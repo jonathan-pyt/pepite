@@ -65,7 +65,7 @@ const TOC_V01 = [
   ["profils", "Selon votre projet"],
 ] as const;
 
-const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_80px_72px]";
+const COMPARABLE_COLS = "grid-cols-[72px_1fr_1fr_90px_80px_72px]";
 
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
@@ -222,7 +222,7 @@ export default function App() {
                 <div
                   className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
                 >
-                  {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                  {["Date", "Bien", "Adresse", "Prix", "€/m²", "Distance"].map((h) => (
                     <span key={h} className="text-[11px] font-medium text-ink-3">
                       {h}
                     </span>
@@ -239,6 +239,9 @@ export default function App() {
                     <span className="text-ink-3">{fmtDate(c.date)}</span>
                     <span className="truncate font-medium text-ink">
                       {c.type} {c.surface} m²
+                    </span>
+                    <span className="truncate text-ink-2" title={c.address}>
+                      {c.address.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
                     </span>
                     <span className="font-semibold text-ink">
                       {c.price.toLocaleString("fr-FR")} €
