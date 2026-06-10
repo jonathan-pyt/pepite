@@ -1,0 +1,160 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62",
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": 48.8610,
+      "lon": 2.3360,
+      "tags": {
+        "amenity": "school",
+        "name": "École Jules Ferry"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1002,
+      "lat": 48.8590,
+      "lon": 2.3340,
+      "tags": {
+        "amenity": "kindergarten",
+        "name": "Maternelle Les Lilas"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2001,
+      "center": {
+        "lat": 48.8605,
+        "lon": 2.3370
+      },
+      "tags": {
+        "amenity": "college",
+        "name": "Collège Victor Hugo"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3001,
+      "lat": 48.8615,
+      "lon": 2.3355,
+      "tags": {
+        "shop": "supermarket",
+        "name": "Monoprix"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3002,
+      "lat": 48.8625,
+      "lon": 2.3380,
+      "tags": {
+        "shop": "bakery",
+        "name": "Boulangerie du Marché"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3003,
+      "lat": 48.8618,
+      "lon": 2.3348,
+      "tags": {
+        "shop": "butcher",
+        "name": "Boucherie Centrale"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4001,
+      "lat": 48.8600,
+      "lon": 2.3345,
+      "tags": {
+        "amenity": "pharmacy",
+        "name": "Pharmacie de la Paix"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4002,
+      "lat": 48.8595,
+      "lon": 2.3365,
+      "tags": {
+        "amenity": "doctors",
+        "name": "Cabinet Médical Dupont"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5001,
+      "lat": 48.8608,
+      "lon": 2.3358,
+      "tags": {
+        "highway": "bus_stop",
+        "name": "Arrêt République"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5001,
+      "lat": 48.8608,
+      "lon": 2.3358,
+      "tags": {
+        "highway": "bus_stop",
+        "public_transport": "stop_position",
+        "name": "Arrêt République"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5002,
+      "lat": 48.8612,
+      "lon": 2.3362,
+      "tags": {
+        "highway": "bus_stop"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5003,
+      "lat": 48.8598,
+      "lon": 2.3350,
+      "tags": {
+        "railway": "station",
+        "name": "Gare du Nord"
+      }
+    },
+    {
+      "type": "way",
+      "id": 6001,
+      "center": {
+        "lat": 48.8603,
+        "lon": 2.3368
+      },
+      "tags": {
+        "leisure": "park",
+        "name": "Square de la Liberté"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6002,
+      "lat": 48.8622,
+      "lon": 2.3372,
+      "tags": {
+        "leisure": "garden",
+        "name": "Jardin Botanique"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9001,
+      "lat": 48.8601,
+      "lon": 2.3351,
+      "tags": {
+        "amenity": "driving_school",
+        "name": "Auto-École Nationale"
+      }
+    }
+  ]
+}

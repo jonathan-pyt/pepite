@@ -81,7 +81,7 @@ const RADII_M = [500, 1000, 2000];
 const MIN_SAMPLE = 10;
 export const DVF_YEARS = [2023, 2024, 2025]; // fenêtre geo-dvf : 2021-2025 vérifiée 2026-06-10
 
-function haversineM(aLat: number, aLon: number, bLat: number, bLon: number): number {
+export function haversineM(aLat: number, aLon: number, bLat: number, bLon: number): number {
   const R = 6_371_000;
   const dLat = ((bLat - aLat) * Math.PI) / 180;
   const dLon = ((bLon - aLon) * Math.PI) / 180;
