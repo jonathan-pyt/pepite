@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Report } from "@pepite/core";
 import { scoreLabel } from "@pepite/core";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { idbRepository } from "@/lib/repository-idb";
 import {
   ScoreRing,
@@ -11,6 +11,7 @@ import {
   WarnItem,
   DPEChip,
 } from "@/components/pepite";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -80,6 +81,7 @@ function capitalizeAddress(raw: string): string {
 
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
+  const [othersOpen, setOthersOpen] = useState(false);
 
   useEffect(() => {
     const id = new URLSearchParams(location.search).get("id");
@@ -99,10 +101,14 @@ export default function App() {
     year: "numeric",
   });
 
-  // Sort comparables by date descending (YYYY-MM-DD string compare is correct)
-  const sortedComparables = quick.market
-    ? [...quick.market.comparables].sort((a, b) => b.date.localeCompare(a.date))
-    : [];
+  // Split comparables: similar first (date-desc), then others (date-desc)
+  const allComparables = quick.market ? [...quick.market.comparables] : [];
+  const similarComps = allComparables
+    .filter((c) => c.similar !== false)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const otherComps = allComparables
+    .filter((c) => c.similar === false)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <PageShell maxWidth="rapport" topRight={`Rapport généré le ${generatedAt}`}>
@@ -205,7 +211,7 @@ export default function App() {
                 }
                 sub={
                   quick.market
-                    ? `${quick.market.sampleSize} ventes · r${quick.market.radiusM} m · ${quick.market.confidence}`
+                    ? `${quick.market.sampleSize} ventes · r${quick.market.radiusM} m · ${quick.market.confidence}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                     : undefined
                 }
               />
@@ -227,8 +233,9 @@ export default function App() {
             </div>
 
             {/* Comparables table */}
-            {quick.market && quick.market.comparables.length > 0 && (
+            {quick.market && allComparables.length > 0 && (
               <TooltipProvider>
+                {/* Main table — similar rows */}
                 <div className="overflow-hidden rounded-[9px] border border-line-soft">
                   {/* Header row */}
                   <div
@@ -240,8 +247,8 @@ export default function App() {
                       </span>
                     ))}
                   </div>
-                  {/* Rows — sorted by date descending */}
-                  {sortedComparables.map((c, i) => (
+                  {/* Similar rows */}
+                  {similarComps.map((c, i) => (
                     <div
                       key={c.idMutation}
                       className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
@@ -269,6 +276,67 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+
+                {/* Toggle button + others table */}
+                {otherComps.length > 0 && (
+                  <div className="mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-1.5 text-[12px] text-ink-3"
+                      onClick={() => setOthersOpen((v) => !v)}
+                    >
+                      {othersOpen ? (
+                        <ChevronUp className="size-[14px]" />
+                      ) : (
+                        <ChevronDown className="size-[14px]" />
+                      )}
+                      {othersOpen
+                        ? "Masquer les autres ventes du secteur"
+                        : `Voir les ${otherComps.length} autres ventes du secteur`}
+                    </Button>
+                    {othersOpen && (
+                      <div className="mt-1.5 overflow-hidden rounded-[9px] border border-line-soft opacity-70">
+                        <div
+                          className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
+                        >
+                          {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                            <span key={h} className="text-[11px] font-medium text-ink-3">
+                              {h}
+                            </span>
+                          ))}
+                        </div>
+                        {otherComps.map((c, i) => (
+                          <div
+                            key={c.idMutation}
+                            className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
+                              i % 2 ? "bg-surface-sub" : "bg-white"
+                            }`}
+                          >
+                            <span className="text-ink-3">{fmtDate(c.date)}</span>
+                            <span className="truncate font-medium text-ink-2">
+                              {c.type} {c.surface} m²
+                            </span>
+                            <span className="font-semibold text-ink-2">
+                              {c.price.toLocaleString("fr-FR")} €
+                            </span>
+                            <span className="font-semibold text-ink-3">
+                              {Math.round(c.pricePerM2).toLocaleString("fr-FR")}
+                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help underline decoration-dotted underline-offset-2 text-ink-3">
+                                  {c.distanceM} m
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </TooltipProvider>
             )}
           </RSection>

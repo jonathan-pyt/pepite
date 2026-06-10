@@ -64,6 +64,7 @@ async function runQuickAnalysis(listing: Listing): Promise<QuickAnalysis> {
     sales,
     { lat: point.lat, lon: point.lon },
     listing.propertyType,
+    listing.surface,
   );
   return buildQuickAnalysis(listing, market);
 }
