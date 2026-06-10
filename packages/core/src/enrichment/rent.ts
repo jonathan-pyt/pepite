@@ -20,10 +20,16 @@ async function decodeLatin1(res: Response): Promise<string> {
   return new TextDecoder("iso-8859-1").decode(buf);
 }
 
+/** Retire les guillemets doubles ENGLOBANTS d'une cellule (le CSV loyers réel
+ *  guillemette toutes les cellules texte ; le zonage non — strip inoffensif). */
+function unquote(cell: string): string {
+  return cell.trim().replace(/^"(.*)"$/, "$1");
+}
+
 function splitCsv(csv: string): string[][] {
   return csv
     .split(/\r?\n/)
-    .map((line) => line.split(";"));
+    .map((line) => line.split(";").map(unquote));
 }
 
 function findIndex(headers: string[], matcher: (h: string) => boolean): number {

@@ -2,14 +2,16 @@ import { describe, it, expect, vi } from "vitest";
 import { parseRentCsv, parseZonageCsv, fetchRentInfo } from "./rent";
 
 // ─── Synthetic CSV fixtures ───────────────────────────────────────────────────
-// Headers match the real 2025 ANIL/MTE files exactly.
-// The accent in "Île-de-France" tests latin-1 → UTF-8 decoding.
+// Format reproduit du VRAI fichier 2025 ANIL/MTE : toutes les cellules TEXTE
+// sont entre guillemets doubles ("INSEE_C", "maille"…), les nombres sont nus,
+// décimales à virgule.
 
 const RENT_CSV_HEADER =
-  "INSEE_C;LIBGEO;REG;DEP;loypredm2;lwr.IPm2;upr.IPm2;TYPPRED;nbobs_com;loypredm2_MAI;lwr.IPm2_MAI;upr.IPm2_MAI";
+  '"id_zone";"INSEE_C";"LIBGEO";"EPCI";"DEP";"REG";"loypredm2";"lwr.IPm2";"upr.IPm2";"TYPPRED";"nbobs_com";"nbobs_mail";"R2_adj"';
 
 /**
- * 5 lignes :
+ * 6 lignes :
+ *  - 05066 La Haute-Beaume — ligne RÉELLE du fichier (maille, longues décimales)
  *  - 44109 Nantes, commune observée, décimales à virgule
  *  - 75056 Paris, commune observée
  *  - 97411 Saint-Denis La Réunion, MAILLE (extrapolée)  ← piège DOM
@@ -17,11 +19,12 @@ const RENT_CSV_HEADER =
  *  - 97100 Basse-Terre, maille (Guadeloupe)
  */
 const RENT_CSV_BODY = [
-  "44109;Nantes;52;44;13,50;11,20;15,80;commune;842;12,90;10,80;15,10",
-  "75056;Paris;11;75;36,20;30,10;42,50;commune;5123;34,80;28,90;40,70",
-  "97411;Saint-Denis;04;974;14,30;12,00;16,60;maille;0;13,90;11,50;16,30",
-  "33063;Bordeaux;75;33;18,40;15,60;21,20;commune;1204;17,80;15,00;20,60",
-  "97100;Basse-Terre;01;971;11,20;9,40;13,00;maille;0;10,80;9,00;12,60",
+  '"1";"05066";"La Haute-Beaume";"200067445";"05";"93";9,75769624568385;7,57917786912916;12,5623963003751;"maille";0;484;0,77697857231704',
+  '"2";"44109";"Nantes";"244400404";"44";"52";13,50;11,20;15,80;"commune";842;1200;0,81',
+  '"3";"75056";"Paris";"200054781";"75";"11";36,20;30,10;42,50;"commune";5123;6000;0,85',
+  '"4";"97411";"Saint-Denis";"249740119";"974";"04";14,30;12,00;16,60;"maille";0;310;0,72',
+  '"5";"33063";"Bordeaux";"243300316";"33";"75";18,40;15,60;21,20;"commune";1204;1500;0,83',
+  '"6";"97100";"Basse-Terre";"249710062";"971";"01";11,20;9,40;13,00;"maille";0;150;0,70',
 ].join("\n");
 
 const RENT_CSV = RENT_CSV_HEADER + "\n" + RENT_CSV_BODY;
@@ -82,9 +85,20 @@ describe("parseRentCsv", () => {
 
   it("retourne une Map avec toutes les lignes valides", () => {
     const map = parseRentCsv(RENT_CSV);
-    expect(map.size).toBe(5);
+    expect(map.size).toBe(6);
     expect(map.has("33063")).toBe(true);
     expect(map.has("97100")).toBe(true);
+  });
+
+  it("ligne réelle du fichier — guillemets retirés, clé INSEE nue, longues décimales (La Haute-Beaume 05066)", () => {
+    const map = parseRentCsv(RENT_CSV);
+    const hauteBeaume = map.get("05066"); // clé SANS guillemets
+    expect(hauteBeaume).toBeDefined();
+    expect(hauteBeaume!.loyerM2).toBeCloseTo(9.75769624568385, 10);
+    expect(hauteBeaume!.loyerM2Bas).toBeCloseTo(7.57917786912916, 10);
+    expect(hauteBeaume!.loyerM2Haut).toBeCloseTo(12.5623963003751, 10);
+    expect(hauteBeaume!.fiable).toBe(false); // "maille" guillemeté dans le CSV
+    expect(hauteBeaume!.nbAnnonces).toBe(0);
   });
 
   it("retourne une Map vide sur CSV sans données (header seul)", () => {
@@ -186,13 +200,11 @@ describe("fetchRentInfo", () => {
   });
 
   it("décode correctement un accent latin-1 dans le libellé (preuve d'encodage)", async () => {
-    // CSV avec un caractère latin-1 : é (0xE9) dans le libellé "Île-de-France"
+    // CSV avec un caractère latin-1 : é (0xE9) dans "Réunion"
     const csvWithAccent =
       RENT_CSV_HEADER +
       "\n" +
-      // "Île" en latin-1 : Î = 0xCE, l = 0x6C, e = 0x65 → le é dans "Île-de-France" = 0xE9 for "é"
-      // Simpler: use "Réunion" which has é (0xE9)
-      "97411;R\xE9union;04;974;14,30;12,00;16,60;maille;0;13,90;11,50;16,30";
+      '"1";"97411";"R\xE9union";"249740119";"974";"04";14,30;12,00;16,60;"maille";0;310;0,72';
 
     const mockFetch = vi
       .fn()

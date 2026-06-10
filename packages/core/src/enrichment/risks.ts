@@ -47,10 +47,20 @@ export interface FetchRisksOptions {
   fetchFn?: typeof fetch;
 }
 
+const RETRY_DELAY_MS = 500;
+
 export async function fetchRisks(citycode: string, opts: FetchRisksOptions = {}): Promise<RiskReport> {
   const fetchFn = opts.fetchFn ?? fetch;
   const url = `${API_BASE}?code_insee=${encodeURIComponent(citycode)}`;
-  const res = await fetchFn(url);
+  // Un retry sur erreur réseau transitoire (ECONNRESET observé en live) —
+  // pas de retry sur les réponses HTTP non-OK.
+  let res: Response;
+  try {
+    res = await fetchFn(url);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    res = await fetchFn(url);
+  }
   if (!res.ok) throw new Error(`risques Géorisques: HTTP ${res.status}`);
   const json = (await res.json()) as {
     risquesNaturels?: RisquesSection;

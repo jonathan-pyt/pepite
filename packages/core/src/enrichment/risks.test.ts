@@ -149,7 +149,7 @@ describe("fetchRisks", () => {
     expect(report.technologiques).toHaveLength(0);
   });
 
-  it("erreur HTTP → throw avec le status", async () => {
+  it("erreur HTTP → throw avec le status, sans retry", async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce({
       ok: false,
       status: 503,
@@ -158,6 +158,45 @@ describe("fetchRisks", () => {
     await expect(
       fetchRisks("44109", { fetchFn: mockFetch as unknown as typeof fetch }),
     ).rejects.toThrow("risques Géorisques: HTTP 503");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("erreur réseau transitoire → un retry après ~500 ms puis succès", async () => {
+    vi.useFakeTimers();
+    try {
+      const mockFetch = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("fetch failed: ECONNRESET"))
+        .mockResolvedValueOnce({ ok: true, json: async () => NANTES_RESPONSE });
+
+      const promise = fetchRisks("44109", { fetchFn: mockFetch as unknown as typeof fetch });
+      await vi.advanceTimersByTimeAsync(500);
+      const report = await promise;
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(report.naturels.map((r) => r.libelle)).toContain("Inondation");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("erreur réseau persistante (deux rejets) → throw", async () => {
+    vi.useFakeTimers();
+    try {
+      const mockFetch = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("ECONNRESET 1"))
+        .mockRejectedValueOnce(new Error("ECONNRESET 2"));
+
+      const promise = fetchRisks("44109", { fetchFn: mockFetch as unknown as typeof fetch });
+      const assertion = expect(promise).rejects.toThrow("ECONNRESET 2");
+      await vi.advanceTimersByTimeAsync(500);
+      await assertion;
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("clé inconnue avec present:true → incluse avec un libellé humanisé", async () => {
