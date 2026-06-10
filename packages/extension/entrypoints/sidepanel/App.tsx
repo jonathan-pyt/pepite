@@ -31,7 +31,7 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { state, analysis, reportId, analysisDate, error, runFullAnalysis } = useTabState();
+  const { state, analysis, enrichments, reportId, analysisDate, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
 
   // ── State: idle / no listing ─────────────────────────────────────────────
@@ -149,6 +149,24 @@ export default function App() {
             />
           </div>
         )}
+
+        {/* ── Quartier résumé ──────────────────────────────────────────────── */}
+        {analysis && enrichments?.neighborhood && (() => {
+          const nb = enrichments.neighborhood!;
+          const parts: string[] = [];
+          if (nb.ecoles.count > 0) parts.push(`${nb.ecoles.count} école${nb.ecoles.count > 1 ? "s" : ""}`);
+          if (nb.transports.count > 0) parts.push(`${nb.transports.count} arrêt${nb.transports.count > 1 ? "s" : ""}`);
+          if (nb.commerces.count > 0) parts.push(`${nb.commerces.count} commerce${nb.commerces.count > 1 ? "s" : ""}`);
+          if (nb.sante.count > 0) parts.push(`${nb.sante.count} santé`);
+          if (parts.length === 0) return null;
+          return (
+            <p className="text-[11.5px] text-ink-3">
+              <span className="font-medium text-ink-2">Quartier</span>
+              {" : "}
+              {parts.join(" · ")}
+            </p>
+          );
+        })()}
 
         {/* ── Comparaison marché indisponible ─────────────────────────────── */}
         {quick && !quick.market && (

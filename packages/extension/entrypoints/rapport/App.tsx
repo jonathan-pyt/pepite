@@ -1,7 +1,16 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Report } from "@pepite/core";
 import { scoreLabel } from "@pepite/core";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  School,
+  ShoppingBag,
+  Stethoscope,
+  Bus,
+  Trees,
+} from "lucide-react";
 import { idbRepository } from "@/lib/repository-idb";
 import {
   ScoreRing,
@@ -64,7 +73,7 @@ function RSection({ id, num, title, children }: RSectionProps) {
 }
 
 /* ---------- Main TOC items ---------- */
-const TOC_V01 = [
+const TOC_BASE = [
   ["synthese", "Synthèse IA"],
   ["prix", "Prix & marché"],
   ["vigilance", "Points de vigilance"],
@@ -94,6 +103,7 @@ export default function App() {
     return <p className="bg-page p-8 text-ink-3">Rapport introuvable.</p>;
 
   const { listing, quick, analysis } = report;
+  const enrichments = report.enrichments;
 
   const generatedAt = new Date(report.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -122,7 +132,12 @@ export default function App() {
           <div className="px-2.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.07em] text-ink-3">
             Sommaire
           </div>
-          {TOC_V01.map(([id, label], i) => (
+          {[
+            ...TOC_BASE,
+            ...(enrichments?.neighborhood ? [["quartier", "Quartier"] as const] : []),
+            ...(enrichments?.risks ? [["risques", "Risques recensés"] as const] : []),
+            ...(enrichments?.rent ? [["locatif", "Marché locatif"] as const] : []),
+          ].map(([id, label], i) => (
             <a
               key={id}
               href={`#${id}`}
@@ -409,6 +424,141 @@ export default function App() {
               </div>
             </RSection>
           )}
+
+          {/* ── 6. Quartier ── */}
+          {enrichments?.neighborhood && (() => {
+            const nb = enrichments.neighborhood!;
+            type CatKey = "ecoles" | "commerces" | "sante" | "transports" | "espacesVerts";
+            const categories: { key: CatKey; label: string; Icon: React.ElementType }[] = [
+              { key: "ecoles", label: "Écoles", Icon: School },
+              { key: "commerces", label: "Commerces", Icon: ShoppingBag },
+              { key: "sante", label: "Santé", Icon: Stethoscope },
+              { key: "transports", label: "Transports", Icon: Bus },
+              { key: "espacesVerts", label: "Espaces verts", Icon: Trees },
+            ];
+            const sectionNum = 6;
+            return (
+              <RSection id="quartier" num={sectionNum} title={`Quartier (rayon ${nb.radiusM} m)`}>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                  {categories.map(({ key, label, Icon }) => {
+                    const cat = nb[key];
+                    return (
+                      <div
+                        key={key}
+                        className="min-w-0 rounded-lg border border-line-soft bg-surface-sub px-3 py-2.5"
+                      >
+                        <div className="mb-1.5 flex items-center gap-1.5">
+                          <Icon className="size-[13px] shrink-0 text-ink-3" />
+                          <span className="text-[11px] font-medium tracking-[0.01em] text-ink-3">
+                            {label}
+                          </span>
+                        </div>
+                        <div className="text-base font-bold leading-[1.1] tracking-[-0.02em] tabular-nums text-ink">
+                          {cat.count}
+                        </div>
+                        {cat.nearest.length > 0 && (
+                          <div className="mt-1.5 flex flex-col gap-[3px]">
+                            {cat.nearest.map((poi, i) => (
+                              <div key={i} className="min-w-0">
+                                <span className="block truncate text-[13px] leading-[1.3] text-ink-2">
+                                  {poi.name}
+                                </span>
+                                <span className="text-[11.5px] text-ink-3 tabular-nums">
+                                  {poi.distanceM} m
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </RSection>
+            );
+          })()}
+
+          {/* ── 7. Risques recensés ── */}
+          {enrichments?.risks && (() => {
+            const risks = enrichments.risks!;
+            const hasAny = risks.naturels.length > 0 || risks.technologiques.length > 0;
+            const sectionNum = enrichments?.neighborhood ? 7 : 6;
+            return (
+              <RSection id="risques" num={sectionNum} title="Risques recensés">
+                {!hasAny ? (
+                  <p className="text-[13px] text-ink-3">Aucun risque recensé sur la commune.</p>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {risks.naturels.map((r, i) => (
+                      <WarnItem key={`n-${i}`} tone="warn" title={r.libelle} sub={r.statut} />
+                    ))}
+                    {risks.technologiques.map((r, i) => (
+                      <WarnItem key={`t-${i}`} tone="info" title={r.libelle} sub={r.statut} />
+                    ))}
+                  </div>
+                )}
+              </RSection>
+            );
+          })()}
+
+          {/* ── 8. Marché locatif ── */}
+          {enrichments?.rent && (() => {
+            const rent = enrichments.rent!;
+            const prevCount = (enrichments?.neighborhood ? 1 : 0) + (enrichments?.risks ? 1 : 0);
+            const sectionNum = 6 + prevCount;
+            const rendementBrut =
+              listing.price && listing.surface && rent.fiable
+                ? ((rent.loyerM2 * listing.surface * 12) / listing.price * 100).toFixed(1)
+                : null;
+            return (
+              <RSection id="locatif" num={sectionNum} title="Marché locatif">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                  <Metric
+                    label="Loyer médian"
+                    value={`${rent.loyerM2.toFixed(2)} €/m² CC`}
+                    sub={`IC 80 % : ${rent.loyerM2Bas.toFixed(2)} – ${rent.loyerM2Haut.toFixed(2)} €/m²`}
+                  />
+                  {rent.zoneAbc && (
+                    <div className="min-w-0 rounded-lg border border-line-soft bg-surface-sub px-3 py-2.5">
+                      <div className="mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3">
+                        Zone ABC
+                      </div>
+                      <span className="inline-block rounded-md border border-line bg-white px-2 py-0.5 text-[13px] font-semibold text-ink tabular-nums">
+                        {rent.zoneAbc}
+                      </span>
+                    </div>
+                  )}
+                  <div className="min-w-0 rounded-lg border border-line-soft bg-surface-sub px-3 py-2.5">
+                    <div className="mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3">
+                      Fiabilité
+                    </div>
+                    {rent.fiable ? (
+                      <span className="inline-block rounded-md border border-good/30 bg-good/10 px-2 py-0.5 text-[12px] font-semibold text-good">
+                        observé · {rent.nbAnnonces} annonces
+                      </span>
+                    ) : (
+                      <span className="inline-block rounded-md border border-warn-border bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn">
+                        extrapolé (maille)
+                      </span>
+                    )}
+                  </div>
+                  {rendementBrut && (
+                    <div className="col-span-full min-w-0 rounded-lg border border-line-soft bg-surface-sub px-3 py-2.5">
+                      <div className="mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3">
+                        Rendement brut indicatif
+                      </div>
+                      <div className="text-base font-bold leading-[1.1] tracking-[-0.02em] tabular-nums text-ink">
+                        {rendementBrut} %
+                      </div>
+                      <div className="mt-[3px] text-[10.5px] leading-[1.4] text-ink-3">
+                        Estimation indicative (loyer médian CC × surface × 12 / prix) — hors charges, vacance et fiscalité.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </RSection>
+            );
+          })()}
 
           {/* ── Footer ── */}
           <footer className="px-1.5 pb-1.5 pt-[18px] text-[11px] leading-relaxed text-ink-3">
