@@ -35,9 +35,11 @@ Présentation de votre programme neuf Carré des Halles à Vouvray. Cadre de vie
   "landSurface": undefined,
   "location": {
     "city": "Vouvray",
+    "district": undefined,
     "lat": 47.41185,
     "lon": 0.7993,
     "postalCode": "37210",
+    "precision": "street",
     "rawAddress": "Vouvray 37210",
   },
   "photos": [
@@ -94,9 +96,11 @@ Présentation de votre programme neuf Carré des Halles à Vouvray. Cadre de vie
   "landSurface": undefined,
   "location": {
     "city": "Vouvray",
+    "district": undefined,
     "lat": 47.41185,
     "lon": 0.7993,
     "postalCode": "37210",
+    "precision": "street",
     "rawAddress": "Vouvray 37210",
   },
   "photos": [

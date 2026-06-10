@@ -305,4 +305,100 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("P25");
     expect(prompt).toContain("opportunité");
   });
+
+  // ── Fix 2 : caveat position approximative ─────────────────────────────────
+
+  it("Localisation sans precision → ligne inchangée (sans caveat)", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, undefined, new Date("2026-06-10"));
+    expect(prompt).toContain("- Localisation : Nantes 44000");
+    expect(prompt).not.toContain("position approximative");
+  });
+
+  it("Localisation precision=address → ligne inchangée (sans caveat)", () => {
+    const listingAddr: Listing = {
+      ...listing,
+      location: { ...listing.location, precision: "address" },
+    };
+    const prompt = buildAnalysisPrompt(listingAddr, quick, undefined, new Date("2026-06-10"));
+    expect(prompt).toContain("- Localisation : Nantes 44000");
+    expect(prompt).not.toContain("position approximative");
+  });
+
+  it("Localisation precision=district + district → caveat complet avec quartier", () => {
+    const listingDistrict: Listing = {
+      ...listing,
+      location: {
+        rawAddress: "Saint-Denis 97400 Centre-Ville",
+        city: "Saint-Denis",
+        postalCode: "97400",
+        district: "Centre-Ville",
+        precision: "district",
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingDistrict, quick, undefined, new Date("2026-06-10"));
+    expect(prompt).toContain("position approximative");
+    expect(prompt).toContain("adresse exacte non communiquée");
+    expect(prompt).toContain("Centre-Ville");
+    expect(prompt).toContain("point au centre du quartier Centre-Ville");
+  });
+
+  it("Localisation precision=city (sans district) → caveat sans mention quartier", () => {
+    const listingCity: Listing = {
+      ...listing,
+      location: {
+        rawAddress: "Nantes 44000",
+        city: "Nantes",
+        postalCode: "44000",
+        precision: "city",
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingCity, quick, undefined, new Date("2026-06-10"));
+    expect(prompt).toContain("position approximative");
+    expect(prompt).toContain("adresse exacte non communiquée");
+    expect(prompt).not.toContain("point au centre du quartier");
+  });
+
+  it("section Quartier titre avec point approximatif quand precision != address", () => {
+    const listingDistrict: Listing = {
+      ...listing,
+      location: {
+        rawAddress: "Saint-Denis 97400 Centre-Ville",
+        city: "Saint-Denis",
+        postalCode: "97400",
+        district: "Centre-Ville",
+        precision: "district",
+      },
+    };
+    const enrichments: Enrichments = {
+      neighborhood: {
+        radiusM: 800,
+        ecoles: { count: 2, nearest: [] },
+        commerces: { count: 3, nearest: [] },
+        sante: { count: 1, nearest: [] },
+        transports: { count: 5, nearest: [] },
+        espacesVerts: { count: 1, nearest: [] },
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingDistrict, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).toContain("autour du point approximatif");
+  });
+
+  it("section Quartier titre SANS mention approximative quand precision=address", () => {
+    const listingAddr: Listing = {
+      ...listing,
+      location: { ...listing.location, precision: "address" },
+    };
+    const enrichments: Enrichments = {
+      neighborhood: {
+        radiusM: 800,
+        ecoles: { count: 2, nearest: [] },
+        commerces: { count: 3, nearest: [] },
+        sante: { count: 1, nearest: [] },
+        transports: { count: 5, nearest: [] },
+        espacesVerts: { count: 1, nearest: [] },
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingAddr, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).not.toContain("autour du point approximatif");
+  });
 });

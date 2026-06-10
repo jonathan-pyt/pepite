@@ -88,9 +88,11 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
     landSurface: landSurfaceRaw ? Number(landSurfaceRaw) : undefined,
     propertyType,
     location: {
-      rawAddress: [location.city, location.zipcode].filter(Boolean).join(" "),
+      rawAddress: [location.city, location.zipcode, location.district].filter(Boolean).join(" "),
       postalCode: location.zipcode ? String(location.zipcode) : undefined,
       city: location.city ? String(location.city) : undefined,
+      district: location.district ? String(location.district) : undefined,
+      precision: location.type ? String(location.type) : undefined,
       lat: typeof location.lat === "number" ? location.lat : undefined,
       lon: typeof location.lng === "number" ? location.lng : undefined,
     },

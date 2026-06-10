@@ -8,6 +8,8 @@ export interface ListingLocation {
   rawAddress: string;
   postalCode?: string;
   city?: string;
+  district?: string;
+  precision?: string;
   lat?: number;
   lon?: number;
 }

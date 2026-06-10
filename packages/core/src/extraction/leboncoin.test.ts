@@ -150,4 +150,69 @@ describe("parseLeboncoin", () => {
     const { extractedAt, ...stable } = listing;
     expect(stable).toMatchSnapshot();
   });
+
+  // ── Fix 1 : district + précision extraits ─────────────────────────────────
+
+  it("extrait district et precision depuis une annonce de quartier forgée", () => {
+    const ad = forgedAd({
+      location: {
+        city: "Saint-Denis",
+        zipcode: "97400",
+        district: "Centre-Ville",
+        city_label: "Saint-Denis 97400 Centre-Ville",
+        lat: -20.884153,
+        lng: 55.45604,
+        type: "district",
+      },
+    });
+    const listing = parseLeboncoin(
+      forgeDoc(ad),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.location.district).toBe("Centre-Ville");
+    expect(listing.location.precision).toBe("district");
+    expect(listing.location.rawAddress).toContain("Centre-Ville");
+    expect(listing.location.rawAddress).toBe("Saint-Denis 97400 Centre-Ville");
+  });
+
+  it("rawAddress inclut district quand présent (shape LBC city_label)", () => {
+    const ad = forgedAd({
+      location: {
+        city: "Paris",
+        zipcode: "75010",
+        district: "Canal Saint-Martin",
+        lat: 48.87,
+        lng: 2.37,
+        type: "district",
+      },
+    });
+    const listing = parseLeboncoin(
+      forgeDoc(ad),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.location.rawAddress).toBe("Paris 75010 Canal Saint-Martin");
+  });
+
+  it("district et precision absents → comportement inchangé (rétrocompat)", () => {
+    const listing = parseLeboncoin(
+      forgeDoc(forgedAd()),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.location.district).toBeUndefined();
+    expect(listing.location.precision).toBeUndefined();
+    expect(listing.location.rawAddress).toBe("Nantes 44000"); // pas de quartier
+  });
+
+  it("precision=address → extrait correctement", () => {
+    const ad = forgedAd({
+      location: { city: "Lyon", zipcode: "69001", lat: 45.76, lng: 4.83, type: "address" },
+    });
+    const listing = parseLeboncoin(
+      forgeDoc(ad),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.location.precision).toBe("address");
+    expect(listing.location.district).toBeUndefined();
+    expect(listing.location.rawAddress).toBe("Lyon 69001");
+  });
 });

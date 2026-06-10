@@ -23,14 +23,21 @@ function dpeLine(listing: Listing): string {
   return "DPE : non renseigné";
 }
 
-function buildNeighborhoodSection(n: NeighborhoodStats): string {
+function isApproximatePrecision(precision: string | undefined): boolean {
+  return precision !== undefined && precision !== "address" && precision !== "housenumber";
+}
+
+function buildNeighborhoodSection(n: NeighborhoodStats, listing: Listing): string {
   function catLine(label: string, cat: { count: number; nearest: { name: string; distanceM: number }[] }): string {
     const nearestStr = cat.nearest.length > 0
       ? ` (${cat.nearest.map((p) => `${p.name} à ${p.distanceM} m`).join(", ")})`
       : "";
     return `- ${label} : ${cat.count}${nearestStr}`;
   }
-  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap)
+  const approxSuffix = isApproximatePrecision(listing.location.precision)
+    ? " — autour du point approximatif"
+    : "";
+  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap${approxSuffix})
 ${catLine("Écoles", n.ecoles)}
 ${catLine("Commerces", n.commerces)}
 ${catLine("Santé", n.sante)}
@@ -85,7 +92,7 @@ export function buildAnalysisPrompt(
       : "";
 
   const neighborhoodBlock = enrichments?.neighborhood
-    ? buildNeighborhoodSection(enrichments.neighborhood)
+    ? buildNeighborhoodSection(enrichments.neighborhood, listing)
     : `## Quartier (rayon 800 m, OpenStreetMap)\n- données quartier indisponibles`;
 
   const risksBlock = enrichments?.risks
@@ -101,6 +108,11 @@ export function buildAnalysisPrompt(
       ? `\n- Dispersion du secteur : P25 ${market.p25PricePerM2} €/m² · P75 ${market.p75PricePerM2} €/m²`
       : "";
 
+  const loc = listing.location;
+  const locLine = isApproximatePrecision(loc.precision)
+    ? `${loc.rawAddress} (position approximative — adresse exacte non communiquée${loc.district ? `, point au centre du quartier ${loc.district}` : ""})`
+    : loc.rawAddress;
+
   return `Nous sommes le ${dateStr}.
 
 Analyse ce bien pour un acheteur particulier.
@@ -109,7 +121,7 @@ Analyse ce bien pour un acheteur particulier.
 - Titre : ${listing.title}
 - Prix demandé : ${listing.price.toLocaleString("fr-FR")} €
 - Surface : ${listing.surface ?? "inconnue"} m² · Pièces : ${listing.rooms ?? "?"} · Type : ${listing.propertyType ?? "?"}
-- Localisation : ${listing.location.rawAddress}
+- Localisation : ${locLine}
 - ${dpeLine(listing)} · GES : ${listing.ges ?? "non renseigné"}
 - Publiée le : ${listing.publishedAt ?? "date inconnue"}
 - Description : ${listing.description.slice(0, 2500)}${attributesBlock}
