@@ -7,6 +7,8 @@ export { parseOverpass, fetchNeighborhood } from "./enrichment/neighborhood";
 export type { FetchNeighborhoodOptions } from "./enrichment/neighborhood";
 export { fetchRisks } from "./enrichment/risks";
 export type { FetchRisksOptions } from "./enrichment/risks";
+export { parseRentCsv, parseZonageCsv, fetchRentInfo } from "./enrichment/rent";
+export type { FetchRentInfoOptions } from "./enrichment/rent";
 export { buildQuickAnalysis, scoreLabel } from "./scoring/score";
 export { createModel, DEFAULT_MODELS, type LlmConfig, type LlmProviderId } from "./analysis/provider";
 export { analyzeListing, type AnalyzeInput } from "./analysis/analyze";
