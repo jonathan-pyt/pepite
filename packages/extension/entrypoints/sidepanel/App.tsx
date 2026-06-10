@@ -144,7 +144,7 @@ export default function App() {
             </CardContent>
           </Card>
           {reportId && (
-            <Button variant="outline" onClick={() => window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}` as never))}>
+            <Button variant="outline" onClick={() => window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))}>
               Voir le rapport complet
             </Button>
           )}
