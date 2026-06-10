@@ -133,7 +133,7 @@ export default function App() {
               }
               sub={
                 quick.market
-                  ? `${quick.market.sampleSize} ventes · ${quick.market.radiusM} m${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
+                  ? `${quick.market.sampleSize} ventes · ${quick.market.radiusM} m${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                   : undefined
               }
             />
