@@ -1,7 +1,7 @@
 import "./style.css";
 import ReactDOM from "react-dom/client";
 import { useEffect, useState } from "react";
-import { isLeboncoinListingPage, parseLeboncoin, type QuickAnalysis } from "@pepite/core";
+import { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml, type QuickAnalysis } from "@pepite/core";
 import { sendRequest } from "@/lib/messages";
 
 /* ---------- helpers ---------- */
@@ -100,26 +100,53 @@ function MiniWordmark() {
 
 /* ---------- Badge component ---------- */
 
-function Badge() {
-  const [quick, setQuick] = useState<QuickAnalysis | null | "loading" | "error">("loading");
+type BadgeState = QuickAnalysis | null | "loading" | "error";
+
+function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
+  const [quick, setQuick] = useState<BadgeState>("loading");
+  const [parsedListing, setParsedListing] = useState<import("@pepite/core").Listing | null>(null);
+
+  if (!isLeboncoinListingPage(url)) return null;
 
   useEffect(() => {
-    try {
-      const listing = parseLeboncoin(document, location.href);
-      sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing })
-        .then((q) => setQuick(q ?? "error"))
-        .catch(() => setQuick("error"));
-    } catch {
-      setQuick("error");
+    let cancelled = false;
+
+    async function run() {
+      try {
+        let listing: import("@pepite/core").Listing;
+        if (!viaFetch) {
+          listing = parseLeboncoin(document, url);
+        } else {
+          const resp = await fetch(url, { credentials: "include" });
+          const html = await resp.text();
+          listing = parseLeboncoinHtml(html, url);
+        }
+        if (cancelled) return;
+        setParsedListing(listing);
+        const q = await sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing });
+        if (cancelled) return;
+        setQuick(q ?? null);
+      } catch {
+        if (!cancelled) setQuick("error");
+      }
     }
-  }, []);
+
+    void run();
+    return () => { cancelled = true; };
+  }, [url, viaFetch]);
 
   if (quick === "error") return null;
 
   /* Loading state */
   if (quick === "loading") {
     return (
-      <div className="pep-card">
+      <div
+        className="pep-card"
+        role="button"
+        title="Ouvrir l'analyse Pépite"
+        style={{ cursor: "pointer" }}
+        onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
+      >
         <div className="pep-loading-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" style={{ display: "block" }}>
             <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
@@ -141,8 +168,32 @@ function Badge() {
   /* Result state */
   const hasScore = quick !== null && quick.score !== null;
 
+  // Determine sub lines
+  const listingPpm2 = quick?.listingPricePerM2 ?? null;
+  const medianPpm2 = quick?.market?.medianPricePerM2 ?? null;
+  const gapPct = quick?.marketGapPct ?? null;
+
+  const hasNoPropertyType = parsedListing ? parsedListing.propertyType === undefined : false;
+  const hasMarket = quick !== null && quick.market !== null;
+
+  let marketSubLine: string | null = null;
+  if (quick === null && hasNoPropertyType) {
+    marketSubLine = "Type de bien non comparé (parking, terrain…)";
+  } else if (quick === null || (!hasMarket && quick !== null)) {
+    marketSubLine = "Marché inconnu (pas assez de ventes)";
+  }
+
+  const showPriceDetails = hasScore && listingPpm2 !== null && medianPpm2 !== null;
+  const showUnusualGap = gapPct !== null && Math.abs(gapPct) > 60;
+
   return (
-    <div className="pep-card">
+    <div
+      className="pep-card"
+      role="button"
+      title="Ouvrir l'analyse Pépite"
+      style={{ cursor: "pointer" }}
+      onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
+    >
       {/* Left: score ring or dash */}
       {hasScore && quick !== null && quick.score !== null ? (
         <ScoreRing score={quick.score} size={38} stroke={4} />
@@ -165,13 +216,30 @@ function Badge() {
                 fontVariantNumeric: "tabular-nums",
                 marginTop: 1,
               }}>
-                {quick.marketGapPct !== null
-                  ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1)} % vs marché`
+                {gapPct !== null
+                  ? `${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} % vs marché`
                   : "marché inconnu"}
               </div>
+              {showPriceDetails && (
+                <div style={{
+                  fontSize: 10.5,
+                  color: "#8e8e98",
+                  fontVariantNumeric: "tabular-nums",
+                  marginTop: 1,
+                }}>
+                  {listingPpm2} €/m² · secteur {medianPpm2} €/m²
+                </div>
+              )}
+              {showUnusualGap && (
+                <div style={{ fontSize: 10.5, color: "#d97706", marginTop: 1 }}>
+                  Écart inhabituel — vérifier surface/type
+                </div>
+              )}
             </>
           ) : (
-            <div style={{ fontSize: 11, color: "#8e8e98", marginTop: 1 }}>marché inconnu</div>
+            <div style={{ fontSize: 11, color: "#8e8e98", marginTop: 1 }}>
+              {marketSubLine ?? "marché inconnu"}
+            </div>
           )}
         </div>
       </div>
@@ -183,18 +251,26 @@ export default defineContentScript({
   matches: ["*://*.leboncoin.fr/*"],
   cssInjectionMode: "ui",
   async main(ctx) {
-    if (!isLeboncoinListingPage(location.href)) return;
+    let root: ReactDOM.Root | null = null;
+
     const ui = await createShadowRootUi(ctx, {
       name: "pepite-badge",
       position: "inline",
       anchor: "body",
       onMount: (container) => {
-        const root = ReactDOM.createRoot(container);
-        root.render(<Badge />);
+        root = ReactDOM.createRoot(container);
+        root.render(<Badge key={location.href} url={location.href} viaFetch={false} />);
         return root;
       },
-      onRemove: (root) => root?.unmount(),
+      onRemove: (r) => r?.unmount(),
     });
     ui.mount();
+
+    ctx.addEventListener(window, "wxt:locationchange", ({ newUrl }: { newUrl: string | URL }) => {
+      if (root) {
+        const url = String(newUrl);
+        root.render(<Badge key={url} url={url} viaFetch={true} />);
+      }
+    });
   },
 });

@@ -23,6 +23,11 @@ function readNextData(doc: Document): Record<string, unknown> | null {
   }
 }
 
+export function parseLeboncoinHtml(html: string, url: string): Listing {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return parseLeboncoin(doc, url);
+}
+
 export function parseLeboncoin(doc: Document, url: string): Listing {
   const data = readNextData(doc) as {
     props?: { pageProps?: { ad?: Record<string, unknown> } };
