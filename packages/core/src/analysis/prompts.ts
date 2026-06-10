@@ -18,9 +18,12 @@ export function buildAnalysisPrompt(
   profile: UsageProfile,
 ): string {
   const market = quick.market;
-  const comparables = market?.comparables
-    .map((c) => `- ${c.date} · ${c.type} ${c.surface} m² · ${c.price.toLocaleString("fr-FR")} € (${Math.round(c.pricePerM2)} €/m²) · à ${c.distanceM} m`)
-    .join("\n");
+  const comparablesBlock =
+    market && market.comparables.length > 0
+      ? `\n- Ventes comparables :\n${market.comparables
+          .map((c) => `- ${c.date} · ${c.type} ${c.surface} m² · ${c.price.toLocaleString("fr-FR")} € (${Math.round(c.pricePerM2)} €/m²) · à ${c.distanceM} m`)
+          .join("\n")}`
+      : "";
 
   return `Analyse ce bien pour un ${PROFILE_LABEL[profile]}.
 
@@ -37,9 +40,7 @@ export function buildAnalysisPrompt(
 ${
   market
     ? `- Médiane du secteur : ${market.medianPricePerM2} €/m² (${market.sampleSize} ventes, rayon ${market.radiusM} m, confiance ${market.confidence})
-- Prix demandé : ${quick.listingPricePerM2} €/m², soit ${quick.marketGapPct! >= 0 ? "+" : ""}${quick.marketGapPct!.toFixed(1)} % vs médiane
-- Ventes comparables :
-${comparables}`
+- Prix demandé : ${quick.listingPricePerM2} €/m², soit ${quick.marketGapPct! >= 0 ? "+" : ""}${quick.marketGapPct!.toFixed(1)} % vs médiane${comparablesBlock}`
     : "- Données DVF insuffisantes dans la zone : ne chiffre l'écart au marché que si la description le permet, et signale cette limite."
 }
 

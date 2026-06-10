@@ -77,6 +77,12 @@ describe("buildAnalysisPrompt", () => {
     expect(normalized).toContain("-5.8 % vs médiane");
   });
 
+  it("omet la rubrique comparables quand il n'y en a aucun", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, "residence"); // quick a comparables: []
+    expect(prompt).not.toContain("Ventes comparables");
+    expect(prompt).toContain("Médiane du secteur");
+  });
+
   it("signale l'absence de données DVF", () => {
     const prompt = buildAnalysisPrompt(listing, { ...quick, market: null, marketGapPct: null }, "residence");
     expect(prompt).toContain("Données DVF insuffisantes");
