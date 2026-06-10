@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Loader2, RotateCw, Sparkles } from "lucide-react";
+import { Info, Loader2, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
 import { useTabState } from "@/lib/hooks/use-tab-state";
@@ -231,6 +231,14 @@ export default function App() {
             >
               Analyse IA
             </SecTitle>
+            {(!enrichments?.neighborhood && !enrichments?.risks && !enrichments?.rent) && (
+              <div className="mb-[8px] flex items-start gap-1.5 text-[11px] text-ink-3">
+                <Info className="mt-px size-[12px] shrink-0" />
+                <span>
+                  Analyse générée sans données contextuelles (quartier, risques, loyers) — cliquer ⟳ pour ré-analyser avec.
+                </span>
+              </div>
+            )}
             <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">
               {analysis.synthese}
             </p>

@@ -137,11 +137,26 @@ async function buildEnrichments(
     })(),
   ]);
 
-  return {
+  if (neighborhoodResult.status === "rejected")
+    console.warn("[pepite] enrichissement quartier indisponible:", neighborhoodResult.reason);
+  if (risksResult.status === "rejected")
+    console.warn("[pepite] enrichissement risques indisponible:", risksResult.reason);
+  if (rentResult.status === "rejected")
+    console.warn("[pepite] enrichissement loyers indisponible:", rentResult.reason);
+
+  const enrichments: Enrichments = {
     neighborhood: neighborhoodResult.status === "fulfilled" ? neighborhoodResult.value : undefined,
     risks: risksResult.status === "fulfilled" ? risksResult.value : undefined,
     rent: rentResult.status === "fulfilled" ? rentResult.value : undefined,
   };
+
+  console.info("[pepite] enrichissements:", {
+    quartier: enrichments.neighborhood !== undefined,
+    risques: enrichments.risks !== undefined,
+    loyers: enrichments.rent !== undefined,
+  });
+
+  return enrichments;
 }
 
 export default defineBackground(() => {
