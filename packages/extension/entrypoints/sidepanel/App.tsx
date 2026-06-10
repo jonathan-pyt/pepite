@@ -261,9 +261,10 @@ export default function App() {
             <Button
               className="w-full"
               size="lg"
-              onClick={() =>
-                window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))
-              }
+              onClick={() => {
+                window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`));
+                window.close();
+              }}
             >
               Voir le rapport complet
             </Button>
