@@ -1,13 +1,18 @@
 import type { Site } from "../types";
 import { isLeboncoinListingPage } from "./leboncoin";
+import { isSelogerListingPage } from "./seloger";
+import { isCityaListingPage } from "./citya";
 
 /**
  * Registry of supported sites. Each entry knows how to recognise its domain
  * (`detect`) and whether a given URL points to a single listing (`isListing`).
  *
- * URL patterns for seloger/bienici/citya are derived from public URL structures
- * and coded defensively — they will be refined once real fixtures are captured
- * via the owner's browser (DataDome blocks server-side fetches).
+ * URL patterns are derived from real fixtures captured via the owner's browser
+ * (updated 2026-06).
+ *
+ * SeLoger:  /annonces/achat/appartement/saint-denis-974/271190031.htm
+ * Citya:    /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
+ * Bien'ici: /annonce/vente/{ville}/{type}/{N}pieces/{ref}  (SPA — fixture pending)
  */
 type SupportedSite = Exclude<Site, "generic">;
 
@@ -28,22 +33,22 @@ const SITES: SiteEntry[] = [
   {
     site: "seloger",
     detect: /(^|\.)seloger\.com\//,
-    // ex: /annonces/achat/appartement/nantes-44/123456789.htm
-    isListing: (url) => /seloger\.com\/annonces\/[^?#]*\/\d+\.htm/.test(url),
+    // ex: /annonces/achat/appartement/saint-denis-974/271190031.htm
+    isListing: isSelogerListingPage,
   },
   {
     site: "bienici",
     detect: /(^|\.)bienici\.com\//,
-    // ex: /annonce/vente/nantes/appartement/3pieces/abc-123
+    // ex: /annonce/vente/nantes/appartement/3pieces/ref
+    //     /annonce/vente/{type}/{pieces}/{ref}
+    //     /annonce/location/...
     isListing: (url) => /bienici\.com\/annonce\/(vente|location)\//.test(url),
   },
   {
     site: "citya",
     detect: /(^|\.)citya\.com\//,
-    // ex: /annonce/12345  ou /annonces/achat/appartement/nantes/12345
-    isListing: (url) =>
-      /citya\.com\/annonce\/\d+/.test(url) ||
-      /citya\.com\/annonces\/[^?#]*\/\d+(\/|$|\?|#)/.test(url),
+    // ex: /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
+    isListing: isCityaListingPage,
   },
 ];
 

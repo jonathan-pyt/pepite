@@ -1,18 +1,37 @@
 import type { Listing } from "../types";
 import { buildRawAddress, toLetter, toNumber, toPropertyType, toStr } from "./mapping";
 
-/**
- * Citya parser — TRIES schema.org JSON-LD (the most stable public structure on
- * Citya pages) and THROWS a clear "structure inconnue" error when no usable
- * offer is found.
- *
- * The exact JSON-LD shape is plausible but UNVERIFIED — real pages could not be
- * fetched. It will be refined with real fixtures captured via the owner's
- * browser. The generic LLM fallback is the production value of this release.
- */
-const UNKNOWN = "citya: structure inconnue (fixtures réelles à capturer)";
+const UNKNOWN = "citya: structure inconnue";
 
-interface JsonLdProduct {
+export function isCityaListingPage(url: string): boolean {
+  return /citya\.com\/annonces\/[^?#]+\/[A-Z]+\d+[A-Z]*/.test(url);
+}
+
+// ── JSON-LD helpers ───────────────────────────────────────────────────────
+
+interface RealEstateListing {
+  "@type"?: unknown;
+  mainEntity?: unknown;
+  image?: unknown;
+}
+
+interface ItemOffered {
+  "@type"?: unknown;
+  name?: unknown;
+  description?: unknown;
+  address?: unknown;
+  numberOfRooms?: unknown;
+  floorSize?: unknown;
+}
+
+interface Offer {
+  "@type"?: unknown;
+  price?: unknown;
+  priceCurrency?: unknown;
+  itemOffered?: unknown;
+}
+
+interface LegacyProduct {
   "@type"?: unknown;
   name?: unknown;
   description?: unknown;
@@ -21,22 +40,15 @@ interface JsonLdProduct {
   address?: unknown;
 }
 
-/** Flatten any JSON-LD payload (object, array, or @graph) into a node list. */
-function ldNodes(data: unknown): JsonLdProduct[] {
+/** Flatten any JSON-LD payload (object, array, @graph) into a flat node list. */
+function ldNodes(data: unknown): unknown[] {
   if (Array.isArray(data)) return data.flatMap(ldNodes);
   if (data && typeof data === "object") {
     const obj = data as { "@graph"?: unknown };
     if (Array.isArray(obj["@graph"])) return obj["@graph"].flatMap(ldNodes);
-    return [data as JsonLdProduct];
+    return [data];
   }
   return [];
-}
-
-function priceOf(node: JsonLdProduct): number | undefined {
-  const offers = node.offers;
-  if (!offers || typeof offers !== "object") return undefined;
-  const offer = Array.isArray(offers) ? offers[0] : offers;
-  return toNumber((offer as { price?: unknown })?.price);
 }
 
 function readImages(value: unknown): string[] {
@@ -45,8 +57,82 @@ function readImages(value: unknown): string[] {
   return [];
 }
 
+/**
+ * Try the REAL structure (observed 2026-06):
+ *   RealEstateListing → mainEntity: Offer → itemOffered: Apartment
+ */
+function tryRealEstateListing(
+  node: unknown,
+  topImage: unknown,
+): Omit<Listing, "url" | "site" | "extractedAt"> | null {
+  const n = node as RealEstateListing;
+  if (n["@type"] !== "RealEstateListing") return null;
+  const offer = n.mainEntity as Offer | undefined;
+  if (!offer) return null;
+
+  const price = toNumber(offer.price);
+  if (!price || price <= 0) return null;
+
+  const item = (offer.itemOffered ?? {}) as ItemOffered;
+  const address = (item.address ?? {}) as Record<string, unknown>;
+  const floorSize = (item.floorSize ?? {}) as Record<string, unknown>;
+
+  const city = toStr(address.addressLocality);
+  const postalCode = toStr(address.postalCode);
+  const surface = toNumber(floorSize.value);
+  const rooms = toNumber(item.numberOfRooms);
+  const title = toStr(item.name) ?? "";
+  const description = toStr(item.description) ?? "";
+  const propertyType = toPropertyType(item["@type"]) ?? toPropertyType(item.name);
+
+  // image lives at RealEstateListing level
+  const photos = readImages(n.image ?? topImage);
+
+  return {
+    title,
+    price,
+    surface,
+    rooms,
+    propertyType,
+    location: { rawAddress: buildRawAddress(city, postalCode, undefined), city, postalCode },
+    description,
+    photos,
+  };
+}
+
+/**
+ * Fallback: legacy Product/Offer shape (observed in earlier versions / other
+ * properties). Kept for robustness.
+ */
+function tryLegacyProduct(
+  node: unknown,
+): Omit<Listing, "url" | "site" | "extractedAt"> | null {
+  const n = node as LegacyProduct;
+  const offers = n.offers;
+  if (!offers || typeof offers !== "object") return null;
+  const offer = Array.isArray(offers) ? offers[0] : offers;
+  const price = toNumber((offer as { price?: unknown })?.price);
+  if (!price || price <= 0) return null;
+
+  const address = (n.address ?? {}) as Record<string, unknown>;
+  const city = toStr(address.addressLocality);
+  const postalCode = toStr(address.postalCode);
+
+  return {
+    title: toStr(n.name) ?? "",
+    price,
+    propertyType: toPropertyType(n.name),
+    location: { rawAddress: buildRawAddress(city, postalCode, undefined), city, postalCode },
+    dpe: toLetter((n as Record<string, unknown>).energyEfficiencyScaleMin),
+    ges: toLetter((n as Record<string, unknown>).co2EmissionsScaleMin),
+    description: toStr(n.description) ?? "",
+    photos: readImages(n.image),
+  };
+}
+
 export function parseCitya(doc: Document, url: string): Listing {
   const scripts = doc.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]');
+
   for (const script of scripts) {
     if (!script.textContent) continue;
     let data: unknown;
@@ -55,28 +141,21 @@ export function parseCitya(doc: Document, url: string): Listing {
     } catch {
       continue;
     }
+
     for (const node of ldNodes(data)) {
-      const price = priceOf(node);
-      if (price === undefined || price <= 0) continue;
+      // Try real structure first
+      const real = tryRealEstateListing(node, (node as Record<string, unknown>).image);
+      if (real) {
+        return { url, site: "citya", extractedAt: new Date().toISOString(), ...real };
+      }
 
-      const address = (node.address ?? {}) as Record<string, unknown>;
-      const city = toStr(address.addressLocality);
-      const postalCode = toStr(address.postalCode);
-
-      return {
-        url,
-        site: "citya",
-        title: toStr(node.name) ?? "",
-        price,
-        propertyType: toPropertyType(node.name),
-        location: { rawAddress: buildRawAddress(city, postalCode, undefined), city, postalCode },
-        dpe: toLetter((node as Record<string, unknown>).energyEfficiencyScaleMin),
-        ges: toLetter((node as Record<string, unknown>).co2EmissionsScaleMin),
-        description: toStr(node.description) ?? "",
-        photos: readImages(node.image),
-        extractedAt: new Date().toISOString(),
-      };
+      // Fallback: legacy Product/Offer
+      const legacy = tryLegacyProduct(node);
+      if (legacy) {
+        return { url, site: "citya", extractedAt: new Date().toISOString(), ...legacy };
+      }
     }
   }
+
   throw new Error(UNKNOWN);
 }

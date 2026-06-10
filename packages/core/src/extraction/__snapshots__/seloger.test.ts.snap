@@ -1,0 +1,109 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseSeloger > snapshot stable (hors extractedAt) sur la fixture réelle 1`] = `
+{
+  "attributes": [
+    {
+      "label": "Informations générales",
+      "value": "Non meublé",
+    },
+    {
+      "label": "Informations générales",
+      "value": "4ème étage/6 étages",
+    },
+    {
+      "label": "Accessibilité",
+      "value": "Ascenseur",
+    },
+    {
+      "label": "Intérieur",
+      "value": "Cuisine ouverte",
+    },
+    {
+      "label": "Intérieur",
+      "value": "1 salle de bain; 1 salle de douches",
+    },
+    {
+      "label": "Intérieur",
+      "value": "3 chambres",
+    },
+    {
+      "label": "Intérieur",
+      "value": "Pas de cave",
+    },
+    {
+      "label": "Intérieur",
+      "value": "Revêtement du sol: Parquet",
+    },
+    {
+      "label": "Intérieur",
+      "value": "Entrée séparée",
+    },
+    {
+      "label": "Extérieur",
+      "value": "Balcon",
+    },
+    {
+      "label": "Extérieur",
+      "value": "Terrasse",
+    },
+    {
+      "label": "Extérieur",
+      "value": "Sans vis-à-vis",
+    },
+    {
+      "label": "Extérieur",
+      "value": "Parking",
+    },
+  ],
+  "bedrooms": 3,
+  "description": "iad France - Asma Moullan vous propose: Coup de coeur pour cet appartement lumineux et spacieux au carré d'or de Saint Denis 97400 Ile de la Réunion!
+A l'aube, tout comme au coucher du soleil, des rayons rougeâtres viennent faire un décor incroyable sur la montagne, que vous pouvez admirer sur la terrasse, tout comme dans votre salon ou même depuis votre lit!
+L'appartement de type T4/5 d'environ 90m2, à rajouter la terrasse d'environ 6m2 offre 2 chambres avec la salle de bain privative, une suite parentale avec grande salle d'eau, un très grand séjour/ salle à manger , une cuisine américaine ainsi qu'un WC séparé et une entrée avec des espaces de rangements.
+Son confort rassure notre esprit et notre bien être tant dans son côté spacieux et ses multiples rangements encastrés ( comme le chauffe-eau électrique) ou tout simplement meublé dans des endroits stratégiques, parquets dans tout l'appartement et carrelage dans les salles d'eau, tant dans son éclairage, et même dans son aération sans vis à vis situé au 4e étage ( sur 6 étages), climatisation dans chaque pièce, insonorisation malgré que l'ensemble immobilier soit dans le carré piéton!
+Autre bonne nouvelle, l'ascenseur a été rénové récemment ( déja payé par les copropriétaires). 
+Pour parler chiffres les frais de copropriétés s'élèvent de façon normale à 400eur par trimestre ( 102 lots dont 50 d'habitation ) et la taxe foncière à 2500eur St Denis ville.
+Enfin votre véhicule aussi est protégé par un parking sous forme de box, situé en sous-terrain au 1er niveau. Portail électrique avec bip. Moto, citadine, SUV mais peut être pas les grands 4x4..à voir!
+N'hésitez pas à me contacter pour ce bien exceptionnel! 
+
+La presente annonce immobiliere vise 2 lots situés dans une copropriété de 102 lots au total et ne faisant l'objet d'aucune procédure en cours citée à l'article L. 721-1 du code de la construction et de l'habitation. Montant moyen mensuel de charges déclaré par le vendeur : 137.67 euros par mois (soit 1652 euros annuel). Honoraires d'agence à la charge du vendeur.
+Bien non soumis au DPE. Les informations sur les risques auxquels ce bien est exposé, y compris l'obligation légale de débroussaillement, sont disponibles sur le site Géorisques : 
+La présente annonce immobilière a été rédigée sous la responsabilité éditoriale de Mme Asma Moullan mandataire indépendant en immobilier (sans détention de fonds), agent commercial de la SAS I@D France immatriculé au RSAC de Saint Denis la réunion sous le numéro 909504300, titulaire de la carte de démarchage immobilier pour le compte de la société I@D France SAS.",
+  "dpe": undefined,
+  "ges": undefined,
+  "location": {
+    "city": "Saint-Denis",
+    "postalCode": "97400",
+    "rawAddress": "Saint-Denis 97400",
+  },
+  "photos": [
+    "https://mms.seloger.com/2/a/d/9/2ad98134-75d5-4445-bbdc-3d07074517ca.jpg?ci_seal=247fd2a0b4d863b57befaec453077bb70798b05e",
+    "https://mms.seloger.com/8/f/c/8/8fc8c5e8-893e-4a14-a013-c93db73ce8ef.jpg?ci_seal=f5491a2cb47ef3b57e8da8f25645450b4bb1f430",
+    "https://mms.seloger.com/6/e/a/7/6ea71baa-8278-46ee-82f2-9d6953f445db.jpg?ci_seal=8840bc4392eac30c59b75187d566ac33673b820d",
+    "https://mms.seloger.com/e/0/7/e/e07e812c-38e6-4a0c-a34a-5e887076b6b4.jpg?ci_seal=ff1ee30d01c11abe2e8d2420d8496b463db55afa",
+    "https://mms.seloger.com/9/6/9/2/96928d1f-9441-472e-ae09-145ec1bc5dc4.jpg?ci_seal=35b76d2366df284fc915e984f1766d210c4e433e",
+    "https://mms.seloger.com/f/4/a/d/f4ad14f4-4778-4450-a51e-058017ab012b.jpg?ci_seal=2e14bf9427425164db1cfb5cebf6be9a049f4189",
+    "https://mms.seloger.com/a/6/3/f/a63fc231-5d59-4762-a3b7-0954a49ef385.jpg?ci_seal=16124dbca31987683ebfcf58ef0bdc28d2e18b41",
+    "https://mms.seloger.com/0/a/9/9/0a993f29-150f-476c-85d3-7d9e68c1c5d5.jpg?ci_seal=495384d2f4bccd33d7cf502eb65d26aa4a11a7d0",
+    "https://mms.seloger.com/4/f/b/5/4fb5535c-3af1-4bb2-806a-43a309bbc0ac.jpg?ci_seal=99122de745e9f2727db6bcdc550ad99c5cc7bb78",
+    "https://mms.seloger.com/3/7/9/a/379a4cd1-10b5-4adb-9313-aeb2dd65fe4e.jpg?ci_seal=519d95a044d9daca4fa06c6115eb3e34cc91e181",
+    "https://mms.seloger.com/b/5/7/8/b5782ab5-5167-4627-8a90-db1881bfd76a.jpg?ci_seal=123d3a8a1a4e2384f85ba3df0cbde048445d3f0c",
+    "https://mms.seloger.com/b/d/e/8/bde8e716-80f3-4922-a6ca-140712ce9b0b.jpg?ci_seal=0be012ff244f211a0d36a222a18dacf05337fc7d",
+    "https://mms.seloger.com/8/3/1/e/831ea5a5-4700-43c6-80b5-49a52d3e3b6b.jpg?ci_seal=b1bc262dd7f622f197df74c1113d40fafe6d578e",
+    "https://mms.seloger.com/8/f/c/7/8fc707e8-4d9b-4eb1-8cd6-e940765c24bc.jpg?ci_seal=c3bc0881efcc44ab5f9c496b680c47d4ea711554",
+    "https://mms.seloger.com/c/d/5/6/cd567b1f-0476-4007-989b-bfa9a1ea64a2.jpg?ci_seal=77dc65d6e40d38fe5c5f1b67ec1c040a4552c059",
+    "https://mms.seloger.com/3/5/7/b/357b033d-f2e8-411c-ab04-92c87970d4a7.jpg?ci_seal=b552ee351500a601c2ec9416b3db2a9b77f46fd8",
+    "https://mms.seloger.com/c/b/7/2/cb7279a8-28d5-48e5-9ad0-80caa475ec8e.jpg?ci_seal=d82b93bc360944d1f83a1a364f157d31f5ee26d0",
+    "https://mms.seloger.com/6/0/7/3/6073cdb0-65cb-4bc1-9efd-6b614a346561.jpg?ci_seal=02f8f0912f31592da8c3ca00b28f4d1eff2fda26",
+    "https://mms.seloger.com/8/1/9/3/8193cda3-2931-4358-a5e9-d64bdf557a67.jpg?ci_seal=eca8a563ae2a4725a048472d1acb59d8859ed40e",
+  ],
+  "price": 394400,
+  "propertyType": "Appartement",
+  "publishedAt": "2026-06-05T18:14:00Z",
+  "rooms": 4,
+  "site": "seloger",
+  "surface": 89,
+  "title": "Appartement à vendre",
+  "url": "https://www.seloger.com/annonces/achat/appartement/saint-denis-974/271190031.htm",
+}
+`;

@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseCitya > snapshot stable (hors extractedAt) sur la fixture réelle 1`] = `
+{
+  "description": "À vendre A RENOVER appartement à Charleville-Mézières, 80.52 m², 3 pièces, chauffage individuel. Etat correct - À VENDRE
+Découvrez cet appartement de 80.52 m2 situé dans l'hypercentre de Charleville-Mézières, quartier dynamique et accessible. 
+En rez-de-chaussée d'une petite copropriété calme avec une jolie cour intérieur,  garantissant un accès facile et pratique, l'appartement est actuellement utilisé en local professionnel.
+Il dispose de 3 grandes pièces lumineuses de 23.70 m², 19.59 m² et 14.50 m² que vous pourrez aménager comme bon vous semble ! 
+Deux pièces supplémentaires de 16 m² et 5 m² - sans fenêtres - complètent ce bien afin d'y accueillir une salle de bain et un espace de rangement.
+Un chauffage électrique est installé, garantissant un confort optimal tout au long de l'année. Les fenêtres sur rue sont en double vitrage, assurant une isolation phonique et thermique de qualité.
+Des travaux de réaménagement sont à prévoir (création d'une salle de bain, pose d'une cuisine)
+Idéalement situé, cet appartement est à proximité de nombreux commerces, écoles, pharmacies et stations de recharge, facilitant ainsi la vie quotidienne.  Le bien est soumis au statut de la copropriété , la copropriété comporte 6 lots , la quote-part budget prévisionnel (dépenses courantes) est de 804,00 euros/an. 
+ Honoraires à la charge du vendeur. 
+Vous pouvez consulter les barèmes d'honoraires à l'adresse suivante : https://www.citya.com/agences-immobilieres/charleville-mezieres-08000/614 . Logement à consommation énergétique excessive. Montant estimé des dépenses annuelles d'énergie pour un usage standard : entre 2 134 et 2 888 euros. Prix moyens des énergies indexés en 2023. Les informations sur les risques auxquels ce bien est exposé sont disponibles sur le site Géorisques : https://www.georisques.gouv.fr",
+  "location": {
+    "city": "Charleville-Mézières",
+    "postalCode": "08000",
+    "rawAddress": "Charleville-Mézières 08000",
+  },
+  "photos": [
+    "https://www.citya.com//media/images/agences/biens/763/vente/filigrane-IMG_1200-7065268100392245145.webp",
+  ],
+  "price": 96000,
+  "propertyType": "Appartement",
+  "rooms": 3,
+  "site": "citya",
+  "surface": 80.52,
+  "title": "Appartement à vendre 3 pièces 80.52m² - Charleville-Mézières (08)",
+  "url": "https://www.citya.com/annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A",
+}
+`;
