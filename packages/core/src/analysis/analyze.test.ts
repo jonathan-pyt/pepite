@@ -40,6 +40,12 @@ const fakeAnalysis = {
     { titre: "DPE C", detail: "Facture estimée 85-113 €/mois", niveau: "info" },
   ],
   negociation: { cibleBasse: 272_000, cibleHaute: 280_000, arguments: ["Prix 5,8 % sous la médiane"] },
+  profils: {
+    residence: "Idéal pour une résidence principale, bon DPE.",
+    "locatif-nu": "Rendement estimable à 4 % brut si loué 900 €/mois.",
+    airbnb: "Potentiel saisonnier correct, vérifier la réglementation locale.",
+    coloc: "3 pièces adapté à une coloc à 2, demande locale à vérifier.",
+  },
 };
 
 describe("analyzeListing", () => {
@@ -56,19 +62,20 @@ describe("analyzeListing", () => {
       }),
     });
     const result = await analyzeListing(
-      { listing, quick, profile: "residence" },
+      { listing, quick },
       { provider: "google", apiKey: "test", model: "gemini-2.5-flash" },
       model,
     );
     expect(result.recommandation).toContain("277 000");
     expect(result.pointsVigilance[0]!.niveau).toBe("info");
     expect(result.negociation.cibleBasse).toBe(272_000);
+    expect(result.profils["locatif-nu"]).toBeTruthy();
   });
 });
 
 describe("buildAnalysisPrompt", () => {
-  it("inclut les données clés et le profil", () => {
-    const prompt = buildAnalysisPrompt(listing, quick, "airbnb");
+  it("inclut les données clés et les 4 profils", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
     // Normalize whitespace (toLocaleString uses narrow no-break spaces U+202F on some locales)
     const normalized = prompt.replace(/ /g, " ");
     expect(normalized).toContain("courte durée");
@@ -78,13 +85,18 @@ describe("buildAnalysisPrompt", () => {
   });
 
   it("omet la rubrique comparables quand il n'y en a aucun", () => {
-    const prompt = buildAnalysisPrompt(listing, quick, "residence"); // quick a comparables: []
+    const prompt = buildAnalysisPrompt(listing, quick); // quick a comparables: []
     expect(prompt).not.toContain("Ventes comparables");
     expect(prompt).toContain("Médiane du secteur");
   });
 
   it("signale l'absence de données DVF", () => {
-    const prompt = buildAnalysisPrompt(listing, { ...quick, market: null, marketGapPct: null }, "residence");
+    const prompt = buildAnalysisPrompt(listing, { ...quick, market: null, marketGapPct: null });
     expect(prompt).toContain("Données DVF insuffisantes");
+  });
+
+  it("inclut la date du jour dans le prompt", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10"));
+    expect(prompt).toContain("10 juin 2026");
   });
 });

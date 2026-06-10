@@ -88,6 +88,12 @@ export const analysisSchema = z.object({
     cibleHaute: z.number().describe("Prix d'accord probable en euros"),
     arguments: z.array(z.string()).describe("Arguments factuels utilisables avec le vendeur"),
   }),
+  profils: z.object({
+    residence: z.string().describe("Avis résidence principale, 1 paragraphe"),
+    "locatif-nu": z.string().describe("Avis location nue (loyer plausible si estimable, sinon le dire)"),
+    airbnb: z.string().describe("Avis courte durée (potentiel, contraintes réglementaires à vérifier)"),
+    coloc: z.string().describe("Avis colocation (adéquation pièces/surface, demande locale)"),
+  }),
 });
 export type AnalysisResult = z.infer<typeof analysisSchema>;
 
@@ -95,7 +101,6 @@ export interface Report {
   id: string;
   listingUrl: string;
   createdAt: string;
-  profile: UsageProfile;
   listing: Listing;
   quick: QuickAnalysis;
   analysis: AnalysisResult;

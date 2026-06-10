@@ -1,6 +1,6 @@
 import type { Listing, QuickAnalysis, UsageProfile } from "../types";
 
-const PROFILE_LABEL: Record<UsageProfile, string> = {
+export const PROFILE_LABEL: Record<UsageProfile, string> = {
   residence: "achat en résidence principale",
   "locatif-nu": "investissement en location nue",
   airbnb: "investissement en location courte durée (Airbnb)",
@@ -15,7 +15,7 @@ Tu réponds en français.`;
 export function buildAnalysisPrompt(
   listing: Listing,
   quick: QuickAnalysis,
-  profile: UsageProfile,
+  now: Date = new Date(),
 ): string {
   const market = quick.market;
   const comparablesBlock =
@@ -25,7 +25,11 @@ export function buildAnalysisPrompt(
           .join("\n")}`
       : "";
 
-  return `Analyse ce bien pour un ${PROFILE_LABEL[profile]}.
+  const dateStr = now.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+  return `Nous sommes le ${dateStr}.
+
+Analyse ce bien pour un acheteur particulier.
 
 ## Annonce
 - Titre : ${listing.title}
@@ -45,7 +49,12 @@ ${
 }
 
 ## Attendu
-Remplis le schéma demandé : synthèse (2-3 paragraphes adaptés au profil), recommandation en une phrase,
+Remplis le schéma demandé : synthèse globale (2-3 paragraphes), recommandation en une phrase,
 points de vigilance concrets (DPE, copropriété, travaux, quartier, éléments suspects de l'annonce),
-et négociation (cibleBasse, cibleHaute en euros, arguments factuels tirés des données).`;
+négociation (cibleBasse, cibleHaute en euros, arguments factuels tirés des données),
+et un avis distinct par profil d'usage (1 paragraphe solide chacun, fondé uniquement sur les données fournies — si un loyer ou rendement ne peut pas être estimé à partir des données, le dire) :
+- ${PROFILE_LABEL["residence"]}
+- ${PROFILE_LABEL["locatif-nu"]}
+- ${PROFILE_LABEL["airbnb"]}
+- ${PROFILE_LABEL["coloc"]}`;
 }
