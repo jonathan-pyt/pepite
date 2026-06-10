@@ -122,4 +122,10 @@ describe("fetchCommuneSales", () => {
       "https://files.data.gouv.fr/geo-dvf/latest/csv/2025/communes/44/44109.csv",
     );
   });
+
+  it("utilise le département à 3 chiffres pour l'outre-mer", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response("not found", { status: 404 }));
+    await fetchCommuneSales("97411", { years: [2025], fetchFn });
+    expect((fetchFn.mock.calls[0]![0] as string)).toContain("/communes/974/97411.csv");
+  });
 });

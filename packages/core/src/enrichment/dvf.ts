@@ -144,7 +144,8 @@ export async function fetchCommuneSales(
 ): Promise<DvfSale[]> {
   const fetchFn = opts.fetchFn ?? fetch;
   const years = opts.years ?? DVF_YEARS;
-  const dept = citycode.slice(0, 2);
+  // DOM/COM : répertoire département à 3 chiffres sur geo-dvf (971-976, 98x)
+  const dept = citycode.startsWith("97") || citycode.startsWith("98") ? citycode.slice(0, 3) : citycode.slice(0, 2);
   const all: DvfSale[] = [];
   for (const year of years) {
     const url = `https://files.data.gouv.fr/geo-dvf/latest/csv/${year}/communes/${dept}/${citycode}.csv`;
