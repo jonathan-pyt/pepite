@@ -1,7 +1,30 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseLeboncoin > extrait un Listing cohérent depuis la fixture 1`] = `
+exports[`parseLeboncoin > attributes depuis la fixture réelle est un tableau non vide avec label+value 1`] = `
 {
+  "attributes": [
+    {
+      "label": "Type de bien",
+      "value": "Appartement",
+    },
+    {
+      "label": "Surface habitable",
+      "value": "58 m²",
+    },
+    {
+      "label": "Nombre de pièces",
+      "value": "3",
+    },
+    {
+      "label": "Honoraires inclus",
+      "value": "Non",
+    },
+    {
+      "label": "Référence",
+      "value": "030-237ZE2",
+    },
+  ],
+  "bedrooms": undefined,
   "description": "| CARRE DES HALLES à VOUVRAY (37210)
 FRAIS DE NOTAIRE OFFERTS (*)
 Du 1er au 30 juin 2026, Bouygues Immobilier vous OFFRE les FRAIS DE NOTAIRE (*) sur une sélection de logements.
@@ -9,6 +32,66 @@ Présentation de votre programme neuf Carré des Halles à Vouvray. Cadre de vie
 (*) Offre sous conditions, détails de l'offre sur simple demande ou sur le site [URL masquée pour votre sécurité]. Contactez-nous dès à présent au [Coordonnées masquées] pour découvrir notre résidence et rencontrez nos équipes.",
   "dpe": undefined,
   "ges": undefined,
+  "landSurface": undefined,
+  "location": {
+    "city": "Vouvray",
+    "lat": 47.41185,
+    "lon": 0.7993,
+    "postalCode": "37210",
+    "rawAddress": "Vouvray 37210",
+  },
+  "photos": [
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/1e/97/8e/1e978e433a6f634f04f440b34786d1dda69d6955.jpg?rule=ad-image",
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/04/ae/ec/04aeecfec525373150524e74994e255764e88973.jpg?rule=ad-image",
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/8c/fb/5b/8cfb5b65b5745d6091073f5a45ad4db27eb09e2b.jpg?rule=ad-image",
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/2e/45/30/2e4530041b8a72379ce7006efe6c979fc6eb03f3.jpg?rule=ad-image",
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/59/62/44/5962443e78d6a8d3ce04d268d7ae70bb1f2bb366.jpg?rule=ad-image",
+    "https://img.leboncoin.fr/api/v1/lbcpb1/images/19/cf/ee/19cfeed5468d5bff33abeb0a9e7c82d860465ca4.jpg?rule=ad-image",
+  ],
+  "price": 249900,
+  "propertyType": "Appartement",
+  "publishedAt": "2025-04-26 04:20:57",
+  "rooms": 3,
+  "site": "leboncoin",
+  "surface": 58,
+  "title": "Appartement - 3 pièces - CARRE DES HALLES",
+  "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/test",
+}
+`;
+
+exports[`parseLeboncoin > extrait un Listing cohérent depuis la fixture 1`] = `
+{
+  "attributes": [
+    {
+      "label": "Type de bien",
+      "value": "Appartement",
+    },
+    {
+      "label": "Surface habitable",
+      "value": "58 m²",
+    },
+    {
+      "label": "Nombre de pièces",
+      "value": "3",
+    },
+    {
+      "label": "Honoraires inclus",
+      "value": "Non",
+    },
+    {
+      "label": "Référence",
+      "value": "030-237ZE2",
+    },
+  ],
+  "bedrooms": undefined,
+  "description": "| CARRE DES HALLES à VOUVRAY (37210)
+FRAIS DE NOTAIRE OFFERTS (*)
+Du 1er au 30 juin 2026, Bouygues Immobilier vous OFFRE les FRAIS DE NOTAIRE (*) sur une sélection de logements.
+Présentation de votre programme neuf Carré des Halles à Vouvray. Cadre de vie au calme et préservé, niché dans un espace hors du commun. Cette nouvelle réalisation signée Bouygues Immobilier prend place sur un site rare en plein centre-bourg, face à la Mairie et aux halles de Vouvray. Architecture remarquable, de très belles terrasses en dernier étage.
+(*) Offre sous conditions, détails de l'offre sur simple demande ou sur le site [URL masquée pour votre sécurité]. Contactez-nous dès à présent au [Coordonnées masquées] pour découvrir notre résidence et rencontrez nos équipes.",
+  "dpe": undefined,
+  "ges": undefined,
+  "landSurface": undefined,
   "location": {
     "city": "Vouvray",
     "lat": 47.41185,

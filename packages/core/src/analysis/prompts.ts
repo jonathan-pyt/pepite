@@ -27,6 +27,11 @@ export function buildAnalysisPrompt(
 
   const dateStr = now.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
+  const attributesBlock =
+    listing.attributes && listing.attributes.length > 0
+      ? `\n- Caractéristiques complètes :\n${listing.attributes.map((a) => `  - ${a.label} : ${a.value}`).join("\n")}`
+      : "";
+
   return `Nous sommes le ${dateStr}.
 
 Analyse ce bien pour un acheteur particulier.
@@ -38,7 +43,7 @@ Analyse ce bien pour un acheteur particulier.
 - Localisation : ${listing.location.rawAddress}
 - DPE : ${listing.dpe ?? "non renseigné"} · GES : ${listing.ges ?? "non renseigné"}
 - Publiée le : ${listing.publishedAt ?? "date inconnue"}
-- Description : ${listing.description.slice(0, 2500)}
+- Description : ${listing.description.slice(0, 2500)}${attributesBlock}
 
 ## Marché local (transactions notariées DVF)
 ${
@@ -52,7 +57,8 @@ ${
 Remplis le schéma demandé : synthèse globale (2-3 paragraphes), recommandation en une phrase,
 points de vigilance concrets (DPE, copropriété, travaux, quartier, éléments suspects de l'annonce),
 négociation (cibleBasse, cibleHaute en euros, arguments factuels tirés des données),
-et un avis distinct par profil d'usage (1 paragraphe solide chacun, fondé uniquement sur les données fournies — si un loyer ou rendement ne peut pas être estimé à partir des données, le dire) :
+et un avis distinct par profil d'usage (1 paragraphe solide chacun, fondé uniquement sur les données fournies — si un loyer ou rendement ne peut pas être estimé à partir des données, le dire).
+Exploite toutes les caractéristiques et la description : équipements (piscine, extérieur, salles de bain, stationnement…), atouts et défauts implicites — un acheteur ne doit rien rater d'important.
 - ${PROFILE_LABEL["residence"]}
 - ${PROFILE_LABEL["locatif-nu"]}
 - ${PROFILE_LABEL["airbnb"]}

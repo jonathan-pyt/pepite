@@ -99,4 +99,23 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10"));
     expect(prompt).toContain("10 juin 2026");
   });
+
+  it("inclut les Caractéristiques complètes quand attributes non vide", () => {
+    const listingWithAttrs: Listing = {
+      ...listing,
+      attributes: [
+        { label: "Salle de bain", value: "5" },
+        { label: "Piscine", value: "Oui" },
+      ],
+    };
+    const prompt = buildAnalysisPrompt(listingWithAttrs, quick, new Date("2026-06-10"));
+    expect(prompt).toContain("Caractéristiques complètes");
+    expect(prompt).toContain("Salle de bain : 5");
+    expect(prompt).toContain("Piscine : Oui");
+  });
+
+  it("omet la rubrique Caractéristiques quand attributes absent ou vide", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10")); // no attributes
+    expect(prompt).not.toContain("Caractéristiques complètes");
+  });
 });

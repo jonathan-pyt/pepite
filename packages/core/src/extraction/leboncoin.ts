@@ -7,10 +7,26 @@ export function isLeboncoinListingPage(url: string): boolean {
 interface LbcAttribute {
   key: string;
   value: string;
+  key_label?: string;
+  value_label?: string;
+  generic?: boolean;
 }
 
 function attr(attributes: LbcAttribute[], key: string): string | undefined {
   return attributes.find((a) => a.key === key)?.value;
+}
+
+function buildAttributes(
+  attributes: LbcAttribute[],
+): { label: string; value: string }[] {
+  const result: { label: string; value: string }[] = [];
+  for (const a of attributes.slice(0, 40)) {
+    if (!a.key_label) continue; // skip purely technical entries without a human label
+    const label = a.key_label;
+    const value = a.value_label ?? a.value;
+    result.push({ label, value });
+  }
+  return result;
 }
 
 function readNextData(doc: Document): Record<string, unknown> | null {
@@ -45,6 +61,8 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
 
   const surfaceRaw = attr(attributes, "square");
   const roomsRaw = attr(attributes, "rooms");
+  const bedroomsRaw = attr(attributes, "bedrooms");
+  const landSurfaceRaw = attr(attributes, "land_plot_surface");
   // real_estate_type LBC : "1"=Maison, "2"=Appartement (observé sur fixture 2026-06)
   const estateType = attr(attributes, "real_estate_type")?.toLowerCase();
   const propertyType: PropertyType | undefined =
@@ -57,6 +75,8 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
   const dpe = attr(attributes, "energy_rate")?.toUpperCase();
   const ges = attr(attributes, "ges")?.toUpperCase();
 
+  const builtAttributes = buildAttributes(attributes);
+
   return {
     url,
     site: "leboncoin",
@@ -64,6 +84,8 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
     price,
     surface: surfaceRaw ? Number(surfaceRaw) : undefined,
     rooms: roomsRaw ? Number(roomsRaw) : undefined,
+    bedrooms: bedroomsRaw ? Number(bedroomsRaw) : undefined,
+    landSurface: landSurfaceRaw ? Number(landSurfaceRaw) : undefined,
     propertyType,
     location: {
       rawAddress: [location.city, location.zipcode].filter(Boolean).join(" "),
@@ -78,5 +100,6 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
     photos: images.urls ?? [],
     publishedAt: ad.first_publication_date ? String(ad.first_publication_date) : undefined,
     extractedAt: new Date().toISOString(),
+    attributes: builtAttributes.length > 0 ? builtAttributes : undefined,
   };
 }

@@ -19,6 +19,8 @@ export interface Listing {
   price: number;
   surface?: number;
   rooms?: number;
+  bedrooms?: number;
+  landSurface?: number;
   propertyType?: PropertyType;
   location: ListingLocation;
   dpe?: string;
@@ -27,6 +29,7 @@ export interface Listing {
   photos: string[];
   publishedAt?: string;
   extractedAt: string;
+  attributes?: { label: string; value: string }[];
 }
 
 export interface GeoPoint {
