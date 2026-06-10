@@ -164,6 +164,19 @@ export interface Enrichments {
   rent?: RentInfo;
 }
 
+export interface GlobalScoreCritere {
+  id: string;
+  label: string;
+  score: number;
+  /** Poids renormalisé arrondi (les poids somment à 100). */
+  poids: number;
+}
+
+export interface GlobalScore {
+  score: number;
+  criteres: GlobalScoreCritere[];
+}
+
 export interface Report {
   id: string;
   listingUrl: string;
@@ -174,4 +187,5 @@ export interface Report {
   provider: string;
   model: string;
   enrichments?: Enrichments;
+  globalScore?: GlobalScore;
 }
