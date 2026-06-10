@@ -5,6 +5,8 @@ export { geocode } from "./enrichment/geocode";
 export { parseDvfCsv, computeMarketStats, fetchCommuneSales, DVF_YEARS, haversineM } from "./enrichment/dvf";
 export { parseOverpass, fetchNeighborhood } from "./enrichment/neighborhood";
 export type { FetchNeighborhoodOptions } from "./enrichment/neighborhood";
+export { fetchRisks } from "./enrichment/risks";
+export type { FetchRisksOptions } from "./enrichment/risks";
 export { buildQuickAnalysis, scoreLabel } from "./scoring/score";
 export { createModel, DEFAULT_MODELS, type LlmConfig, type LlmProviderId } from "./analysis/provider";
 export { analyzeListing, type AnalyzeInput } from "./analysis/analyze";
