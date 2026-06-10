@@ -10,6 +10,8 @@ export type { FetchRisksOptions } from "./enrichment/risks";
 export { parseRentCsv, parseZonageCsv, fetchRentInfo } from "./enrichment/rent";
 export type { FetchRentInfoOptions } from "./enrichment/rent";
 export { buildQuickAnalysis, scoreLabel } from "./scoring/score";
+export { estimateAcquisitionCost } from "./scoring/acquisition";
+export type { AcquisitionCost } from "./scoring/acquisition";
 export { computeGlobalScore } from "./scoring/global-score";
 export type { GlobalScore, GlobalScoreCritere } from "./types";
 export { createModel, DEFAULT_MODELS, type LlmConfig, type LlmProviderId } from "./analysis/provider";
