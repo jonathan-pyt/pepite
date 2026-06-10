@@ -1,16 +1,12 @@
-import "./style.css";
+import "@/assets/tailwind.css";
 import ReactDOM from "react-dom/client";
 import { useEffect, useState } from "react";
 import { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml, type QuickAnalysis } from "@pepite/core";
+import { Loader2 } from "lucide-react";
+import { ScoreRing } from "@/components/pepite";
 import { sendRequest } from "@/lib/messages";
 
 /* ---------- helpers ---------- */
-
-function scoreColor(score: number): string {
-  if (score >= 65) return "#16a34a";
-  if (score >= 45) return "#d97706";
-  return "#dc2626";
-}
 
 function scoreLabelText(score: number): string {
   if (score >= 80) return "Très bon";
@@ -19,81 +15,17 @@ function scoreLabelText(score: number): string {
   return "Faible";
 }
 
-/* ---------- ScoreRing — self-contained inline SVG ---------- */
-
-function ScoreRing({ score, size = 38, stroke = 4 }: { score: number; size?: number; stroke?: number }) {
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const col = scoreColor(score);
-  const fontSize = Math.round(size * 0.34);
-
-  return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <svg
-        width={size}
-        height={size}
-        style={{ transform: "rotate(-90deg)", display: "block" }}
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#ececef"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={col}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${(score / 100) * circumference} ${circumference}`}
-        />
-      </svg>
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <span style={{
-          fontSize: fontSize,
-          fontWeight: 700,
-          color: "#18181b",
-          letterSpacing: "-0.02em",
-          fontVariantNumeric: "tabular-nums",
-          lineHeight: 1,
-        }}>
-          {score}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Mini Pépite wordmark ---------- */
+/* ---------- Mini Pépite wordmark (variante sourdine) ---------- */
 
 function MiniWordmark() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-      {/* Pépite logo icon */}
-      <svg width="14" height="14" viewBox="0 0 24 24" style={{ display: "block", flexShrink: 0 }}>
+    <div className="flex items-center gap-[5px]">
+      <svg width="14" height="14" viewBox="0 0 24 24" className="block shrink-0">
         <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
         <path d="M12 6.2 17 11l-5 6.8L7 11z" fill="#ffffff" />
         <path d="M12 6.2 17 11h-10z" fill="#ccfbf1" />
       </svg>
-      <span style={{
-        fontSize: 11,
-        fontWeight: 560,
-        color: "#8e8e98",
-        letterSpacing: "-0.01em",
-      }}>
-        Pépite
-      </span>
+      <span className="text-[11px] font-medium tracking-[-0.01em] text-ink-3">Pépite</span>
     </div>
   );
 }
@@ -101,6 +33,9 @@ function MiniWordmark() {
 /* ---------- Badge component ---------- */
 
 type BadgeState = QuickAnalysis | null | "loading" | "error";
+
+const CARD_CLASS =
+  "fixed right-4 top-24 z-[2147483000] inline-flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-line bg-white px-3 py-2.5 text-ink shadow-pepite-lg select-none";
 
 function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const [quick, setQuick] = useState<BadgeState>("loading");
@@ -142,25 +77,24 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   if (quick === "loading") {
     return (
       <div
-        className="pep-card"
+        className={CARD_CLASS}
         role="button"
         title="Ouvrir l'analyse Pépite"
-        style={{ cursor: "pointer" }}
         onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
       >
-        <div className="pep-loading-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" style={{ display: "block" }}>
+        <div className="shrink-0">
+          <svg width="24" height="24" viewBox="0 0 24 24" className="block">
             <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
             <path d="M12 6.2 17 11l-5 6.8L7 11z" fill="#ffffff" />
             <path d="M12 6.2 17 11h-10z" fill="#ccfbf1" />
           </svg>
         </div>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <span className="pep-spin" />
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: "#18181b" }}>Analyse en cours…</span>
+          <div className="flex items-center gap-[7px]">
+            <Loader2 className="size-[13px] shrink-0 animate-spin text-accent" />
+            <span className="text-[12.5px] font-semibold text-ink">Analyse en cours…</span>
           </div>
-          <div style={{ fontSize: 10.5, color: "#8e8e98", marginTop: 2 }}>calcul en cours…</div>
+          <div className="mt-0.5 text-[10.5px] text-ink-3">calcul en cours…</div>
         </div>
       </div>
     );
@@ -189,56 +123,47 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
 
   return (
     <div
-      className="pep-card"
+      className={CARD_CLASS}
       role="button"
       title="Ouvrir l'analyse Pépite"
-      style={{ cursor: "pointer" }}
       onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
     >
       {/* Left: score ring or dash */}
       {hasScore && quick !== null && quick.score !== null ? (
         <ScoreRing score={quick.score} size={38} stroke={4} />
       ) : (
-        <div className="pep-noscore">—</div>
+        <div className="flex size-[38px] shrink-0 items-center justify-center text-[19px] font-bold text-ink-3">
+          —
+        </div>
       )}
 
       {/* Right: wordmark + label + gap */}
-      <div style={{ lineHeight: 1.25 }}>
+      <div className="leading-tight">
         <MiniWordmark />
-        <div style={{ marginTop: 4 }}>
+        <div className="mt-1">
           {hasScore && quick !== null ? (
             <>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: "#18181b" }}>
+              <div className="text-[12.5px] font-semibold text-ink">
                 {scoreLabelText(quick.score!)}
               </div>
-              <div style={{
-                fontSize: 11,
-                color: "#8e8e98",
-                fontVariantNumeric: "tabular-nums",
-                marginTop: 1,
-              }}>
+              <div className="mt-px text-[11px] text-ink-3 tabular-nums">
                 {gapPct !== null
                   ? `${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1).replace(".", ",")} % vs marché`
                   : "marché inconnu"}
               </div>
               {showPriceDetails && (
-                <div style={{
-                  fontSize: 10.5,
-                  color: "#8e8e98",
-                  fontVariantNumeric: "tabular-nums",
-                  marginTop: 1,
-                }}>
+                <div className="mt-px text-[10.5px] text-ink-3 tabular-nums">
                   {listingPpm2?.toLocaleString("fr-FR")} €/m² · secteur {medianPpm2?.toLocaleString("fr-FR")} €/m²
                 </div>
               )}
               {showUnusualGap && (
-                <div style={{ fontSize: 10.5, color: "#d97706", marginTop: 1 }}>
+                <div className="mt-px text-[10.5px] text-warn">
                   Écart inhabituel — vérifier surface/type
                 </div>
               )}
             </>
           ) : (
-            <div style={{ fontSize: 11, color: "#8e8e98", marginTop: 1 }}>
+            <div className="mt-px text-[11px] text-ink-3">
               {marketSubLine ?? "marché inconnu"}
             </div>
           )}
