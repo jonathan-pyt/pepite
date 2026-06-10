@@ -11,6 +11,12 @@ import {
   WarnItem,
   DPEChip,
 } from "@/components/pepite";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const PROFILE_LABEL: Record<string, string> = {
   residence: "Résidence principale",
@@ -65,7 +71,12 @@ const TOC_V01 = [
   ["profils", "Selon votre projet"],
 ] as const;
 
-const COMPARABLE_COLS = "grid-cols-[72px_1fr_1fr_90px_80px_72px]";
+const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_80px_72px]";
+
+/** Capitalize each word of an address string */
+function capitalizeAddress(raw: string): string {
+  return raw.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+}
 
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
@@ -217,42 +228,48 @@ export default function App() {
 
             {/* Comparables table */}
             {quick.market && quick.market.comparables.length > 0 && (
-              <div className="overflow-hidden rounded-[9px] border border-line-soft">
-                {/* Header row */}
-                <div
-                  className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
-                >
-                  {["Date", "Bien", "Adresse", "Prix", "€/m²", "Distance"].map((h) => (
-                    <span key={h} className="text-[11px] font-medium text-ink-3">
-                      {h}
-                    </span>
+              <TooltipProvider>
+                <div className="overflow-hidden rounded-[9px] border border-line-soft">
+                  {/* Header row */}
+                  <div
+                    className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
+                  >
+                    {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                      <span key={h} className="text-[11px] font-medium text-ink-3">
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Rows — sorted by date descending */}
+                  {sortedComparables.map((c, i) => (
+                    <div
+                      key={c.idMutation}
+                      className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
+                        i % 2 ? "bg-surface-sub" : "bg-white"
+                      }`}
+                    >
+                      <span className="text-ink-3">{fmtDate(c.date)}</span>
+                      <span className="truncate font-medium text-ink">
+                        {c.type} {c.surface} m²
+                      </span>
+                      <span className="font-semibold text-ink">
+                        {c.price.toLocaleString("fr-FR")} €
+                      </span>
+                      <span className="font-semibold text-ink-2">
+                        {Math.round(c.pricePerM2).toLocaleString("fr-FR")}
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted underline-offset-2 text-ink-3">
+                            {c.distanceM} m
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
+                      </Tooltip>
+                    </div>
                   ))}
                 </div>
-                {/* Rows — sorted by date descending */}
-                {sortedComparables.map((c, i) => (
-                  <div
-                    key={c.idMutation}
-                    className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
-                      i % 2 ? "bg-surface-sub" : "bg-white"
-                    }`}
-                  >
-                    <span className="text-ink-3">{fmtDate(c.date)}</span>
-                    <span className="truncate font-medium text-ink">
-                      {c.type} {c.surface} m²
-                    </span>
-                    <span className="truncate text-ink-2" title={c.address}>
-                      {c.address.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </span>
-                    <span className="font-semibold text-ink">
-                      {c.price.toLocaleString("fr-FR")} €
-                    </span>
-                    <span className="font-semibold text-ink-2">
-                      {Math.round(c.pricePerM2).toLocaleString("fr-FR")}
-                    </span>
-                    <span className="text-ink-3">{c.distanceM} m</span>
-                  </div>
-                ))}
-              </div>
+              </TooltipProvider>
             )}
           </RSection>
 
