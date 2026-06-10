@@ -125,7 +125,7 @@ export default function App() {
               }
             />
             <Metric
-              label="Médiane secteur"
+              label="Médiane biens comparables"
               value={
                 quick.market
                   ? `${quick.market.medianPricePerM2.toLocaleString("fr-FR")} €/m²`
