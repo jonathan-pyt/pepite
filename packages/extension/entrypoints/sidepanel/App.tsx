@@ -101,6 +101,7 @@ export default function App() {
 
   useEffect(() => {
     let currentTabId: number | null = null;
+
     void sendRequest<{ tabId?: number; state: TabState }>({ type: "GET_TAB_STATE" }).then((r) => {
       if (r.tabId !== undefined) {
         currentTabId = r.tabId;
@@ -108,6 +109,7 @@ export default function App() {
       }
       setState(r.state);
     });
+
     const listener = (msg: { type?: string; tabId?: number; state?: TabState }) => {
       if (
         msg.type === "TAB_STATE_CHANGED" &&
@@ -118,7 +120,32 @@ export default function App() {
       }
     };
     browser.runtime.onMessage.addListener(listener);
-    return () => browser.runtime.onMessage.removeListener(listener);
+
+    // Re-query tab state on tab switch
+    const onActivated = () => {
+      void sendRequest<{ tabId?: number; state: TabState }>({ type: "GET_TAB_STATE" }).then((r) => {
+        if (r.tabId !== undefined) {
+          currentTabId = r.tabId;
+          setTabId(r.tabId);
+        }
+        setState(r.state);
+      });
+    };
+    browser.tabs.onActivated.addListener(onActivated);
+
+    // Clear API-key error when settings are saved
+    // WXT stores "local:settings" under the raw key "settings" in chrome.storage.local
+    // (resolveKey strips the area prefix before calling the driver)
+    const onStorageChanged = (changes: Record<string, unknown>, area: string) => {
+      if (area === "local" && "settings" in changes) setError(null);
+    };
+    browser.storage.onChanged.addListener(onStorageChanged);
+
+    return () => {
+      browser.runtime.onMessage.removeListener(listener);
+      browser.tabs.onActivated.removeListener(onActivated);
+      browser.storage.onChanged.removeListener(onStorageChanged);
+    };
   }, []);
 
   async function runFullAnalysis() {
