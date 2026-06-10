@@ -61,6 +61,8 @@ export interface Comparable extends DvfSale {
 
 export interface MarketStats {
   medianPricePerM2: number;
+  p25PricePerM2?: number;
+  p75PricePerM2?: number;
   sampleSize: number;
   radiusM: number;
   confidence: "high" | "medium" | "low";

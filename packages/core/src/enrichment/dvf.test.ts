@@ -263,6 +263,51 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
   });
 });
 
+describe("computeMarketStats — dispersion P25/P75", () => {
+  // Nearest-rank: P25 = sorted[ceil(n * 0.25) - 1], P75 = sorted[ceil(n * 0.75) - 1]
+  // For 8 values [1000,2000,3000,4000,5000,6000,7000,8000] (as pricePerM2):
+  //   P25 = ceil(8*0.25)-1 = index 1 → 2000
+  //   P75 = ceil(8*0.75)-1 = index 5 → 6000
+  it("calcule p25 et p75 exacts sur un ensemble de 8 valeurs connues", () => {
+    const prices = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
+    const sales = prices.map((p) => fakeSale({ pricePerM2: p }));
+    const stats = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement");
+    expect(stats).not.toBeNull();
+    expect(stats!.p25PricePerM2).toBe(2000);
+    expect(stats!.p75PricePerM2).toBe(6000);
+  });
+
+  it("p25/p75 calculés sur le même sous-ensemble que la médiane (similaires récents)", () => {
+    // 12 similaires récents à des prix variés → médiane et dispersion sur ce sous-ensemble
+    const recentSimilar = Array.from({ length: 12 }, (_, i) =>
+      fakeSale({ surface: 65, pricePerM2: 4000 + i * 400, date: "2026-03-01" }),
+    );
+    // prix : 4000,4400,4800,5200,5600,6000,6400,6800,7200,7600,8000,8400
+    // trié → même suite ; P25 = ceil(12*0.25)-1 = index 2 → 4800
+    //                      P75 = ceil(12*0.75)-1 = index 8 → 7200
+    const stats = computeMarketStats(
+      recentSimilar,
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: new Date("2026-06-10") },
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.p25PricePerM2).toBe(4800);
+    expect(stats!.p75PricePerM2).toBe(7200);
+  });
+
+  it("p25/p75 présents même sans surface fournie (tout kept)", () => {
+    const sales = Array.from({ length: 15 }, (_, i) => fakeSale({ pricePerM2: 3000 + i * 100 }));
+    // prix 3000..4400 ; P25 = ceil(15*0.25)-1 = ceil(3.75)-1 = index 3 → 3300
+    //                    P75 = ceil(15*0.75)-1 = ceil(11.25)-1 = index 11 → 4100
+    const stats = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement");
+    expect(stats).not.toBeNull();
+    expect(stats!.p25PricePerM2).toBe(3300);
+    expect(stats!.p75PricePerM2).toBe(4100);
+  });
+});
+
 describe("fetchCommuneSales", () => {
   it("agrège plusieurs années et tolère un 404", async () => {
     const header = readFileSync(

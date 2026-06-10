@@ -96,6 +96,11 @@ export function buildAnalysisPrompt(
     ? buildRentSection(enrichments.rent)
     : `## Marché locatif (carte des loyers 2025)\n- données loyers indisponibles`;
 
+  const dispersionLine =
+    market?.p25PricePerM2 !== undefined && market?.p75PricePerM2 !== undefined
+      ? `\n- Dispersion du secteur : P25 ${market.p25PricePerM2} €/m² · P75 ${market.p75PricePerM2} €/m²`
+      : "";
+
   return `Nous sommes le ${dateStr}.
 
 Analyse ce bien pour un acheteur particulier.
@@ -112,7 +117,7 @@ Analyse ce bien pour un acheteur particulier.
 ## Marché local (transactions notariées DVF)
 ${
   market
-    ? `- Médiane du secteur : ${market.medianPricePerM2} €/m² (${market.sampleSize} ventes${market.windowMonths === 18 ? " des 18 derniers mois" : " des 3 dernières années"}, rayon ${market.radiusM} m, confiance ${market.confidence})
+    ? `- Médiane du secteur : ${market.medianPricePerM2} €/m² (${market.sampleSize} ventes${market.windowMonths === 18 ? " des 18 derniers mois" : " des 3 dernières années"}, rayon ${market.radiusM} m, confiance ${market.confidence})${dispersionLine}
 - Prix demandé : ${quick.listingPricePerM2} €/m², soit ${quick.marketGapPct! >= 0 ? "+" : ""}${quick.marketGapPct!.toFixed(1)} % vs médiane${comparablesBlock}`
     : "- Données DVF insuffisantes dans la zone : ne chiffre l'écart au marché que si la description le permet, et signale cette limite."
 }
@@ -130,6 +135,9 @@ ${rentBlock}
 - Si le prix demandé est égal ou inférieur à la médiane des ventes comparables : le dire explicitement, et proposer une marge faible voire nulle (cibleBasse proche du prix demandé). Ne JAMAIS proposer une décote importante sur un bien déjà sous le marché.
 - Formuler la recommandation en termes de VALEUR estimée et de défendabilité (« vaut plutôt autour de… au vu de… »), pas en promesse (« négociable à… »).
 - Si les données marché sont absentes ou peu fiables (confiance basse, type non comparé), dire que la marge ne peut pas être chiffrée sérieusement.
+- Avant de conclure « surcoté » : confronter l'écart vs médiane à la DISPERSION du secteur (P25/P75). Un prix au-dessus de la médiane mais sous le P75 se situe dans la fourchette haute normale du secteur — ce n'est pas une anomalie, et un verdict « forte surcote » n'est pas fondé sur la seule médiane.
+- Confronter l'écart aux atouts objectifs du bien : caractéristiques de l'annonce (résidence de standing, ascenseur, terrasse, étage élevé, état/rénovation récente, prestations supérieures) ET qualité de micro-localisation visible dans les données quartier (commodités à pied nombreuses = premium de localisation plausible). Formuler ainsi : « premium de X % par rapport à la médiane, possiblement justifié par [éléments cités] » ou « écart difficile à justifier au vu de [absence d'atouts distinctifs] » — jamais de verdict brut « forte surcote » fondé sur la seule médiane.
+- Symétrie : un prix sous le P25 mérite aussi un commentaire — soit une opportunité réelle (bien en bon état, bon secteur), soit un signal d'alerte (expliquer pourquoi si bas : travaux, situation, contrainte ?).
 - Pour le profil locatif-nu : si des données loyers sont disponibles (ci-dessus), calculer un rendement brut indicatif (loyer médian × surface × 12 / prix demandé) et l'afficher comme estimation ; indiquer l'incertitude si fiabilité maille. Si les données loyers sont indisponibles, le dire explicitement sans inventer de chiffre.
 - Pour le profil Airbnb : pas de données courte durée fournies — ne pas inventer de taux d'occupation ni de revenu estimé ; se limiter aux éléments objectifs de l'annonce et aux contraintes réglementaires.
 

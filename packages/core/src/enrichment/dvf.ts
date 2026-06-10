@@ -97,6 +97,15 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
+/**
+ * Nearest-rank percentile: P(p) = sorted[ceil(n * p) - 1]
+ * e.g. for n=8, P25 = sorted[1] (0-based), P75 = sorted[5].
+ */
+function percentileNearestRank(sorted: number[], p: number): number {
+  const idx = Math.ceil(sorted.length * p) - 1;
+  return sorted[Math.max(0, idx)]!;
+}
+
 const RECENT_MONTHS = 18;
 
 function isRecent(date: string, now: Date): boolean {
@@ -186,7 +195,10 @@ export function computeMarketStats(
       windowMonths = 36;
     }
 
-    const finalMedian = median(medianSource.map((s) => s.pricePerM2));
+    const medianPrices = medianSource.map((s) => s.pricePerM2).sort((a, b) => a - b);
+    const finalMedian = median(medianPrices);
+    const p25 = Math.round(percentileNearestRank(medianPrices, 0.25));
+    const p75 = Math.round(percentileNearestRank(medianPrices, 0.75));
     const sampleSize = medianSource.length;
 
     // Comparables : jusqu'à 10 similaires + 6 autres (triés par distance dans chaque groupe)
@@ -196,6 +208,8 @@ export function computeMarketStats(
 
     return {
       medianPricePerM2: Math.round(finalMedian),
+      p25PricePerM2: p25,
+      p75PricePerM2: p75,
       sampleSize,
       radiusM,
       confidence: sampleSize >= 30 ? "high" : sampleSize >= MIN_SAMPLE ? "medium" : "low",

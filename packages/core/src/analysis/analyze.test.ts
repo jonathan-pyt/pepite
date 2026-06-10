@@ -257,4 +257,52 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt(listing, quick, mailleEnrichments);
     expect(prompt).toContain("extrapolé");
   });
+
+  // ── dispersion P25/P75 ────────────────────────────────────────────────────
+
+  it("affiche la ligne dispersion quand p25/p75 sont présents dans MarketStats", () => {
+    const quickWithDispersion: QuickAnalysis = {
+      ...quick,
+      market: {
+        ...quick.market!,
+        p25PricePerM2: 4200,
+        p75PricePerM2: 5400,
+      },
+    };
+    const prompt = buildAnalysisPrompt(listing, quickWithDispersion);
+    expect(prompt).toContain("Dispersion du secteur");
+    expect(prompt).toContain("4200");
+    expect(prompt).toContain("5400");
+  });
+
+  it("omet la ligne dispersion quand p25/p75 absents", () => {
+    const prompt = buildAnalysisPrompt(listing, quick); // quick.market sans p25/p75
+    expect(prompt).not.toContain("Dispersion du secteur");
+  });
+
+  // ── règles de verdict nuancé ──────────────────────────────────────────────
+
+  it("règles : confronter l'écart à la dispersion avant de conclure surcoté", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("P75");
+    expect(prompt).toContain("fourchette haute");
+  });
+
+  it("règles : confronter l'écart aux atouts objectifs du bien", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("atouts");
+    expect(prompt).toContain("micro-localisation");
+  });
+
+  it("règles : formulation premium imposée (jamais verdict brut surcoté seul)", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("premium");
+    expect(prompt).toContain("possiblement justifié");
+  });
+
+  it("règles : symétrie P25 — prix sous le P25 mérite un commentaire", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("P25");
+    expect(prompt).toContain("opportunité");
+  });
 });
