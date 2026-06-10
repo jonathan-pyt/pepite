@@ -64,6 +64,13 @@ ${
     : "- Données DVF insuffisantes dans la zone : ne chiffre l'écart au marché que si la description le permet, et signale cette limite."
 }
 
+## Règles pour la négociation
+
+- La marge de négociation se DÉDUIT des données, elle ne s'invente pas. En France, la marge habituelle constatée est de 2 à 5 % ; au-delà de 8-10 %, il faut des arguments objectifs forts (surcote manifeste vs ventes DVF comparables, annonce ancienne, travaux lourds, DPE F/G).
+- Si le prix demandé est égal ou inférieur à la médiane des ventes comparables : le dire explicitement, et proposer une marge faible voire nulle (cibleBasse proche du prix demandé). Ne JAMAIS proposer une décote importante sur un bien déjà sous le marché.
+- Formuler la recommandation en termes de VALEUR estimée et de défendabilité (« vaut plutôt autour de… au vu de… »), pas en promesse (« négociable à… »).
+- Si les données marché sont absentes ou peu fiables (confiance basse, type non comparé), dire que la marge ne peut pas être chiffrée sérieusement.
+
 ## Attendu
 Remplis le schéma demandé : synthèse globale (2-3 paragraphes), recommandation en une phrase,
 points de vigilance concrets (DPE, copropriété, travaux, quartier, éléments suspects de l'annonce),

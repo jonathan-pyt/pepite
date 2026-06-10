@@ -150,4 +150,12 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("DPE : D");
     expect(prompt).not.toContain("non applicable");
   });
+
+  it("contient le bloc Règles pour la négociation", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("Règles pour la négociation");
+    expect(prompt).toContain("2 à 5 %");
+    expect(prompt).toContain("JAMAIS");
+    expect(prompt).toContain("sous le marché");
+  });
 });

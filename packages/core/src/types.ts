@@ -78,7 +78,9 @@ export const analysisSchema = z.object({
   synthese: z.string().describe("Synthèse rédigée de 2 à 3 paragraphes, en français"),
   recommandation: z
     .string()
-    .describe("Recommandation en une phrase, ex. « Bien intéressant, négociable autour de 277 000 € »"),
+    .describe(
+      "Recommandation en une phrase, formulée en termes de valeur estimée et de défendabilité — ex. « Au vu des ventes du secteur, ce bien se situe dans les prix du marché ; marge de négociation limitée (2-3 %) » ou « Le bien paraît surcoté d'environ X % par rapport aux ventes comparables — une offre vers Y € est défendable ». Ne jamais formuler de promesses assertives du type « négociable à X € ».",
+    ),
   pointsVigilance: z.array(
     z.object({
       titre: z.string(),
@@ -87,9 +89,21 @@ export const analysisSchema = z.object({
     }),
   ),
   negociation: z.object({
-    cibleBasse: z.number().describe("Prix d'offre basse réaliste en euros"),
-    cibleHaute: z.number().describe("Prix d'accord probable en euros"),
-    arguments: z.array(z.string()).describe("Arguments factuels utilisables avec le vendeur"),
+    cibleBasse: z
+      .number()
+      .describe(
+        "Offre basse DÉFENDABLE, justifiée uniquement par les données fournies (écart vs médiane DVF des biens comparables, durée de publication, défauts objectifs) — jamais une décote arbitraire. Si le prix demandé est déjà sous la médiane, rester proche du prix demandé.",
+      ),
+    cibleHaute: z
+      .number()
+      .describe(
+        "Prix d'accord plausible ; si le prix demandé est cohérent avec le marché, rester proche du prix demandé.",
+      ),
+    arguments: z
+      .array(z.string())
+      .describe(
+        "Chaque argument doit citer une donnée fournie (médiane, vente comparable, DPE, durée de publication…) — aucun argument inventé.",
+      ),
   }),
   profils: z.object({
     residence: z.string().describe("Avis résidence principale, 1 paragraphe"),
