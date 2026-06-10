@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Report } from "@pepite/core";
 import { scoreLabel } from "@pepite/core";
+import { Check } from "lucide-react";
 import { idbRepository } from "@/lib/repository-idb";
 import {
   ScoreRing,
   scoreColorClass,
-  PepiteLogo,
+  PageShell,
   Metric,
   WarnItem,
   DPEChip,
@@ -42,75 +43,16 @@ function RSection({ id, num, title, children }: RSectionProps) {
   return (
     <section
       id={id}
-      style={{
-        background: "#fff",
-        border: "1px solid #e4e4e7",
-        borderRadius: 12,
-        padding: "22px 26px",
-        boxShadow:
-          "0 1px 2px rgba(24,24,27,.04), 0 4px 12px rgba(24,24,27,.05)",
-      }}
+      className="rounded-xl border border-line bg-white px-[26px] py-[22px] shadow-pepite-card"
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 16,
-        }}
-      >
-        <span
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            background: "#f4f4f5",
-            border: "1px solid #ededf0",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 11,
-            fontWeight: 650,
-            color: "#8e8e98",
-            flexShrink: 0,
-          }}
-        >
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md border border-line-soft bg-surface-2 text-[11px] font-semibold text-ink-3">
           {num}
         </span>
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 16.5,
-            fontWeight: 680,
-            color: "#18181b",
-            letterSpacing: "-0.015em",
-          }}
-        >
-          {title}
-        </h2>
+        <h2 className="text-[16.5px] font-bold tracking-[-0.015em] text-ink">{title}</h2>
       </div>
       {children}
     </section>
-  );
-}
-
-/* ---------- Check icon ---------- */
-function CheckIcon() {
-  return (
-    <svg
-      width={14}
-      height={14}
-      viewBox="0 0 16 16"
-      style={{ flexShrink: 0, display: "block", marginTop: 3 }}
-    >
-      <path
-        d="M2.8 8.6 6.2 12 13.2 4.4"
-        fill="none"
-        stroke="#0d9488"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 
@@ -121,6 +63,8 @@ const TOC_V01 = [
   ["vigilance", "Points de vigilance"],
   ["nego", "Négociation"],
 ] as const;
+
+const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_80px_72px]";
 
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
@@ -133,18 +77,7 @@ export default function App() {
 
   if (report === "loading") return null;
   if (!report)
-    return (
-      <p
-        style={{
-          padding: 32,
-          color: "#8e8e98",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif',
-        }}
-      >
-        Rapport introuvable.
-      </p>
-    );
+    return <p className="bg-page p-8 text-ink-3">Rapport introuvable.</p>;
 
   const { listing, quick, analysis } = report;
 
@@ -155,511 +88,228 @@ export default function App() {
   });
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f7f7f8",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif',
-      }}
-    >
-      {/* ── Top bar ── */}
-      <div
-        style={{
-          height: 52,
-          background: "#fff",
-          borderBottom: "1px solid #e4e4e7",
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          padding: "0 28px",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <PepiteLogo size="md" />
-        <div style={{ marginLeft: "auto", fontSize: 12, color: "#8e8e98" }}>
-          Rapport généré le {generatedAt}
-        </div>
-      </div>
-
-      {/* ── Content column ── */}
-      <div
-        style={{
-          maxWidth: 880,
-          margin: "0 auto",
-          padding: "24px 20px 48px",
-        }}
-      >
-        {/* Grid: sticky sommaire (lg) + main content */}
-        <div className="grid items-start gap-6 lg:grid-cols-[180px_1fr]">
-          {/* ── Sommaire (sticky, left rail) ── */}
-          <nav
-            aria-label="Sommaire"
-            className="hidden lg:flex"
-            style={{
-              position: "sticky",
-              top: 76,
-              flexDirection: "column",
-              gap: 1,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10.5,
-                fontWeight: 650,
-                color: "#8e8e98",
-                textTransform: "uppercase",
-                letterSpacing: ".07em",
-                padding: "0 10px 8px",
-              }}
+    <PageShell maxWidth="rapport" topRight={`Rapport généré le ${generatedAt}`}>
+      {/* Grid: sticky sommaire (lg) + main content */}
+      <div className="grid items-start gap-6 lg:grid-cols-[180px_1fr]">
+        {/* ── Sommaire (sticky, left rail) ── */}
+        <nav
+          aria-label="Sommaire"
+          className="sticky top-[76px] hidden flex-col gap-px lg:flex"
+        >
+          <div className="px-2.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+            Sommaire
+          </div>
+          {TOC_V01.map(([id, label], i) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="flex items-center gap-2 rounded-[7px] px-2.5 py-[6.5px] text-[12.5px] font-medium text-ink-2 tabular-nums no-underline hover:bg-white"
             >
-              Sommaire
-            </div>
-            {TOC_V01.map(([id, label], i) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                style={{
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  color: "#52525b",
-                  textDecoration: "none",
-                  padding: "6.5px 10px",
-                  borderRadius: 7,
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                <span
-                  style={{ color: "#8e8e98", fontSize: 11, width: 14 }}
-                >
-                  {i + 1}
+              <span className="w-3.5 text-[11px] text-ink-3">{i + 1}</span>
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        {/* ── Main sections ── */}
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* ── 0. Header card ── */}
+          <div className="flex items-start gap-6 rounded-xl border border-line bg-white px-[26px] py-[22px] shadow-pepite-card">
+            {/* Left: title, address, profile, recommandation */}
+            <div className="min-w-0 flex-1">
+              {/* Title */}
+              <h1 className="text-[22px] font-semibold leading-[1.25] tracking-[-0.02em] text-ink">
+                {listing.title}
+              </h1>
+
+              {/* Address + price */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[13px] text-ink-3">
+                <span>{listing.location.rawAddress}</span>
+                <span className="text-line">·</span>
+                <span className="font-semibold text-ink tabular-nums">
+                  {listing.price.toLocaleString("fr-FR")} €
                 </span>
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          {/* ── Main sections ── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-            {/* ── 0. Header card ── */}
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #e4e4e7",
-                borderRadius: 12,
-                padding: "22px 26px",
-                boxShadow:
-                  "0 1px 2px rgba(24,24,27,.04), 0 4px 12px rgba(24,24,27,.05)",
-                display: "flex",
-                gap: 24,
-                alignItems: "flex-start",
-              }}
-            >
-              {/* Left: title, address, profile, recommandation */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Title row */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <h1
-                    style={{
-                      margin: 0,
-                      fontSize: 22,
-                      fontWeight: 650,
-                      color: "#18181b",
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {listing.title}
-                  </h1>
-                </div>
-
-                {/* Address + price */}
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "#8e8e98",
-                    marginTop: 5,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span>{listing.location.rawAddress}</span>
-                  <span style={{ color: "#e4e4e7" }}>·</span>
-                  <span
-                    style={{
-                      fontWeight: 650,
-                      color: "#18181b",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {listing.price.toLocaleString("fr-FR")} €
-                  </span>
-                </div>
-
-                {/* Profile pill + DPE chip */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginTop: 9,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "2.5px 9px",
-                      fontSize: 11.5,
-                      fontWeight: 560,
-                      borderRadius: 99,
-                      background: "#f0fdfa",
-                      border: "1px solid #99f6e4",
-                      color: "#0f766e",
-                      lineHeight: 1.4,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {PROFILE_LABEL[report.profile]}
-                  </span>
-                  {listing.dpe && (
-                    <DPEChip
-                      letter={listing.dpe as "A" | "B" | "C" | "D" | "E" | "F" | "G"}
-                      type="DPE"
-                      size="sm"
-                    />
-                  )}
-                </div>
-
-                {/* Recommandation strip */}
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: "10px 13px",
-                    background: "#f0fdfa",
-                    border: "1px solid #99f6e4",
-                    borderRadius: 8,
-                    fontSize: 13.5,
-                    fontWeight: 560,
-                    color: "#0f766e",
-                    lineHeight: 1.55,
-                  }}
-                >
-                  {analysis.recommandation}
-                </div>
               </div>
 
-              {/* Right: ScoreRing + label */}
-              {quick.score !== null && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 6,
-                    paddingLeft: 20,
-                    borderLeft: "1px solid #ededf0",
-                    flexShrink: 0,
-                  }}
-                >
-                  <ScoreRing score={quick.score} size={84} stroke={7} sub="/100" />
-                  <div
-                    className={scoreColorClass(quick.score)}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      textAlign: "center",
-                    }}
-                  >
-                    {scoreLabel(quick.score)}
-                  </div>
-                </div>
-              )}
+              {/* Profile pill + DPE chip */}
+              <div className="mt-[9px] flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-accent-border bg-accent-soft px-[9px] py-[2.5px] text-[11.5px] font-medium leading-[1.4] text-accent-dark whitespace-nowrap">
+                  {PROFILE_LABEL[report.profile]}
+                </span>
+                {listing.dpe && (
+                  <DPEChip
+                    letter={listing.dpe as "A" | "B" | "C" | "D" | "E" | "F" | "G"}
+                    type="DPE"
+                    size="sm"
+                  />
+                )}
+              </div>
+
+              {/* Recommandation strip */}
+              <div className="mt-3 rounded-lg border border-accent-border bg-accent-soft px-[13px] py-2.5 text-[13.5px] font-medium leading-relaxed text-accent-dark">
+                {analysis.recommandation}
+              </div>
             </div>
 
-            {/* ── 1. Synthèse ── */}
-            <RSection id="synthese" num={1} title="Synthèse IA">
-              <div
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 1.72,
-                  color: "#3f3f46",
-                  whiteSpace: "pre-line",
-                }}
-              >
-                {analysis.synthese}
+            {/* Right: ScoreRing + label */}
+            {quick.score !== null && (
+              <div className="flex shrink-0 flex-col items-center gap-1.5 border-l border-line-soft pl-5">
+                <ScoreRing score={quick.score} size={84} stroke={7} sub="/100" />
+                <div className={`text-xs font-semibold text-center ${scoreColorClass(quick.score)}`}>
+                  {scoreLabel(quick.score)}
+                </div>
               </div>
-            </RSection>
+            )}
+          </div>
 
-            {/* ── 2. Prix & marché ── */}
-            <RSection id="prix" num={2} title="Prix & marché">
-              {/* Metrics row */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 10,
-                  marginBottom: 20,
-                }}
-              >
-                <Metric
-                  label="Prix/m² annonce"
-                  value={
-                    quick.listingPricePerM2 !== null
-                      ? `${Math.round(quick.listingPricePerM2).toLocaleString("fr-FR")} €/m²`
-                      : "—"
-                  }
-                  tone="accent"
-                />
-                <Metric
-                  label="Médiane quartier"
-                  value={
-                    quick.market
-                      ? `${Math.round(quick.market.medianPricePerM2).toLocaleString("fr-FR")} €/m²`
-                      : "—"
-                  }
-                  sub={
-                    quick.market
-                      ? `${quick.market.sampleSize} ventes · r${quick.market.radiusM} m · ${quick.market.confidence}`
-                      : undefined
-                  }
-                />
-                <Metric
-                  label="Écart"
-                  value={
-                    quick.marketGapPct !== null
-                      ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1)} %`
-                      : "—"
-                  }
-                  tone={
-                    quick.marketGapPct !== null
-                      ? quick.marketGapPct < 0
-                        ? "good"
-                        : "warn"
-                      : undefined
-                  }
-                />
-              </div>
+          {/* ── 1. Synthèse ── */}
+          <RSection id="synthese" num={1} title="Synthèse IA">
+            <div className="whitespace-pre-line text-[13.5px] leading-[1.72] text-ink-2">
+              {analysis.synthese}
+            </div>
+          </RSection>
 
-              {/* Comparables table */}
-              {quick.market && quick.market.comparables.length > 0 && (
+          {/* ── 2. Prix & marché ── */}
+          <RSection id="prix" num={2} title="Prix & marché">
+            {/* Metrics row */}
+            <div className="mb-5 grid grid-cols-3 gap-2.5">
+              <Metric
+                label="Prix/m² annonce"
+                value={
+                  quick.listingPricePerM2 !== null
+                    ? `${Math.round(quick.listingPricePerM2).toLocaleString("fr-FR")} €/m²`
+                    : "—"
+                }
+                tone="accent"
+              />
+              <Metric
+                label="Médiane quartier"
+                value={
+                  quick.market
+                    ? `${Math.round(quick.market.medianPricePerM2).toLocaleString("fr-FR")} €/m²`
+                    : "—"
+                }
+                sub={
+                  quick.market
+                    ? `${quick.market.sampleSize} ventes · r${quick.market.radiusM} m · ${quick.market.confidence}`
+                    : undefined
+                }
+              />
+              <Metric
+                label="Écart"
+                value={
+                  quick.marketGapPct !== null
+                    ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1)} %`
+                    : "—"
+                }
+                tone={
+                  quick.marketGapPct !== null
+                    ? quick.marketGapPct < 0
+                      ? "good"
+                      : "warn"
+                    : undefined
+                }
+              />
+            </div>
+
+            {/* Comparables table */}
+            {quick.market && quick.market.comparables.length > 0 && (
+              <div className="overflow-hidden rounded-[9px] border border-line-soft">
+                {/* Header row */}
                 <div
-                  style={{
-                    border: "1px solid #ededf0",
-                    borderRadius: 9,
-                    overflow: "hidden",
-                  }}
+                  className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
                 >
-                  {/* Header row */}
+                  {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                    <span key={h} className="text-[11px] font-medium text-ink-3">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+                {/* Rows */}
+                {quick.market.comparables.map((c, i) => (
                   <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "72px 1fr 90px 80px 72px",
-                      gap: 8,
-                      padding: "7px 12px",
-                      background: "#fafafa",
-                      borderBottom: "1px solid #ededf0",
-                    }}
+                    key={c.idMutation}
+                    className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
+                      i % 2 ? "bg-surface-sub" : "bg-white"
+                    }`}
                   >
-                    {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
-                      <span
-                        key={h}
-                        style={{
-                          fontSize: 11,
-                          color: "#8e8e98",
-                          fontWeight: 560,
-                        }}
-                      >
-                        {h}
-                      </span>
-                    ))}
+                    <span className="text-ink-3">{fmtDate(c.date)}</span>
+                    <span className="truncate font-medium text-ink">
+                      {c.type} {c.surface} m²
+                    </span>
+                    <span className="font-semibold text-ink">
+                      {c.price.toLocaleString("fr-FR")} €
+                    </span>
+                    <span className="font-semibold text-ink-2">
+                      {Math.round(c.pricePerM2).toLocaleString("fr-FR")}
+                    </span>
+                    <span className="text-ink-3">{c.distanceM} m</span>
                   </div>
-                  {/* Rows */}
-                  {quick.market.comparables.map((c, i) => (
-                    <div
-                      key={c.idMutation}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "72px 1fr 90px 80px 72px",
-                        gap: 8,
-                        padding: "7.5px 12px",
-                        fontSize: 12.5,
-                        alignItems: "baseline",
-                        background: i % 2 ? "#fafafa" : "#fff",
-                        borderTop: "1px solid #ededf0",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      <span style={{ color: "#8e8e98" }}>{fmtDate(c.date)}</span>
-                      <span
-                        style={{
-                          color: "#18181b",
-                          fontWeight: 550,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {c.type} {c.surface} m²
+                ))}
+              </div>
+            )}
+          </RSection>
+
+          {/* ── 3. Points de vigilance ── */}
+          <RSection id="vigilance" num={3} title="Points de vigilance">
+            <div className="flex flex-col gap-2.5">
+              {analysis.pointsVigilance.map((p, i) => (
+                <WarnItem
+                  key={i}
+                  tone={NIVEAU_TONE[p.niveau] ?? "warn"}
+                  title={p.titre}
+                  sub={p.detail}
+                />
+              ))}
+            </div>
+          </RSection>
+
+          {/* ── 4. Négociation ── */}
+          <RSection id="nego" num={4} title="Négociation">
+            <div className="grid grid-cols-[auto_1fr] items-start gap-6">
+              {/* Fourchette card */}
+              <div className="min-w-[200px] rounded-[11px] border border-accent-border bg-accent-soft px-[18px] py-4">
+                <div className="mb-1.5 text-[11.5px] font-semibold text-accent-dark">
+                  Fourchette recommandée
+                </div>
+                <div className="text-[19px] font-bold tracking-[-0.02em] text-ink tabular-nums">
+                  {analysis.negociation.cibleBasse.toLocaleString("fr-FR")} €
+                  {" — "}
+                  {analysis.negociation.cibleHaute.toLocaleString("fr-FR")} €
+                </div>
+                <div className="mt-1 text-[11px] text-ink-3 tabular-nums">
+                  cible de négociation
+                </div>
+              </div>
+
+              {/* Arguments list */}
+              <div>
+                <div className="mb-2.5 text-xs font-medium text-ink-3">
+                  Arguments à utiliser en visite
+                </div>
+                <div className="flex flex-col gap-2">
+                  {analysis.negociation.arguments.map((arg, i) => (
+                    <div key={i} className="flex gap-2.5">
+                      <Check className="mt-[3px] size-[14px] shrink-0 text-accent-dark" />
+                      <span className="text-[12.5px] leading-relaxed text-ink-2">
+                        {arg}
                       </span>
-                      <span
-                        style={{ color: "#18181b", fontWeight: 600 }}
-                      >
-                        {c.price.toLocaleString("fr-FR")} €
-                      </span>
-                      <span style={{ color: "#52525b", fontWeight: 600 }}>
-                        {Math.round(c.pricePerM2).toLocaleString("fr-FR")}
-                      </span>
-                      <span style={{ color: "#8e8e98" }}>{c.distanceM} m</span>
                     </div>
                   ))}
                 </div>
-              )}
-            </RSection>
-
-            {/* ── 3. Points de vigilance ── */}
-            <RSection id="vigilance" num={3} title="Points de vigilance">
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {analysis.pointsVigilance.map((p, i) => (
-                  <WarnItem
-                    key={i}
-                    tone={NIVEAU_TONE[p.niveau] ?? "warn"}
-                    title={p.titre}
-                    sub={p.detail}
-                  />
-                ))}
               </div>
-            </RSection>
+            </div>
+          </RSection>
 
-            {/* ── 4. Négociation ── */}
-            <RSection id="nego" num={4} title="Négociation">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 24,
-                  alignItems: "start",
-                }}
-              >
-                {/* Fourchette card */}
-                <div
-                  style={{
-                    background: "#f0fdfa",
-                    border: "1px solid #99f6e4",
-                    borderRadius: 11,
-                    padding: "16px 18px",
-                    minWidth: 200,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 11.5,
-                      fontWeight: 620,
-                      color: "#0f766e",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Fourchette recommandée
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 19,
-                      fontWeight: 680,
-                      color: "#18181b",
-                      letterSpacing: "-0.02em",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {analysis.negociation.cibleBasse.toLocaleString("fr-FR")} €
-                    {" — "}
-                    {analysis.negociation.cibleHaute.toLocaleString("fr-FR")} €
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#8e8e98",
-                      marginTop: 4,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    cible de négociation
-                  </div>
-                </div>
-
-                {/* Arguments list */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#8e8e98",
-                      fontWeight: 560,
-                      marginBottom: 10,
-                    }}
-                  >
-                    Arguments à utiliser en visite
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    {analysis.negociation.arguments.map((arg, i) => (
-                      <div
-                        key={i}
-                        style={{ display: "flex", gap: 10 }}
-                      >
-                        <CheckIcon />
-                        <span
-                          style={{
-                            fontSize: 12.5,
-                            lineHeight: 1.6,
-                            color: "#52525b",
-                          }}
-                        >
-                          {arg}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </RSection>
-
-            {/* ── Footer ── */}
-            <footer
-              style={{
-                padding: "18px 6px 6px",
-                fontSize: 11,
-                color: "#8e8e98",
-                lineHeight: 1.65,
-              }}
-            >
-              Généré le{" "}
-              {new Date(report.createdAt).toLocaleString("fr-FR")} ·{" "}
-              {report.provider}/{report.model} · Sources : annonce, DVF
-              (data.gouv.fr), BAN (IGN). Estimation indicative — ne remplace
-              pas une expertise.
-            </footer>
-          </div>
+          {/* ── Footer ── */}
+          <footer className="px-1.5 pb-1.5 pt-[18px] text-[11px] leading-relaxed text-ink-3">
+            Généré le {new Date(report.createdAt).toLocaleString("fr-FR")} ·{" "}
+            {report.provider}/{report.model} · Sources : annonce, DVF
+            (data.gouv.fr), BAN (IGN). Estimation indicative — ne remplace pas une
+            expertise.
+          </footer>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

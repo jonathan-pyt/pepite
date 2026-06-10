@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { browser } from "wxt/browser";
-import type { AnalysisResult, UsageProfile } from "@pepite/core";
-import { sendRequest, type TabState } from "@/lib/messages";
-import {
-  PepiteLogo,
-  ScoreRing,
-  Seg,
-  Metric,
-  WarnItem,
-} from "@/components/pepite";
+import type { UsageProfile } from "@pepite/core";
+import { Loader2, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
+import { useTabState } from "@/lib/hooks/use-tab-state";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
 
@@ -19,62 +15,12 @@ const PROFILES: { id: UsageProfile; label: string }[] = [
   { id: "coloc", label: "Coloc" },
 ];
 
-// ─── Tiny spinner ────────────────────────────────────────────────────────────
-
-function Spinner() {
-  return (
-    <svg
-      width={14}
-      height={14}
-      viewBox="0 0 14 14"
-      style={{
-        animation: "spin 0.8s linear infinite",
-        flexShrink: 0,
-        display: "block",
-      }}
-    >
-      <circle
-        cx={7}
-        cy={7}
-        r={5.5}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity={0.25}
-        strokeWidth={2}
-      />
-      <path
-        d="M7 1.5A5.5 5.5 0 0 1 12.5 7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </svg>
-  );
-}
-
 // ─── Section title ───────────────────────────────────────────────────────────
 
 function SecTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 9,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 650,
-          color: "#8e8e98",
-          textTransform: "uppercase",
-          letterSpacing: ".06em",
-        }}
-      >
+    <div className="mb-[9px] flex items-center justify-between">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
         {children}
       </span>
       {right}
@@ -85,118 +31,16 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [tabId, setTabId] = useState<number | null>(null);
-  const [state, setState] = useState<TabState>({ status: "idle" });
+  const { state, analysis, reportId, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [reportId, setReportId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const listingUrl = state.listing?.url;
-  useEffect(() => {
-    setAnalysis(null);
-    setReportId(null);
-    setError(null);
-  }, [listingUrl]);
-
-  useEffect(() => {
-    let currentTabId: number | null = null;
-
-    void sendRequest<{ tabId?: number; state: TabState }>({ type: "GET_TAB_STATE" }).then((r) => {
-      if (r.tabId !== undefined) {
-        currentTabId = r.tabId;
-        setTabId(r.tabId);
-      }
-      setState(r.state);
-    });
-
-    const listener = (msg: { type?: string; tabId?: number; state?: TabState }) => {
-      if (
-        msg.type === "TAB_STATE_CHANGED" &&
-        msg.state &&
-        (currentTabId === null || msg.tabId === currentTabId)
-      ) {
-        setState(msg.state);
-      }
-    };
-    browser.runtime.onMessage.addListener(listener);
-
-    // Re-query tab state on tab switch
-    const onActivated = () => {
-      void sendRequest<{ tabId?: number; state: TabState }>({ type: "GET_TAB_STATE" }).then((r) => {
-        if (r.tabId !== undefined) {
-          currentTabId = r.tabId;
-          setTabId(r.tabId);
-        }
-        setState(r.state);
-      });
-    };
-    browser.tabs.onActivated.addListener(onActivated);
-
-    // Clear API-key error when settings are saved
-    // WXT stores "local:settings" under the raw key "settings" in chrome.storage.local
-    // (resolveKey strips the area prefix before calling the driver)
-    const onStorageChanged = (changes: Record<string, unknown>, area: string) => {
-      if (area === "local" && "settings" in changes) setError(null);
-    };
-    browser.storage.onChanged.addListener(onStorageChanged);
-
-    return () => {
-      browser.runtime.onMessage.removeListener(listener);
-      browser.tabs.onActivated.removeListener(onActivated);
-      browser.storage.onChanged.removeListener(onStorageChanged);
-    };
-  }, []);
-
-  async function runFullAnalysis() {
-    if (tabId === null) return;
-    setError(null);
-    const res = await sendRequest<{
-      reportId?: string;
-      analysis?: AnalysisResult;
-      error?: string;
-    }>({
-      type: "RUN_FULL_ANALYSIS",
-      tabId,
-      profile,
-    });
-    if (res.error === "NO_API_KEY") {
-      setError("Clé API manquante — configure un provider dans les réglages.");
-    } else if (res.error) {
-      setError(res.error);
-    } else {
-      setAnalysis(res.analysis ?? null);
-      setReportId(res.reportId ?? null);
-    }
-  }
 
   // ── State: idle / no listing ─────────────────────────────────────────────
 
   if (state.status === "idle" || !state.listing) {
     return (
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 32px",
-          textAlign: "center",
-          gap: 12,
-          minHeight: "100vh",
-          background: "#ffffff",
-        }}
-      >
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
         <PepiteLogo size="lg" />
-        <p
-          style={{
-            fontSize: 12.5,
-            color: "#8e8e98",
-            lineHeight: 1.6,
-            margin: 0,
-          }}
-        >
+        <p className="text-[12.5px] leading-relaxed text-ink-3">
           Ouvre une annonce immobilière Leboncoin pour lancer l&apos;analyse.
         </p>
       </div>
@@ -228,128 +72,53 @@ export default function App() {
       ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1).replace(".", ",")} %`
       : "—";
 
+  const isApiKeyError = error?.includes("Clé API") ?? false;
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 0,
-        padding: 0,
-        fontSize: 13,
-        background: "#ffffff",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="flex min-h-screen flex-col bg-white text-[13px]">
       {/* ── Top bar: logo ─────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 14px",
-          borderBottom: "1px solid #ededf0",
-          flexShrink: 0,
-        }}
-      >
+      <div className="flex shrink-0 items-center justify-between border-b border-line-soft px-3.5 py-2.5">
         <PepiteLogo size="sm" />
       </div>
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}
-      <div
-        style={{
-          padding: "14px 16px",
-          borderBottom: "1px solid #ededf0",
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-        }}
-      >
+      <div className="flex items-center gap-3 border-b border-line-soft px-4 py-3.5">
         {quick?.score !== null && quick?.score !== undefined ? (
           <ScoreRing score={quick.score} size={54} stroke={5} sub="/100" />
         ) : (
-          <div
-            style={{
-              width: 54,
-              height: 54,
-              flexShrink: 0,
-              borderRadius: "50%",
-              border: "1px solid #ededf0",
-              background: "#fafafa",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#8e8e98",
-            }}
-          >
+          <div className="flex size-[54px] shrink-0 items-center justify-center rounded-full border border-line-soft bg-surface-sub text-lg font-semibold text-ink-3">
             —
           </div>
         )}
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "#18181b",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.3,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-semibold tracking-[-0.01em] leading-tight text-ink">
             {listing.title}
           </div>
-          <div style={{ fontSize: 11.5, color: "#8e8e98", marginTop: 2 }}>
+          <div className="mt-0.5 text-[11.5px] text-ink-3">
             {listing.location.rawAddress}
           </div>
         </div>
       </div>
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 16px 16px" }}>
-
+      <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
         {/* ── Quick-running state ─────────────────────────────────────────── */}
         {state.status === "quick-running" && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 12.5,
-              color: "#52525b",
-            }}
-          >
-            <Spinner />
+          <div className="flex items-center gap-2 text-[12.5px] text-ink-2">
+            <Loader2 className="size-[14px] animate-spin" />
             Analyse du marché en cours…
           </div>
         )}
 
         {/* ── Seg profils ─────────────────────────────────────────────────── */}
         {quick && (
-          <Seg
-            options={segLabels}
-            value={activeLabel}
-            onChange={handleSegChange}
-            size="sm"
-            grow
-          />
+          <Seg options={segLabels} value={activeLabel} onChange={handleSegChange} size="sm" grow />
         )}
 
         {/* ── Metrics grid ────────────────────────────────────────────────── */}
         {quick && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-            }}
-          >
-            <Metric
-              label="Prix"
-              value={`${listing.price.toLocaleString("fr-FR")} €`}
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <Metric label="Prix" value={`${listing.price.toLocaleString("fr-FR")} €`} />
             <Metric
               label="Prix/m²"
               value={
@@ -400,29 +169,17 @@ export default function App() {
         {/* ── Error block ─────────────────────────────────────────────────── */}
         {error && (
           <div
-            style={{
-              background: error.includes("Clé API") ? "#fffbeb" : "#fef2f2",
-              border: `1px solid ${error.includes("Clé API") ? "#fde68a" : "#fecaca"}`,
-              borderRadius: 8,
-              padding: "10px 12px",
-              fontSize: 12,
-              color: error.includes("Clé API") ? "#b45309" : "#b91c1c",
-              lineHeight: 1.55,
-            }}
+            className={
+              isApiKeyError
+                ? "rounded-lg border border-warn-border bg-warn-soft px-3 py-2.5 text-xs leading-relaxed text-warn"
+                : "rounded-lg border border-bad-border bg-bad-soft px-3 py-2.5 text-xs leading-relaxed text-bad"
+            }
           >
             {error}{" "}
-            {error.includes("Clé API") && (
+            {isApiKeyError && (
               <button
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  color: "inherit",
-                  fontSize: "inherit",
-                  fontFamily: "inherit",
-                }}
+                type="button"
+                className="cursor-pointer p-0 text-inherit underline"
                 onClick={() => browser.runtime.openOptionsPage()}
               >
                 Ouvrir les réglages
@@ -433,39 +190,15 @@ export default function App() {
 
         {/* ── Analyse IA block ─────────────────────────────────────────────── */}
         {analysis && (
-          <div
-            style={{
-              background: "#fafafa",
-              border: "1px solid #ededf0",
-              borderRadius: 8,
-              padding: "11px 13px",
-            }}
-          >
+          <div className="rounded-lg border border-line-soft bg-surface-sub px-[13px] py-[11px]">
             <SecTitle
               right={
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    fontWeight: 560,
-                    color: "#8e8e98",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  IA
-                </span>
+                <Sparkles className="size-[13px] text-ink-3" />
               }
             >
               Analyse IA
             </SecTitle>
-            <p
-              style={{
-                fontSize: 12.5,
-                lineHeight: 1.6,
-                color: "#52525b",
-                margin: 0,
-                whiteSpace: "pre-line",
-              }}
-            >
+            <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">
               {analysis.synthese}
             </p>
           </div>
@@ -475,7 +208,7 @@ export default function App() {
         {analysis && analysis.pointsVigilance.length > 0 && (
           <div>
             <SecTitle>Points de vigilance</SecTitle>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="flex flex-col gap-2.5">
               {analysis.pointsVigilance.map((p, i) => (
                 <WarnItem
                   key={i}
@@ -495,84 +228,34 @@ export default function App() {
         )}
 
         {/* ── Action buttons ───────────────────────────────────────────────── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+        <div className="mt-1 flex flex-col gap-2">
           {state.status !== "full-running" ? (
-            <button
-              onClick={runFullAnalysis}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => void runFullAnalysis(profile)}
               disabled={!quick}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "10px 16px",
-                fontSize: 13,
-                fontWeight: 560,
-                borderRadius: 7,
-                cursor: quick ? "pointer" : "not-allowed",
-                background: quick ? "#0d9488" : "#f4f4f5",
-                color: quick ? "#ffffff" : "#8e8e98",
-                border: quick ? "1px solid #0f766e" : "1px solid #e4e4e7",
-                opacity: quick ? 1 : 0.7,
-                width: "100%",
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-              }}
             >
               Analyse complète (IA)
-            </button>
+            </Button>
           ) : (
-            <button
-              disabled
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "10px 16px",
-                fontSize: 13,
-                fontWeight: 560,
-                borderRadius: 7,
-                cursor: "not-allowed",
-                background: "#f4f4f5",
-                color: "#8e8e98",
-                border: "1px solid #e4e4e7",
-                width: "100%",
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <Spinner />
+            <Button className="w-full" size="lg" disabled>
+              <Loader2 className="animate-spin" />
               Analyse IA en cours…
-            </button>
+            </Button>
           )}
 
           {reportId && (
-            <button
+            <Button
+              className="w-full"
+              variant="outline"
+              size="lg"
               onClick={() =>
                 window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))
               }
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "9px 16px",
-                fontSize: 13,
-                fontWeight: 560,
-                borderRadius: 7,
-                cursor: "pointer",
-                background: "#ffffff",
-                color: "#18181b",
-                border: "1px solid #e4e4e7",
-                boxShadow: "0 1px 2px rgba(24,24,27,.04)",
-                width: "100%",
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-              }}
             >
               Voir le rapport complet
-            </button>
+            </Button>
           )}
         </div>
       </div>
