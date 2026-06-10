@@ -21,13 +21,26 @@ export default function App() {
   const [reportId, setReportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const listingUrl = state.listing?.url;
   useEffect(() => {
+    setAnalysis(null);
+    setReportId(null);
+    setError(null);
+  }, [listingUrl]);
+
+  useEffect(() => {
+    let currentTabId: number | null = null;
     void sendRequest<{ tabId?: number; state: TabState }>({ type: "GET_TAB_STATE" }).then((r) => {
-      if (r.tabId !== undefined) setTabId(r.tabId);
+      if (r.tabId !== undefined) {
+        currentTabId = r.tabId;
+        setTabId(r.tabId);
+      }
       setState(r.state);
     });
     const listener = (msg: { type?: string; tabId?: number; state?: TabState }) => {
-      if (msg.type === "TAB_STATE_CHANGED" && msg.state) setState(msg.state);
+      if (msg.type === "TAB_STATE_CHANGED" && msg.state && (currentTabId === null || msg.tabId === currentTabId)) {
+        setState(msg.state);
+      }
     };
     browser.runtime.onMessage.addListener(listener);
     return () => browser.runtime.onMessage.removeListener(listener);
