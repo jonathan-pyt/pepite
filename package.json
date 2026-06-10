@@ -6,5 +6,8 @@
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.60.0"
   }
 }

@@ -4,3 +4,5 @@ node_modules/
 dist/
 *.log
 .idea/
+web-ext.config.ts
+.e2e-scratch/
