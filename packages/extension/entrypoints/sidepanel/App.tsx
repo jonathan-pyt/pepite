@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
 import { useTabState } from "@/lib/hooks/use-tab-state";
@@ -31,7 +31,7 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { state, analysis, reportId, error, runFullAnalysis } = useTabState();
+  const { state, analysis, reportId, analysisDate, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
 
   // ── State: idle / no listing ─────────────────────────────────────────────
@@ -195,7 +195,20 @@ export default function App() {
           <div className="rounded-lg border border-line-soft bg-surface-sub px-[13px] py-[11px]">
             <SecTitle
               right={
-                <Sparkles className="size-[13px] text-ink-3" />
+                <div className="flex items-center gap-1.5">
+                  {analysisDate && (
+                    <span className="text-[10.5px] text-ink-3">
+                      analyse du{" "}
+                      {new Date(analysisDate).toLocaleString("fr-FR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                  <Sparkles className="size-[13px] text-ink-3" />
+                </div>
               }
             >
               Analyse IA
@@ -257,17 +270,29 @@ export default function App() {
             </Button>
           )}
 
-          {analysis && reportId && (
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={() => {
-                window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`));
-                window.close();
-              }}
-            >
-              Voir le rapport complet
-            </Button>
+          {analysis && reportId && state.status !== "full-running" && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                size="lg"
+                onClick={() => {
+                  window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`));
+                  window.close();
+                }}
+              >
+                Voir le rapport complet
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="aspect-square shrink-0 px-0"
+                title="Ré-analyser (nouvelles données)"
+                aria-label="Ré-analyser (nouvelles données)"
+                onClick={() => void runFullAnalysis()}
+              >
+                <RotateCw className="size-[16px]" />
+              </Button>
+            </div>
           )}
         </div>
       </div>

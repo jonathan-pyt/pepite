@@ -3,11 +3,13 @@ import { browser } from "wxt/browser"
 import type { AnalysisResult } from "@pepite/core"
 
 import { sendRequest, type TabState } from "@/lib/messages"
+import { idbRepository } from "@/lib/repository-idb"
 
 export interface UseTabState {
   state: TabState
   analysis: AnalysisResult | null
   reportId: string | null
+  analysisDate: string | null
   error: string | null
   /** Lance l'analyse IA complète. */
   runFullAnalysis: () => Promise<void>
@@ -28,14 +30,31 @@ export function useTabState(): UseTabState {
   const [state, setState] = useState<TabState>({ status: "idle" })
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
+  const [analysisDate, setAnalysisDate] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Purge l'analyse/rapport/erreur quand l'annonce change (anti-stale).
+  // Purge analyse/rapport/erreur quand l'annonce change (anti-stale),
+  // puis tente de restaurer depuis IndexedDB.
   const listingUrl = state.listing?.url
   useEffect(() => {
     setAnalysis(null)
     setReportId(null)
+    setAnalysisDate(null)
     setError(null)
+
+    if (!listingUrl) return
+
+    let cancelled = false
+    void idbRepository.getLatestReportByUrl(listingUrl).then((report) => {
+      if (cancelled || !report) return
+      setAnalysis(report.analysis)
+      setReportId(report.id)
+      setAnalysisDate(report.createdAt)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [listingUrl])
 
   useEffect(() => {
@@ -105,8 +124,9 @@ export function useTabState(): UseTabState {
     } else {
       setAnalysis(res.analysis ?? null)
       setReportId(res.reportId ?? null)
+      setAnalysisDate(new Date().toISOString())
     }
   }
 
-  return { state, analysis, reportId, error, runFullAnalysis }
+  return { state, analysis, reportId, analysisDate, error, runFullAnalysis }
 }

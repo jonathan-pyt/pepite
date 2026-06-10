@@ -13,4 +13,5 @@ export interface Repository {
   listReports(): Promise<Report[]>;
   getCache<T>(key: string): Promise<T | undefined>;
   setCache<T>(key: string, value: T, ttlMs: number): Promise<void>;
+  getLatestReportByUrl(listingUrl: string): Promise<Report | undefined>;
 }

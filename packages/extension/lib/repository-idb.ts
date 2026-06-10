@@ -37,6 +37,11 @@ export const idbRepository: Repository = {
   async listReports() {
     return (await getDb()).getAll("reports");
   },
+  async getLatestReportByUrl(listingUrl) {
+    const reports = await (await getDb()).getAllFromIndex("reports", "by-url", listingUrl);
+    if (reports.length === 0) return undefined;
+    return reports.reduce((latest, r) => (r.createdAt > latest.createdAt ? r : latest));
+  },
   async getCache<T>(key: string): Promise<T | undefined> {
     const entry = (await (await getDb()).get("cache", key)) as CacheEntry<T> | undefined;
     if (!entry) return undefined;
