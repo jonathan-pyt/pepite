@@ -1,4 +1,5 @@
 export * from "./types";
+export type { Repository, CacheEntry } from "./storage/repository";
 export { isLeboncoinListingPage, parseLeboncoin } from "./extraction/leboncoin";
 export { geocode } from "./enrichment/geocode";
 export { parseDvfCsv, computeMarketStats, fetchCommuneSales, DVF_YEARS } from "./enrichment/dvf";
