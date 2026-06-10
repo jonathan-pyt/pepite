@@ -1,5 +1,5 @@
 import { browser } from "wxt/browser";
-import type { Listing, QuickAnalysis } from "@pepite/core";
+import type { GeoPoint, Listing, QuickAnalysis } from "@pepite/core";
 
 export type TabStatus =
   | "idle"
@@ -14,6 +14,7 @@ export interface TabState {
   status: TabStatus;
   listing?: Listing;
   quick?: QuickAnalysis;
+  point?: GeoPoint;
   reportId?: string;
   error?: string;
 }

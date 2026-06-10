@@ -117,6 +117,45 @@ export const analysisSchema = z.object({
 });
 export type AnalysisResult = z.infer<typeof analysisSchema>;
 
+export interface PoiCategory {
+  count: number;
+  nearest: { name: string; distanceM: number }[]; // ≤3, nommés uniquement
+}
+
+export interface NeighborhoodStats {
+  radiusM: number;
+  ecoles: PoiCategory;
+  commerces: PoiCategory;
+  sante: PoiCategory;
+  transports: PoiCategory;
+  espacesVerts: PoiCategory;
+}
+
+export interface RiskItem {
+  libelle: string;
+  statut: string;
+}
+
+export interface RiskReport {
+  naturels: RiskItem[];
+  technologiques: RiskItem[]; // uniquement les présents
+}
+
+export interface RentInfo {
+  loyerM2: number; // €/m² charges comprises (médiane prédite)
+  loyerM2Bas: number; // IC 80 %
+  loyerM2Haut: number;
+  fiable: boolean; // TYPPRED === "commune"
+  nbAnnonces: number; // nbobs_com
+  zoneAbc?: string; // A bis / A / B1 / B2 / C
+}
+
+export interface Enrichments {
+  neighborhood?: NeighborhoodStats;
+  risks?: RiskReport;
+  rent?: RentInfo;
+}
+
 export interface Report {
   id: string;
   listingUrl: string;
@@ -126,4 +165,5 @@ export interface Report {
   analysis: AnalysisResult;
   provider: string;
   model: string;
+  enrichments?: Enrichments;
 }
