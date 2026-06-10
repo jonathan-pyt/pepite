@@ -15,6 +15,34 @@ function loadDoc(): Document {
   return doc;
 }
 
+function forgeDoc(ad: Record<string, unknown>): Document {
+  const doc = document.implementation.createHTMLDocument();
+  const script = doc.createElement("script");
+  script.id = "__NEXT_DATA__";
+  script.type = "application/json";
+  script.textContent = JSON.stringify({ props: { pageProps: { ad } } });
+  doc.body.appendChild(script);
+  return doc;
+}
+
+function forgedAd(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    subject: "Appartement T3 lumineux centre-ville",
+    body: "Bel appartement de 64 m² au cœur de Nantes, proche tram et commerces.",
+    price: [289000],
+    attributes: [
+      { key: "square", value: "64" },
+      { key: "rooms", value: "3" },
+      { key: "energy_rate", value: "c" },
+      { key: "ges", value: "d" },
+      { key: "real_estate_type", value: "2" },
+    ],
+    location: { city: "Nantes", zipcode: "44000", lat: 47.2, lng: -1.55 },
+    images: { urls: ["u1"] },
+    ...overrides,
+  };
+}
+
 describe("parseLeboncoin", () => {
   it("détecte une page annonce", () => {
     expect(isLeboncoinListingPage("https://www.leboncoin.fr/ad/ventes_immobilieres/2987654321")).toBe(true);
@@ -34,5 +62,37 @@ describe("parseLeboncoin", () => {
     expect(listing.description.length).toBeGreaterThan(20);
     const { extractedAt, ...stable } = listing; // extractedAt change à chaque run → hors snapshot
     expect(stable).toMatchSnapshot();
+  });
+
+  it("extrait DPE/GES (uppercase) depuis une annonce forgée", () => {
+    const listing = parseLeboncoin(
+      forgeDoc(forgedAd()),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.dpe).toBe("C");
+    expect(listing.ges).toBe("D");
+    expect(listing.surface).toBe(64);
+    expect(listing.propertyType).toBe("Appartement");
+    expect(listing.photos).toHaveLength(1);
+    expect(listing.location.lat).toBe(47.2);
+    expect(listing.location.lon).toBe(-1.55);
+  });
+
+  it("ignore un energy_rate hors A-G (« v » = vierge)", () => {
+    const ad = forgedAd({
+      attributes: [
+        { key: "square", value: "64" },
+        { key: "rooms", value: "3" },
+        { key: "energy_rate", value: "v" },
+        { key: "ges", value: "d" },
+        { key: "real_estate_type", value: "2" },
+      ],
+    });
+    const listing = parseLeboncoin(
+      forgeDoc(ad),
+      "https://www.leboncoin.fr/ad/ventes_immobilieres/forge",
+    );
+    expect(listing.dpe).toBeUndefined();
+    expect(listing.ges).toBe("D");
   });
 });

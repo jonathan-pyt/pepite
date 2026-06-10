@@ -40,6 +40,7 @@ export function parseLeboncoin(doc: Document, url: string): Listing {
 
   const surfaceRaw = attr(attributes, "square");
   const roomsRaw = attr(attributes, "rooms");
+  // real_estate_type LBC : "1"=Maison, "2"=Appartement (observé sur fixture 2026-06)
   const estateType = attr(attributes, "real_estate_type")?.toLowerCase();
   const propertyType: PropertyType | undefined =
     estateType === "1" || estateType === "maison"

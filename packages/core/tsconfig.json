@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "types": ["vitest/globals"], "lib": ["ES2022", "DOM", "DOM.Iterable"] },
+  "compilerOptions": { "types": ["vitest/globals", "node"], "lib": ["ES2022", "DOM", "DOM.Iterable"] },
   "include": ["src"]
 }
