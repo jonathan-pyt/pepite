@@ -1,27 +1,54 @@
-.pepite-badge {
+/* Pépite badge — Shadow DOM styles */
+
+.pep-card {
   position: fixed;
   top: 96px;
   right: 16px;
   z-index: 2147483000;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   background: #ffffff;
   border: 1px solid #e4e4e7;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(24, 24, 27, 0.08), 0 16px 40px rgba(24, 24, 27, 0.12);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 12.5px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif;
   color: #18181b;
   cursor: default;
+  user-select: none;
 }
-.pepite-badge__score {
+
+/* Loading: icon on the left */
+.pep-loading-icon {
+  flex-shrink: 0;
+}
+
+/* Spinner */
+.pep-spin {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #ededf0;
+  border-top-color: #0d9488;
+  animation: pep-rotate 0.9s linear infinite;
+}
+
+@keyframes pep-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* No-score dash */
+.pep-noscore {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 19px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  color: #8e8e98;
+  flex-shrink: 0;
 }
-.pepite-badge__score--good { color: #16a34a; }
-.pepite-badge__score--warn { color: #d97706; }
-.pepite-badge__score--bad { color: #dc2626; }
-.pepite-badge__sub { color: #8e8e98; font-size: 11px; }
