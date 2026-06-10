@@ -4,6 +4,7 @@ import {
   computeMarketStats,
   fetchCommuneSales,
   geocode,
+  isLeboncoinListingPage,
   type DvfSale,
   type Listing,
   type QuickAnalysis,
@@ -126,14 +127,13 @@ export default defineBackground(() => {
             setTabState(req.tabId, { ...prev, status: "full-running" });
             try {
               const analysis = await analyzeListing(
-                { listing: prev.listing, quick: prev.quick, profile: req.profile },
+                { listing: prev.listing, quick: prev.quick },
                 cfg,
               );
               const report: Report = {
                 id: crypto.randomUUID(),
                 listingUrl: prev.listing.url,
                 createdAt: new Date().toISOString(),
-                profile: req.profile,
                 listing: prev.listing,
                 quick: prev.quick,
                 analysis,

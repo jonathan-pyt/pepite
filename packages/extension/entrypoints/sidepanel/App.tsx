@@ -74,6 +74,8 @@ export default function App() {
 
   const isApiKeyError = error?.includes("Clé API") ?? false;
 
+  const activeProfileLabel = PROFILES.find((p) => p.id === profile)?.label ?? "";
+
   return (
     <div className="flex min-h-screen flex-col bg-white text-[13px]">
       {/* ── Top bar: logo ─────────────────────────────────────────────────── */}
@@ -108,11 +110,6 @@ export default function App() {
             <Loader2 className="size-[14px] animate-spin" />
             Analyse du marché en cours…
           </div>
-        )}
-
-        {/* ── Seg profils ─────────────────────────────────────────────────── */}
-        {quick && (
-          <Seg options={segLabels} value={activeLabel} onChange={handleSegChange} size="sm" grow />
         )}
 
         {/* ── Metrics grid ────────────────────────────────────────────────── */}
@@ -188,6 +185,11 @@ export default function App() {
           </div>
         )}
 
+        {/* ── Seg profils (only when analysis exists) ──────────────────────── */}
+        {analysis && (
+          <Seg options={segLabels} value={activeLabel} onChange={handleSegChange} size="sm" grow />
+        )}
+
         {/* ── Analyse IA block ─────────────────────────────────────────────── */}
         {analysis && (
           <div className="rounded-lg border border-line-soft bg-surface-sub px-[13px] py-[11px]">
@@ -201,6 +203,14 @@ export default function App() {
             <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">
               {analysis.synthese}
             </p>
+            <div className="mt-[10px] border-t border-line-soft pt-[10px]">
+              <div className="mb-[6px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                {activeProfileLabel}
+              </div>
+              <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">
+                {analysis.profils[profile]}
+              </p>
+            </div>
           </div>
         )}
 
@@ -229,26 +239,27 @@ export default function App() {
 
         {/* ── Action buttons ───────────────────────────────────────────────── */}
         <div className="mt-1 flex flex-col gap-2">
-          {state.status !== "full-running" ? (
+          {!analysis && state.status !== "full-running" && (
             <Button
               className="w-full"
               size="lg"
-              onClick={() => void runFullAnalysis(profile)}
+              onClick={() => void runFullAnalysis()}
               disabled={!quick}
             >
               Analyse complète (IA)
             </Button>
-          ) : (
+          )}
+
+          {state.status === "full-running" && (
             <Button className="w-full" size="lg" disabled>
               <Loader2 className="animate-spin" />
               Analyse IA en cours…
             </Button>
           )}
 
-          {reportId && (
+          {analysis && reportId && (
             <Button
               className="w-full"
-              variant="outline"
               size="lg"
               onClick={() =>
                 window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))

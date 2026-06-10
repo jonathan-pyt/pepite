@@ -12,7 +12,7 @@ import {
   DPEChip,
 } from "@/components/pepite";
 
-const PROFILE_LABEL: Record<Report["profile"], string> = {
+const PROFILE_LABEL: Record<string, string> = {
   residence: "Résidence principale",
   "locatif-nu": "Location nue",
   airbnb: "Airbnb",
@@ -56,12 +56,13 @@ function RSection({ id, num, title, children }: RSectionProps) {
   );
 }
 
-/* ---------- Main TOC items for v0.1 ---------- */
+/* ---------- Main TOC items ---------- */
 const TOC_V01 = [
   ["synthese", "Synthèse IA"],
   ["prix", "Prix & marché"],
   ["vigilance", "Points de vigilance"],
   ["nego", "Négociation"],
+  ["profils", "Selon votre projet"],
 ] as const;
 
 const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_80px_72px]";
@@ -86,6 +87,11 @@ export default function App() {
     month: "2-digit",
     year: "numeric",
   });
+
+  // Sort comparables by date descending (YYYY-MM-DD string compare is correct)
+  const sortedComparables = quick.market
+    ? [...quick.market.comparables].sort((a, b) => b.date.localeCompare(a.date))
+    : [];
 
   return (
     <PageShell maxWidth="rapport" topRight={`Rapport généré le ${generatedAt}`}>
@@ -115,7 +121,7 @@ export default function App() {
         <div className="flex min-w-0 flex-col gap-4">
           {/* ── 0. Header card ── */}
           <div className="flex items-start gap-6 rounded-xl border border-line bg-white px-[26px] py-[22px] shadow-pepite-card">
-            {/* Left: title, address, profile, recommandation */}
+            {/* Left: title, address, recommandation */}
             <div className="min-w-0 flex-1">
               {/* Title */}
               <h1 className="text-[22px] font-semibold leading-[1.25] tracking-[-0.02em] text-ink">
@@ -131,19 +137,16 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Profile pill + DPE chip */}
-              <div className="mt-[9px] flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full border border-accent-border bg-accent-soft px-[9px] py-[2.5px] text-[11.5px] font-medium leading-[1.4] text-accent-dark whitespace-nowrap">
-                  {PROFILE_LABEL[report.profile]}
-                </span>
-                {listing.dpe && (
+              {/* DPE chip */}
+              {listing.dpe && (
+                <div className="mt-[9px]">
                   <DPEChip
                     letter={listing.dpe as "A" | "B" | "C" | "D" | "E" | "F" | "G"}
                     type="DPE"
                     size="sm"
                   />
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Recommandation strip */}
               <div className="mt-3 rounded-lg border border-accent-border bg-accent-soft px-[13px] py-2.5 text-[13.5px] font-medium leading-relaxed text-accent-dark">
@@ -225,8 +228,8 @@ export default function App() {
                     </span>
                   ))}
                 </div>
-                {/* Rows */}
-                {quick.market.comparables.map((c, i) => (
+                {/* Rows — sorted by date descending */}
+                {sortedComparables.map((c, i) => (
                   <div
                     key={c.idMutation}
                     className={`grid ${COMPARABLE_COLS} items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
@@ -300,6 +303,24 @@ export default function App() {
               </div>
             </div>
           </RSection>
+
+          {/* ── 5. Selon votre projet ── */}
+          {analysis.profils && (
+            <RSection id="profils" num={5} title="Selon votre projet">
+              <div className="flex flex-col gap-5">
+                {(["residence", "locatif-nu", "airbnb", "coloc"] as const).map((key) => (
+                  <div key={key}>
+                    <div className="mb-1.5 text-[12px] font-semibold text-ink">
+                      {PROFILE_LABEL[key]}
+                    </div>
+                    <p className="whitespace-pre-line text-[13.5px] leading-[1.72] text-ink-2">
+                      {analysis.profils[key]}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </RSection>
+          )}
 
           {/* ── Footer ── */}
           <footer className="px-1.5 pb-1.5 pt-[18px] text-[11px] leading-relaxed text-ink-3">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
-import type { AnalysisResult, UsageProfile } from "@pepite/core"
+import type { AnalysisResult } from "@pepite/core"
 
 import { sendRequest, type TabState } from "@/lib/messages"
 
@@ -9,8 +9,8 @@ export interface UseTabState {
   analysis: AnalysisResult | null
   reportId: string | null
   error: string | null
-  /** Lance l'analyse IA complète pour le profil donné. */
-  runFullAnalysis: (profile: UsageProfile) => Promise<void>
+  /** Lance l'analyse IA complète. */
+  runFullAnalysis: () => Promise<void>
 }
 
 /**
@@ -87,7 +87,7 @@ export function useTabState(): UseTabState {
     }
   }, [])
 
-  async function runFullAnalysis(profile: UsageProfile) {
+  async function runFullAnalysis() {
     if (tabId === null) return
     setError(null)
     const res = await sendRequest<{
@@ -97,7 +97,6 @@ export function useTabState(): UseTabState {
     }>({
       type: "RUN_FULL_ANALYSIS",
       tabId,
-      profile,
     })
     if (res.error === "NO_API_KEY") {
       setError("Clé API manquante — configure un provider dans les réglages.")

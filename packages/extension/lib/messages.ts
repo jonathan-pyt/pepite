@@ -1,5 +1,5 @@
 import { browser } from "wxt/browser";
-import type { Listing, QuickAnalysis, UsageProfile } from "@pepite/core";
+import type { Listing, QuickAnalysis } from "@pepite/core";
 
 export type TabStatus =
   | "idle"
@@ -21,8 +21,10 @@ export interface TabState {
 export type PepiteRequest =
   | { type: "LISTING_DETECTED"; listing: Listing }
   | { type: "GET_TAB_STATE"; tabId?: number }
-  | { type: "RUN_FULL_ANALYSIS"; tabId: number; profile: UsageProfile }
+  | { type: "RUN_FULL_ANALYSIS"; tabId: number }
   | { type: "OPEN_SIDE_PANEL" };
+
+export type PepiteContentRequest = { type: "REDETECT" };
 
 export type PepiteEvent = { type: "TAB_STATE_CHANGED"; tabId: number; state: TabState };
 
