@@ -1,4 +1,4 @@
-import type { DvfSale, PropertyType } from "../types";
+import type { DvfSale, PropertyType, Comparable, MarketStats } from "../types";
 
 const PRICE_PER_M2_MIN = 500;
 const PRICE_PER_M2_MAX = 20_000;
@@ -75,4 +75,82 @@ export function parseDvfCsv(csv: string): DvfSale[] {
     });
   }
   return sales;
+}
+
+const RADII_M = [500, 1000, 2000];
+const MIN_SAMPLE = 10;
+export const DVF_YEARS = [2023, 2024, 2025]; // fenêtre geo-dvf : 2021-2025 vérifiée 2026-06-10
+
+function haversineM(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  const R = 6_371_000;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLon = ((bLon - aLon) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+export function computeMarketStats(
+  sales: DvfSale[],
+  center: { lat: number; lon: number },
+  type: PropertyType,
+): MarketStats | null {
+  const typed = sales.filter((s) => s.type === type);
+  for (const radiusM of RADII_M) {
+    const inRadius: Comparable[] = typed
+      .map((s) => ({ ...s, distanceM: Math.round(haversineM(center.lat, center.lon, s.lat, s.lon)) }))
+      .filter((s) => s.distanceM <= radiusM);
+    const isLastRadius = radiusM === RADII_M[RADII_M.length - 1];
+    if (inRadius.length < MIN_SAMPLE && !isLastRadius) continue;
+    if (inRadius.length === 0) return null;
+
+    // filtre aberrants : médiane ± 3×MAD
+    const prices = inRadius.map((s) => s.pricePerM2);
+    const med = median(prices);
+    const mad = median(prices.map((p) => Math.abs(p - med))) || med * 0.15;
+    const kept = inRadius.filter((s) => Math.abs(s.pricePerM2 - med) <= 3 * mad);
+    if (kept.length === 0) return null;
+
+    const finalMedian = median(kept.map((s) => s.pricePerM2));
+    const sampleSize = kept.length;
+    return {
+      medianPricePerM2: Math.round(finalMedian),
+      sampleSize,
+      radiusM,
+      confidence: sampleSize >= 30 ? "high" : sampleSize >= MIN_SAMPLE ? "medium" : "low",
+      comparables: kept
+        .sort((a, b) => a.distanceM - b.distanceM)
+        .slice(0, 10),
+    };
+  }
+  return null;
+}
+
+export interface FetchSalesOptions {
+  years?: number[];
+  fetchFn?: typeof fetch;
+}
+
+export async function fetchCommuneSales(
+  citycode: string,
+  opts: FetchSalesOptions = {},
+): Promise<DvfSale[]> {
+  const fetchFn = opts.fetchFn ?? fetch;
+  const years = opts.years ?? DVF_YEARS;
+  const dept = citycode.slice(0, 2);
+  const all: DvfSale[] = [];
+  for (const year of years) {
+    const url = `https://files.data.gouv.fr/geo-dvf/latest/csv/${year}/communes/${dept}/${citycode}.csv`;
+    const res = await fetchFn(url);
+    if (!res.ok) continue; // année absente → on continue
+    all.push(...parseDvfCsv(await res.text()));
+  }
+  return all;
 }
