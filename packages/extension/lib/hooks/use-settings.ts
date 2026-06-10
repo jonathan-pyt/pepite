@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { browser } from "wxt/browser"
 
 import { getSettings, saveSettings, type Settings } from "@/lib/settings"
 
@@ -29,7 +30,15 @@ export function useSettings(): UseSettings {
     if (!settings) return
     await saveSettings(settings)
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(async () => {
+      setSaved(false)
+      const tab = await browser.tabs.getCurrent()
+      if (tab?.id !== undefined) {
+        await browser.tabs.remove(tab.id)
+      } else {
+        window.close()
+      }
+    }, 800)
   }
 
   return { settings, setSettings, save, saved }
