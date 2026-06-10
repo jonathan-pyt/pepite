@@ -17,9 +17,9 @@ const buttonVariants = cva(
           "border border-line bg-white text-bad hover:bg-bad-soft",
         // bouton blanc sur carte (mockup Btn secondary)
         outline:
-          "border border-line bg-white text-ink shadow-[0_1px_2px_rgba(24,24,27,.04)] hover:bg-surface-sub",
+          "border border-line bg-white text-ink shadow-pepite-card hover:bg-surface-sub",
         secondary:
-          "border border-line bg-white text-ink shadow-[0_1px_2px_rgba(24,24,27,.04)] hover:bg-surface-sub",
+          "border border-line bg-white text-ink shadow-pepite-card hover:bg-surface-sub",
         ghost: "text-ink-2 hover:bg-surface-sub",
         link: "text-accent-dark underline-offset-4 hover:underline",
       },

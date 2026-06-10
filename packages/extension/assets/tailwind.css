@@ -138,6 +138,16 @@
   }
 }
 
+/* Shadow root du badge (content script) : les utilities d'espacement Tailwind
+   (top-24, gap-2.5, px-3…) dérivent de --spacing = .25rem, et les rem se
+   résolvent contre le <html> du site hôte — pas contre :host. On fige la
+   valeur en px pour que le badge ne se déforme pas si leboncoin.fr utilise un
+   font-size racine ≠ 16px. Scopé :host uniquement : les pages extension
+   (options/sidepanel/rapport) restent en rem. */
+:host {
+  --spacing: 4px;
+}
+
 .dark {
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
