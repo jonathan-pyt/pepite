@@ -18,6 +18,11 @@ export default defineConfig({
       "https://generativelanguage.googleapis.com/*",
       "https://api.anthropic.com/*",
       "https://api.openai.com/*",
+      "https://overpass-api.de/*",
+      "https://overpass.osm.ch/*",
+      "https://www.georisques.gouv.fr/*",
+      "https://www.data.gouv.fr/*",
+      "https://static.data.gouv.fr/*",
     ],
   },
 });

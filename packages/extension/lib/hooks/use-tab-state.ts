@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
-import type { AnalysisResult } from "@pepite/core"
+import type { AnalysisResult, Enrichments } from "@pepite/core"
 
 import { sendRequest, type TabState } from "@/lib/messages"
 import { idbRepository } from "@/lib/repository-idb"
@@ -8,6 +8,7 @@ import { idbRepository } from "@/lib/repository-idb"
 export interface UseTabState {
   state: TabState
   analysis: AnalysisResult | null
+  enrichments: Enrichments | null
   reportId: string | null
   analysisDate: string | null
   error: string | null
@@ -29,6 +30,7 @@ export function useTabState(): UseTabState {
   const [tabId, setTabId] = useState<number | null>(null)
   const [state, setState] = useState<TabState>({ status: "idle" })
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
+  const [enrichments, setEnrichments] = useState<Enrichments | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
   const [analysisDate, setAnalysisDate] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +40,7 @@ export function useTabState(): UseTabState {
   const listingUrl = state.listing?.url
   useEffect(() => {
     setAnalysis(null)
+    setEnrichments(null)
     setReportId(null)
     setAnalysisDate(null)
     setError(null)
@@ -48,6 +51,7 @@ export function useTabState(): UseTabState {
     void idbRepository.getLatestReportByUrl(listingUrl).then((report) => {
       if (cancelled || !report) return
       setAnalysis(report.analysis)
+      setEnrichments(report.enrichments ?? null)
       setReportId(report.id)
       setAnalysisDate(report.createdAt)
     })
@@ -112,6 +116,7 @@ export function useTabState(): UseTabState {
     const res = await sendRequest<{
       reportId?: string
       analysis?: AnalysisResult
+      enrichments?: Enrichments
       error?: string
     }>({
       type: "RUN_FULL_ANALYSIS",
@@ -123,10 +128,11 @@ export function useTabState(): UseTabState {
       setError(res.error)
     } else {
       setAnalysis(res.analysis ?? null)
+      setEnrichments(res.enrichments ?? null)
       setReportId(res.reportId ?? null)
       setAnalysisDate(new Date().toISOString())
     }
   }
 
-  return { state, analysis, reportId, analysisDate, error, runFullAnalysis }
+  return { state, analysis, enrichments, reportId, analysisDate, error, runFullAnalysis }
 }

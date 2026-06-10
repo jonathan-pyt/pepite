@@ -3,9 +3,14 @@ import {
   buildQuickAnalysis,
   computeMarketStats,
   fetchCommuneSales,
+  fetchNeighborhood,
+  fetchRentInfo,
+  fetchRisks,
   geocode,
   isLeboncoinListingPage,
   type DvfSale,
+  type Enrichments,
+  type GeoPoint,
   type Listing,
   type QuickAnalysis,
   type Report,
@@ -15,6 +20,10 @@ import { getSettings, toLlmConfig } from "@/lib/settings";
 import type { PepiteRequest, TabState } from "@/lib/messages";
 
 const DVF_CACHE_TTL = 30 * 24 * 3600 * 1000; // 30 jours
+const OSM_CACHE_TTL = 30 * 24 * 3600 * 1000; // 30 jours
+const RISQUES_CACHE_TTL = 90 * 24 * 3600 * 1000; // 90 jours
+const LOYERS_CACHE_TTL = 30 * 24 * 3600 * 1000; // 30 jours
+
 const tabStates = new Map<number, TabState>();
 
 function setTabState(tabId: number, state: TabState) {
@@ -43,30 +52,84 @@ async function getSalesCached(citycode: string): Promise<DvfSale[]> {
   return sales;
 }
 
-async function runQuickAnalysis(listing: Listing): Promise<QuickAnalysis> {
-  const point =
+/** Returns both the quick analysis and the resolved GeoPoint for later reuse. */
+async function runQuickAnalysis(listing: Listing): Promise<{ quick: QuickAnalysis; point: GeoPoint | null }> {
+  const rawPoint =
     listing.location.lat && listing.location.lon
-      ? { lat: listing.location.lat, lon: listing.location.lon, citycode: "" }
+      ? { lat: listing.location.lat, lon: listing.location.lon, citycode: "" as string, label: "", score: 1, precision: "housenumber" as const }
       : await geocode(listing.location.rawAddress);
-  if (!point) return buildQuickAnalysis(listing, null);
+  if (!rawPoint) return { quick: buildQuickAnalysis(listing, null), point: null };
 
-  let citycode = point.citycode;
-  if (!citycode) {
+  let point = rawPoint;
+  if (!point.citycode) {
     const geo = await geocode(listing.location.rawAddress);
-    citycode = geo?.citycode ?? "";
+    if (geo) point = geo;
+    else return { quick: buildQuickAnalysis(listing, null), point: null };
   }
-  if (!citycode) return buildQuickAnalysis(listing, null);
+  if (!point.citycode) return { quick: buildQuickAnalysis(listing, null), point: null };
 
-  if (!listing.propertyType) return buildQuickAnalysis(listing, null);
+  if (!listing.propertyType) return { quick: buildQuickAnalysis(listing, null), point };
 
-  const sales = await getSalesCached(citycode);
+  const sales = await getSalesCached(point.citycode);
   const market = computeMarketStats(
     sales,
     { lat: point.lat, lon: point.lon },
     listing.propertyType,
     { surface: listing.surface },
   );
-  return buildQuickAnalysis(listing, market);
+  return { quick: buildQuickAnalysis(listing, market), point };
+}
+
+/** Build enrichments via Promise.allSettled with IDB cache. */
+async function buildEnrichments(
+  point: GeoPoint,
+  listing: Listing,
+): Promise<Enrichments> {
+  const lat = point.lat;
+  const lon = point.lon;
+  const citycode = point.citycode;
+
+  // OSM neighborhood — cache key includes lat/lon at 3 decimal places (~110 m) + radius
+  const osmKey = `osm:${lat.toFixed(3)},${lon.toFixed(3)},800`;
+  // Risks — cache key per commune code
+  const risquesKey = citycode ? `risques:${citycode}` : null;
+  // Loyers — cache per commune + property type
+  const loyersKey = citycode && listing.propertyType ? `loyer:${citycode}:${listing.propertyType}` : null;
+
+  const [neighborhoodResult, risksResult, rentResult] = await Promise.allSettled([
+    // Neighborhood
+    (async () => {
+      const cached = await idbRepository.getCache<Enrichments["neighborhood"]>(osmKey);
+      if (cached) return cached;
+      const stats = await fetchNeighborhood(lat, lon);
+      await idbRepository.setCache(osmKey, stats, OSM_CACHE_TTL);
+      return stats;
+    })(),
+    // Risks
+    (async () => {
+      if (!risquesKey || !citycode) return undefined;
+      const cached = await idbRepository.getCache<Enrichments["risks"]>(risquesKey);
+      if (cached) return cached;
+      const report = await fetchRisks(citycode);
+      await idbRepository.setCache(risquesKey, report, RISQUES_CACHE_TTL);
+      return report;
+    })(),
+    // Rent
+    (async () => {
+      if (!loyersKey || !citycode || !listing.propertyType) return undefined;
+      const cached = await idbRepository.getCache<Enrichments["rent"]>(loyersKey);
+      if (cached) return cached;
+      const info = await fetchRentInfo(citycode, listing.propertyType);
+      if (info) await idbRepository.setCache(loyersKey, info, LOYERS_CACHE_TTL);
+      return info ?? undefined;
+    })(),
+  ]);
+
+  return {
+    neighborhood: neighborhoodResult.status === "fulfilled" ? neighborhoodResult.value : undefined,
+    risks: risksResult.status === "fulfilled" ? risksResult.value : undefined,
+    rent: rentResult.status === "fulfilled" ? rentResult.value : undefined,
+  };
 }
 
 export default defineBackground(() => {
@@ -100,10 +163,10 @@ export default defineBackground(() => {
             setTabState(tabId, { status: "quick-running", listing: req.listing });
             try {
               await idbRepository.saveListing(req.listing);
-              const quick = await runQuickAnalysis(req.listing);
+              const { quick, point } = await runQuickAnalysis(req.listing);
               // résultat périmé, une autre annonce a pris la main
               if (tabStates.get(tabId)?.listing?.url !== url) return sendResponse(null);
-              setTabState(tabId, { status: "quick-done", listing: req.listing, quick });
+              setTabState(tabId, { status: "quick-done", listing: req.listing, quick, point: point ?? undefined });
               sendResponse(quick);
             } catch (e) {
               // résultat périmé, une autre annonce a pris la main
@@ -141,8 +204,14 @@ export default defineBackground(() => {
 
             setTabState(req.tabId, { ...prev, status: "full-running" });
             try {
+              // Build enrichments when we have a resolved GeoPoint
+              const point = prev.point;
+              const enrichments: Enrichments | undefined = point
+                ? await buildEnrichments(point, prev.listing)
+                : undefined;
+
               const analysis = await analyzeListing(
-                { listing: prev.listing, quick: prev.quick },
+                { listing: prev.listing, quick: prev.quick, enrichments },
                 cfg,
               );
               const report: Report = {
@@ -154,10 +223,11 @@ export default defineBackground(() => {
                 analysis,
                 provider: cfg.provider,
                 model: cfg.model,
+                enrichments,
               };
               await idbRepository.saveReport(report);
               setTabState(req.tabId, { ...prev, status: "full-done", reportId: report.id });
-              sendResponse({ reportId: report.id, analysis });
+              sendResponse({ reportId: report.id, analysis, enrichments });
             } catch (e) {
               const msg = e instanceof Error ? e.message : String(e);
               setTabState(req.tabId, { ...prev, status: "error", error: msg });
