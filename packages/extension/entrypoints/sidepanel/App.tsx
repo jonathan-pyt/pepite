@@ -31,7 +31,7 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { state, analysis, enrichments, reportId, analysisDate, error, runFullAnalysis } = useTabState();
+  const { state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
 
   // ── State: idle / no listing ─────────────────────────────────────────────
@@ -85,7 +85,9 @@ export default function App() {
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-line-soft px-4 py-3.5">
-        {quick?.score !== null && quick?.score !== undefined ? (
+        {globalScore !== null ? (
+          <ScoreRing score={globalScore.score} size={54} stroke={5} sub="/100" />
+        ) : quick?.score !== null && quick?.score !== undefined ? (
           <ScoreRing score={quick.score} size={54} stroke={5} sub="/100" />
         ) : (
           <div className="flex size-[54px] shrink-0 items-center justify-center rounded-full border border-line-soft bg-surface-sub text-lg font-semibold text-ink-3">

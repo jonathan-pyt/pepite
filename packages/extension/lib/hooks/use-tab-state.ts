@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
-import type { AnalysisResult, Enrichments } from "@pepite/core"
+import type { AnalysisResult, Enrichments, GlobalScore } from "@pepite/core"
 
 import { sendRequest, type TabState } from "@/lib/messages"
 import { idbRepository } from "@/lib/repository-idb"
@@ -9,6 +9,7 @@ export interface UseTabState {
   state: TabState
   analysis: AnalysisResult | null
   enrichments: Enrichments | null
+  globalScore: GlobalScore | null
   reportId: string | null
   analysisDate: string | null
   error: string | null
@@ -31,6 +32,7 @@ export function useTabState(): UseTabState {
   const [state, setState] = useState<TabState>({ status: "idle" })
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [enrichments, setEnrichments] = useState<Enrichments | null>(null)
+  const [globalScore, setGlobalScore] = useState<GlobalScore | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
   const [analysisDate, setAnalysisDate] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +43,7 @@ export function useTabState(): UseTabState {
   useEffect(() => {
     setAnalysis(null)
     setEnrichments(null)
+    setGlobalScore(null)
     setReportId(null)
     setAnalysisDate(null)
     setError(null)
@@ -52,6 +55,7 @@ export function useTabState(): UseTabState {
       if (cancelled || !report) return
       setAnalysis(report.analysis)
       setEnrichments(report.enrichments ?? null)
+      setGlobalScore(report.globalScore ?? null)
       setReportId(report.id)
       setAnalysisDate(report.createdAt)
     })
@@ -117,6 +121,7 @@ export function useTabState(): UseTabState {
       reportId?: string
       analysis?: AnalysisResult
       enrichments?: Enrichments
+      globalScore?: GlobalScore
       error?: string
     }>({
       type: "RUN_FULL_ANALYSIS",
@@ -129,10 +134,11 @@ export function useTabState(): UseTabState {
     } else {
       setAnalysis(res.analysis ?? null)
       setEnrichments(res.enrichments ?? null)
+      setGlobalScore(res.globalScore ?? null)
       setReportId(res.reportId ?? null)
       setAnalysisDate(new Date().toISOString())
     }
   }
 
-  return { state, analysis, enrichments, reportId, analysisDate, error, runFullAnalysis }
+  return { state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis }
 }

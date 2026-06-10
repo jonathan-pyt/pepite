@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { Report } from "@pepite/core";
+import type { GlobalScore, Report } from "@pepite/core";
 import { scoreLabel } from "@pepite/core";
 import {
   Check,
@@ -109,6 +109,7 @@ export default function App() {
 
   const { listing, quick, analysis } = report;
   const enrichments = report.enrichments;
+  const globalScore: GlobalScore | undefined = report.globalScore;
 
   const generatedAt = new Date(report.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -142,6 +143,7 @@ export default function App() {
             ...(enrichments?.neighborhood ? [["quartier", "Quartier"] as const] : []),
             ...(enrichments?.risks ? [["risques", "Risques recensés"] as const] : []),
             ...(enrichments?.rent ? [["locatif", "Marché locatif"] as const] : []),
+            ...(globalScore !== undefined ? [["recap", "Récapitulatif du score"] as const] : []),
           ].map(([id, label], i) => (
             <a
               key={id}
@@ -198,15 +200,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right: ScoreRing + label */}
-            {quick.score !== null && (
-              <div className="flex shrink-0 flex-col items-center gap-1.5 border-l border-line-soft pl-5">
-                <ScoreRing score={quick.score} size={84} stroke={7} sub="/100" />
-                <div className={`text-xs font-semibold text-center ${scoreColorClass(quick.score)}`}>
-                  {scoreLabel(quick.score)}
+            {/* Right: ScoreRing + label — score global si disponible, sinon score prix */}
+            {(globalScore !== undefined || quick.score !== null) && (() => {
+              const displayScore = globalScore !== undefined ? globalScore.score : quick.score!;
+              const displayLabel = globalScore !== undefined ? "score global" : scoreLabel(displayScore);
+              return (
+                <div className="flex shrink-0 flex-col items-center gap-1.5 border-l border-line-soft pl-5">
+                  <ScoreRing score={displayScore} size={84} stroke={7} sub="/100" />
+                  <div className={`text-xs font-semibold text-center ${scoreColorClass(displayScore)}`}>
+                    {displayLabel}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* ── 1. Synthèse ── */}
@@ -576,6 +582,53 @@ export default function App() {
                       </div>
                     </div>
                   )}
+                </div>
+              </RSection>
+            );
+          })()}
+
+          {/* ── Récapitulatif du score ── */}
+          {globalScore !== undefined && (() => {
+            const prevCount =
+              (enrichments?.neighborhood ? 1 : 0) +
+              (enrichments?.risks ? 1 : 0) +
+              (enrichments?.rent ? 1 : 0);
+            const sectionNum = 6 + prevCount;
+            return (
+              <RSection id="recap" num={sectionNum} title="Récapitulatif du score">
+                <div className="overflow-hidden rounded-[9px] border border-line-soft">
+                  {/* Header */}
+                  <div className="grid grid-cols-[1fr_80px_60px_70px] gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]">
+                    {["Critère", "Score /100", "Poids %", "Points"].map((h) => (
+                      <span key={h} className="text-[11px] font-medium text-ink-3">
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Rows */}
+                  {globalScore.criteres.map((c, i) => {
+                    const points = (c.score * c.poids) / 100;
+                    return (
+                      <div
+                        key={c.id}
+                        className={`grid grid-cols-[1fr_80px_60px_70px] items-baseline gap-2 border-t border-line-soft px-3 py-[7.5px] text-[12.5px] tabular-nums ${
+                          i % 2 ? "bg-surface-sub" : "bg-white"
+                        }`}
+                      >
+                        <span className="font-medium text-ink">{c.label}</span>
+                        <span className="text-ink-2">{c.score}</span>
+                        <span className="text-ink-3">{c.poids} %</span>
+                        <span className="font-semibold text-ink">{points.toFixed(1)}</span>
+                      </div>
+                    );
+                  })}
+                  {/* Footer row: global */}
+                  <div className="grid grid-cols-[1fr_80px_60px_70px] items-baseline gap-2 border-t-2 border-line bg-surface-sub px-3 py-[8px] text-[12.5px] tabular-nums">
+                    <span className="font-bold text-ink">Score global</span>
+                    <span className="font-bold text-ink">{globalScore.score}</span>
+                    <span className="font-bold text-ink">100 %</span>
+                    <span className="font-bold text-ink">{globalScore.score.toFixed(1)}</span>
+                  </div>
                 </div>
               </RSection>
             );

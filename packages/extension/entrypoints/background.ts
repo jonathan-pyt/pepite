@@ -1,6 +1,7 @@
 import {
   analyzeListing,
   buildQuickAnalysis,
+  computeGlobalScore,
   computeMarketStats,
   fetchCommuneSales,
   fetchNeighborhood,
@@ -246,6 +247,7 @@ export default defineBackground(() => {
                 { listing: prev.listing, quick: prev.quick, enrichments },
                 cfg,
               );
+              const globalScore = computeGlobalScore(prev.quick, prev.listing, enrichments) ?? undefined;
               const report: Report = {
                 id: crypto.randomUUID(),
                 listingUrl: prev.listing.url,
@@ -256,10 +258,11 @@ export default defineBackground(() => {
                 provider: cfg.provider,
                 model: cfg.model,
                 enrichments,
+                globalScore,
               };
               await idbRepository.saveReport(report);
               setTabState(req.tabId, { ...prev, status: "full-done", reportId: report.id });
-              sendResponse({ reportId: report.id, analysis, enrichments });
+              sendResponse({ reportId: report.id, analysis, enrichments, globalScore });
             } catch (e) {
               const msg = e instanceof Error ? e.message : String(e);
               setTabState(req.tabId, { ...prev, status: "error", error: msg });
