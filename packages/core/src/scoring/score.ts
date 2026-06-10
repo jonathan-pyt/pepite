@@ -13,7 +13,7 @@ export function buildQuickAnalysis(listing: Listing, market: MarketStats | null)
   const listingPricePerM2 =
     listing.surface && listing.surface > 0 ? Math.round(listing.price / listing.surface) : null;
 
-  if (!market || listingPricePerM2 === null) {
+  if (!market || listingPricePerM2 === null || market.medianPricePerM2 <= 0) {
     return { listingPricePerM2, marketGapPct: null, market, score: null, scoreLabel: "Inconnu" };
   }
 
