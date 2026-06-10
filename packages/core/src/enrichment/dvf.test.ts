@@ -34,4 +34,20 @@ describe("parseDvfCsv", () => {
     expect(s1.rooms).toBe(4);
     expect(s1.date).toBe("2024-01-03");
   });
+
+  it("supporte les fins de ligne CRLF", () => {
+    const crlf = parseDvfCsv(csv.replace(/\n/g, "\r\n"));
+    expect(crlf).toHaveLength(sales.length);
+  });
+
+  it("supporte un BOM en tête de fichier", () => {
+    const bom = parseDvfCsv("﻿" + csv);
+    expect(bom).toHaveLength(sales.length);
+  });
+
+  it("ignore une ligne malformée trop courte sans lever", () => {
+    const malformed = parseDvfCsv(csv + "\n2024-9,2024-08-01,bad");
+    expect(malformed).toHaveLength(sales.length);
+    expect(malformed.map((s) => s.idMutation)).not.toContain("2024-9");
+  });
 });

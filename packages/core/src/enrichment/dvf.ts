@@ -6,7 +6,8 @@ const SURFACE_MIN = 9;
 const SURFACE_MAX = 400;
 
 export function parseDvfCsv(csv: string): DvfSale[] {
-  const lines = csv.split("\n").filter((l) => l.trim().length > 0);
+  const input = csv.charCodeAt(0) === 0xfeff ? csv.slice(1) : csv;
+  const lines = input.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const header = lines[0]!.split(",");
   const col = (name: string) => {
     const i = header.indexOf(name);
@@ -46,6 +47,7 @@ export function parseDvfCsv(csv: string): DvfSale[] {
     // exactement 1 local d'habitation, sinon prix non ventilable (vente en bloc)
     if (housing.length !== 1) continue;
     const cells = housing[0]!;
+    // allowlist volontaire : seul "Vente" passe (exclut Adjudication, Échange, VEFA…)
     if (cells[idx.nature] !== "Vente") continue;
 
     const price = Number(cells[idx.valeur]);
