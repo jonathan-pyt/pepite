@@ -9,7 +9,7 @@ export default defineConfig({
   manifest: {
     name: "Pépite — analyse immobilière",
     description:
-      "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin.",
+      "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin, SeLoger, Bien'ici et Citya.",
     permissions: ["storage", "sidePanel", "tabs"],
     host_permissions: [
       "https://data.geopf.fr/*",
