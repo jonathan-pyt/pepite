@@ -38,7 +38,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         // Pépite: h-9 / 13px / border-line / rounded-[7px], aligné sur Input
-        "flex w-full items-center justify-between gap-2 rounded-[7px] border border-line bg-white px-3 py-2 text-[13px] text-ink whitespace-nowrap shadow-[0_1px_2px_rgba(24,24,27,.04)] transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-ink-3 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-ink-3",
+        "flex w-full items-center justify-between gap-2 rounded-[7px] border border-line bg-white px-3 py-2 text-[13px] text-ink whitespace-nowrap shadow-pepite-control transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-ink-3 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-ink-3",
         className
       )}
       {...props}
