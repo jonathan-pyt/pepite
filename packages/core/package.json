@@ -1,0 +1,26 @@
+{
+  "name": "@pepite/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.82",
+    "@ai-sdk/google": "^3.0.80",
+    "@ai-sdk/openai": "^3.0.69",
+    "ai": "^6.0.199",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.10.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
