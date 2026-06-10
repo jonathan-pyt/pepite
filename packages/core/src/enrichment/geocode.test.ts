@@ -46,6 +46,6 @@ describe("geocode", () => {
 
   it("jette une erreur explicite si HTTP != 200", async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response("oops", { status: 503 }));
-    await expect(geocode("Nantes", { fetchFn })).rejects.toThrow(/geocodage/i);
+    await expect(geocode("Nantes", { fetchFn })).rejects.toThrow(/geocodage BAN: HTTP 503/);
   });
 });

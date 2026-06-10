@@ -20,6 +20,7 @@ export async function geocode(query: string, opts: GeocodeOptions = {}): Promise
   const res = await fetchFn(url);
   if (!res.ok) throw new Error(`geocodage BAN: HTTP ${res.status}`);
   const json = (await res.json()) as { features: BanFeature[] };
+  if (!Array.isArray(json.features)) throw new Error("geocodage BAN: réponse inattendue");
   const feature = json.features[0];
   if (!feature) return null;
   const [lon, lat] = feature.geometry.coordinates;
