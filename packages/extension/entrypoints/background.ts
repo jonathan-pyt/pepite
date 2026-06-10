@@ -46,11 +46,13 @@ async function runQuickAnalysis(listing: Listing): Promise<QuickAnalysis> {
   }
   if (!citycode) return buildQuickAnalysis(listing, null);
 
+  if (!listing.propertyType) return buildQuickAnalysis(listing, null);
+
   const sales = await getSalesCached(citycode);
   const market = computeMarketStats(
     sales,
     { lat: point.lat, lon: point.lon },
-    listing.propertyType ?? "Appartement",
+    listing.propertyType,
   );
   return buildQuickAnalysis(listing, market);
 }

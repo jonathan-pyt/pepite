@@ -348,8 +348,26 @@ export default function App() {
               label="Écart marché"
               value={gapValue}
               tone={gapTone}
+              sub={
+                quick.market
+                  ? `vs ${quick.market.medianPricePerM2.toLocaleString("fr-FR")} €/m²`
+                  : undefined
+              }
             />
           </div>
+        )}
+
+        {/* ── Comparaison marché indisponible ─────────────────────────────── */}
+        {quick && !quick.market && (
+          <WarnItem
+            tone="info"
+            title="Comparaison marché indisponible"
+            sub={
+              listing.propertyType === undefined
+                ? "Type de bien non mappé (parking, terrain, local…) — pas de données DVF comparables."
+                : "Pas assez de ventes dans ce secteur pour calculer une médiane fiable."
+            }
+          />
         )}
 
         {/* ── Error block ─────────────────────────────────────────────────── */}
