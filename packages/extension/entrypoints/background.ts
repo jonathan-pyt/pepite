@@ -66,8 +66,17 @@ export default defineBackground(() => {
   browser.runtime.onMessage.addListener(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (message: any, sender: any, sendResponse: (r: unknown) => void) => {
+      const req = message as PepiteRequest;
+
+      // Handle synchronously (user-gesture context must not cross an await)
+      if (req.type === "OPEN_SIDE_PANEL") {
+        const tabId = sender.tab?.id;
+        if (tabId !== undefined) void browser.sidePanel.open({ tabId }).catch(() => {});
+        sendResponse(null);
+        return false;
+      }
+
       (async () => {
-        const req = message as PepiteRequest;
         switch (req.type) {
           case "LISTING_DETECTED": {
             const tabId = sender.tab?.id;
