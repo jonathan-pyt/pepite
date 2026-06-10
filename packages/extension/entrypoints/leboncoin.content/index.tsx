@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { useEffect, useState } from "react";
 import { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml, type QuickAnalysis } from "@pepite/core";
 import { Loader2 } from "lucide-react";
-import { ScoreRing } from "@/components/pepite";
+import { PepiteMark, ScoreRing } from "@/components/pepite";
 import { sendRequest } from "@/lib/messages";
 
 /* ---------- helpers ---------- */
@@ -20,11 +20,7 @@ function scoreLabelText(score: number): string {
 function MiniWordmark() {
   return (
     <div className="flex items-center gap-[5px]">
-      <svg width="14" height="14" viewBox="0 0 24 24" className="block shrink-0">
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
-        <path d="M12 6.2 17 11l-5 6.8L7 11z" fill="#ffffff" />
-        <path d="M12 6.2 17 11h-10z" fill="#ccfbf1" />
-      </svg>
+      <PepiteMark className="size-[14px]" />
       <span className="text-[11px] font-medium tracking-[-0.01em] text-ink-3">Pépite</span>
     </div>
   );
@@ -82,13 +78,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
         title="Ouvrir l'analyse Pépite"
         onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
       >
-        <div className="shrink-0">
-          <svg width="24" height="24" viewBox="0 0 24 24" className="block">
-            <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
-            <path d="M12 6.2 17 11l-5 6.8L7 11z" fill="#ffffff" />
-            <path d="M12 6.2 17 11h-10z" fill="#ccfbf1" />
-          </svg>
-        </div>
+        <PepiteMark className="size-[24px]" />
         <div>
           <div className="flex items-center gap-[7px]">
             <Loader2 className="size-[13px] shrink-0 animate-spin text-accent" />

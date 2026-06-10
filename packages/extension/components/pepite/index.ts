@@ -4,6 +4,9 @@ export type { ScoreRingProps } from "./score-ring"
 export { PepiteLogo } from "./pepite-logo"
 export type { PepiteLogoProps, PepiteLogoSize } from "./pepite-logo"
 
+export { PepiteMark } from "./pepite-mark"
+export type { PepiteMarkProps } from "./pepite-mark"
+
 export { Metric } from "./metric"
 export type { MetricProps } from "./metric"
 

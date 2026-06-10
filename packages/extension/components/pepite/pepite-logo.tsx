@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { PepiteMark } from "./pepite-mark"
 
 export type PepiteLogoSize = "sm" | "md" | "lg"
 
@@ -24,8 +25,7 @@ const textSize: Record<PepiteLogoSize, string> = {
 }
 
 /**
- * PepiteLogo — losange dans carré arrondi (asset de marque) + libellé « Pépite ».
- * Carré teal accent, facette haute teal clair. Couleurs de marque conservées en SVG.
+ * PepiteLogo — losange PepiteMark + libellé « Pépite ».
  */
 export function PepiteLogo({
   size = "md",
@@ -34,18 +34,7 @@ export function PepiteLogo({
 }: PepiteLogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <svg
-        viewBox="0 0 24 24"
-        className={cn("block shrink-0", iconSize[size])}
-        aria-hidden="true"
-      >
-        {/* Carré arrondi teal */}
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="#0d9488" />
-        {/* Corps du losange — blanc */}
-        <path d="M12 6.2 17 11l-5 6.8L7 11z" fill="#ffffff" />
-        {/* Facette haute — teal clair */}
-        <path d="M12 6.2 17 11h-10z" fill="#ccfbf1" />
-      </svg>
+      <PepiteMark className={iconSize[size]} />
 
       {withText && (
         <span
