@@ -1,0 +1,10 @@
+id_mutation,date_mutation,numero_disposition,nature_mutation,valeur_fonciere,adresse_numero,adresse_suffixe,adresse_nom_voie,adresse_code_voie,code_postal,code_commune,nom_commune,code_departement,ancien_code_commune,ancien_nom_commune,id_parcelle,ancien_id_parcelle,numero_volume,lot1_numero,lot1_surface_carrez,lot2_numero,lot2_surface_carrez,lot3_numero,lot3_surface_carrez,lot4_numero,lot4_surface_carrez,lot5_numero,lot5_surface_carrez,nombre_lots,code_type_local,type_local,surface_reelle_bati,nombre_pieces_principales,code_nature_culture,nature_culture,code_nature_culture_speciale,nature_culture_speciale,surface_terrain,longitude,latitude
+2024-1,2024-01-03,000001,Vente,316000,71,,RUE DU COUDRAY,2224,44000,44109,Nantes,44,,,44109000BZ0694,,,133,,,,,,,,,,1,2,Appartement,71,4,,,,,,-1.544104,47.229194
+2024-2,2024-02-10,000001,Vente,250000,12,,RUE DE LA VILLE EN PIERRE,8528,44000,44109,Nantes,44,,,44109000AB0001,,,1,,,,,,,,,,2,2,Appartement,55,3,,,,,,-1.5265,47.2252
+2024-2,2024-02-10,000001,Vente,250000,12,,RUE DE LA VILLE EN PIERRE,8528,44000,44109,Nantes,44,,,44109000AB0001,,,2,,,,,,,,,,2,3,Dépendance,,0,,,,,,-1.5265,47.2252
+2024-3,2024-03-15,000001,Vente,900000,5,,RUE EN BLOC,1111,44000,44109,Nantes,44,,,44109000CC0002,,,1,,,,,,,,,,2,2,Appartement,60,3,,,,,,-1.527,47.226
+2024-3,2024-03-15,000001,Vente,900000,5,,RUE EN BLOC,1111,44000,44109,Nantes,44,,,44109000CC0002,,,2,,,,,,,,,,2,2,Appartement,65,3,,,,,,-1.527,47.226
+2024-4,2024-04-20,000001,Vente,30000000,8,,RUE ABERRANTE,2222,44000,44109,Nantes,44,,,44109000DD0003,,,1,,,,,,,,,,1,2,Appartement,50,2,,,,,,-1.528,47.224
+2024-5,2024-05-12,000001,Vente,420000,3,,RUE DES MAISONS,3333,44000,44109,Nantes,44,,,44109000EE0004,,,,,,,,,,,,,0,1,Maison,110,5,S,sols,,,250,-1.530,47.223
+2024-6,2024-06-01,000001,Adjudication,180000,9,,RUE ADJUGEE,4444,44000,44109,Nantes,44,,,44109000FF0005,,,1,,,,,,,,,,1,2,Appartement,48,2,,,,,,-1.531,47.227
+2024-7,2024-07-08,000001,Vente,200000,4,,RUE SANS GPS,5555,44000,44109,Nantes,44,,,44109000GG0006,,,1,,,,,,,,,,1,2,Appartement,52,3,,,,,,,
