@@ -456,31 +456,35 @@ export default function App() {
                     Position approximative (quartier {listing.location.district ?? "non précisé"}) — adresse exacte non communiquée par l&apos;annonce.
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {categories.map(({ key, label, Icon }) => {
                     const cat = nb[key];
                     return (
                       <div
                         key={key}
-                        className="min-w-0 rounded-lg border border-line-soft bg-surface-sub px-3 py-2.5"
+                        className="flex min-w-0 flex-col rounded-lg border border-line-soft bg-surface-sub px-3.5 py-3"
                       >
-                        <div className="mb-1.5 flex items-center gap-1.5">
-                          <Icon className="size-[13px] shrink-0 text-ink-3" />
-                          <span className="text-[11px] font-medium tracking-[0.01em] text-ink-3">
-                            {label}
+                        {/* Header: icon + label left, count right */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <Icon className="size-[13px] shrink-0 text-ink-3" />
+                            <span className="whitespace-nowrap text-[11px] font-medium tracking-[0.01em] text-ink-3">
+                              {label}
+                            </span>
+                          </div>
+                          <span className="text-[20px] font-bold leading-none tabular-nums text-ink">
+                            {cat.count}
                           </span>
                         </div>
-                        <div className="text-base font-bold leading-[1.1] tracking-[-0.02em] tabular-nums text-ink">
-                          {cat.count}
-                        </div>
+                        {/* Nearest POI list */}
                         {cat.nearest.length > 0 && (
-                          <div className="mt-1.5 flex flex-col gap-[3px]">
+                          <div className="mt-2.5 flex flex-col gap-1.5 border-t border-line-soft pt-2.5">
                             {cat.nearest.map((poi, i) => (
-                              <div key={i} className="min-w-0">
-                                <span className="block truncate text-[13px] leading-[1.3] text-ink-2">
+                              <div key={i} className="flex min-w-0 items-baseline justify-between gap-2">
+                                <span className="line-clamp-2 flex-1 text-[12px] leading-[1.35] text-ink-2">
                                   {poi.name}
                                 </span>
-                                <span className="text-[11.5px] text-ink-3 tabular-nums">
+                                <span className="shrink-0 text-[11px] tabular-nums text-ink-3">
                                   {poi.distanceM} m
                                 </span>
                               </div>
