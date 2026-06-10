@@ -7,93 +7,67 @@ export interface ScoreRingProps {
   sub?: string
 }
 
-/** Returns the Tailwind text-color class for a given score. */
+/** Classe de couleur de texte Tailwind selon le score. */
 export function scoreColorClass(score: number): string {
-  if (score >= 65) return "text-green-600"
-  if (score >= 45) return "text-amber-600"
-  return "text-red-600"
+  if (score >= 65) return "text-good"
+  if (score >= 45) return "text-warn"
+  return "text-bad"
 }
 
-/** Returns the hex color for a given score (matches scoreColor in shared.jsx). */
-function scoreColor(score: number): string {
-  if (score >= 65) return "#16a34a"
-  if (score >= 45) return "#d97706"
-  return "#dc2626"
+/** Couleur du stroke de l'arc selon le seuil de score (dataviz). */
+function scoreStroke(score: number): string {
+  if (score >= 65) return "var(--color-good)"
+  if (score >= 45) return "var(--color-warn)"
+  return "var(--color-bad)"
 }
 
 /**
- * ScoreRing — SVG donut ring showing a score 0–100.
- * Track is #ececef; fill arc is colored by score threshold.
- * Score number is centered in bold; optional sub label below.
+ * ScoreRing — donut SVG affichant un score 0–100.
+ * Piste ring-track ; arc coloré selon le seuil. Score centré en gras, sous-titre optionnel.
+ *
+ * Seul composant à conserver des styles inline : ce sont des valeurs de géométrie
+ * SVG calculées (taille, rayon, dasharray, tailles de police dérivées de `size`).
  */
 export function ScoreRing({ score, size = 56, stroke = 5, sub }: ScoreRingProps) {
   const r = (size - stroke) / 2
   const circumference = 2 * Math.PI * r
-  const col = scoreColor(score)
 
   return (
-    <div
-      style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
-    >
-      {/* SVG rotated -90° so the arc starts at 12 o'clock */}
-      <svg
-        width={size}
-        height={size}
-        style={{ transform: "rotate(-90deg)", display: "block" }}
-      >
-        {/* Track */}
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {/* SVG tourné de -90° pour démarrer l'arc à midi */}
+      <svg width={size} height={size} className="block -rotate-90">
+        {/* Piste */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#ececef"
+          stroke="var(--color-ring-track)"
           strokeWidth={stroke}
         />
-        {/* Fill arc */}
+        {/* Arc de remplissage */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={col}
+          stroke={scoreStroke(score)}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${(score / 100) * circumference} ${circumference}`}
         />
       </svg>
 
-      {/* Centered label overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          lineHeight: 1,
-        }}
-      >
+      {/* Libellé centré */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
         <span
-          style={{
-            fontSize: size * 0.3,
-            fontWeight: 700,
-            color: "#18181b",
-            letterSpacing: "-0.02em",
-            fontVariantNumeric: "tabular-nums",
-          }}
+          className="font-bold tracking-[-0.02em] text-ink tabular-nums"
+          style={{ fontSize: size * 0.3 }}
         >
           {score}
         </span>
         {sub && (
-          <span
-            style={{
-              fontSize: size * 0.14,
-              color: "#8e8e98",
-              marginTop: 2,
-            }}
-          >
+          <span className="mt-0.5 text-ink-3" style={{ fontSize: size * 0.14 }}>
             {sub}
           </span>
         )}

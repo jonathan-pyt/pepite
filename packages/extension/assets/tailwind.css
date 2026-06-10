@@ -69,6 +69,14 @@
   --color-bad: #dc2626;
   --color-bad-soft: #fef2f2;
   --color-bad-border: #fecaca;
+  /* échelle DPE/GES (A→G) — palette dataviz diagnostic énergétique */
+  --color-dpe-a: #15803d;
+  --color-dpe-b: #4d9f3c;
+  --color-dpe-c: #a3b820;
+  --color-dpe-d: #e8b71c;
+  --color-dpe-e: #e88f1c;
+  --color-dpe-f: #e25822;
+  --color-dpe-g: #c81e1e;
   /* segmented control track */
   --color-seg-track: #f1f1f3;
   /* score-ring track */

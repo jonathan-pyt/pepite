@@ -2,7 +2,7 @@ export { ScoreRing, scoreColorClass } from "./score-ring"
 export type { ScoreRingProps } from "./score-ring"
 
 export { PepiteLogo } from "./pepite-logo"
-export type { PepiteLogoProps } from "./pepite-logo"
+export type { PepiteLogoProps, PepiteLogoSize } from "./pepite-logo"
 
 export { Metric } from "./metric"
 export type { MetricProps } from "./metric"
@@ -15,3 +15,9 @@ export type { SegProps } from "./seg"
 
 export { DPEChip } from "./dpe-chip"
 export type { DPEChipProps } from "./dpe-chip"
+
+export { PageShell } from "./page-shell"
+export type { PageShellProps } from "./page-shell"
+
+export { Field } from "./field"
+export type { FieldProps } from "./field"

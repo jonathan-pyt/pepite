@@ -188,7 +188,7 @@ export default function App() {
           background: "#ffffff",
         }}
       >
-        <PepiteLogo size={36} withText={true} textSize={18} />
+        <PepiteLogo size="lg" />
         <p
           style={{
             fontSize: 12.5,
@@ -251,7 +251,7 @@ export default function App() {
           flexShrink: 0,
         }}
       >
-        <PepiteLogo size={20} withText={true} textSize={14} />
+        <PepiteLogo size="sm" />
       </div>
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}

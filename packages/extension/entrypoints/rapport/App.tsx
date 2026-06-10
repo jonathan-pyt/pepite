@@ -178,7 +178,7 @@ export default function App() {
           zIndex: 10,
         }}
       >
-        <PepiteLogo size={21} withText textSize={14.5} />
+        <PepiteLogo size="md" />
         <div style={{ marginLeft: "auto", fontSize: 12, color: "#8e8e98" }}>
           Rapport généré le {generatedAt}
         </div>

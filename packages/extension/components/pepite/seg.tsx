@@ -1,5 +1,7 @@
 import * as React from "react"
 
+import { cn } from "@/lib/utils"
+
 export interface SegProps {
   options: string[]
   value: string
@@ -9,25 +11,13 @@ export interface SegProps {
 }
 
 /**
- * Seg — segmented control.
- * Container: bg #f1f1f3, radius 8, padding 3px, border #ededf0.
- * Active segment: white bg, subtle shadow, font-weight 600.
- * Inactive: transparent bg, gray text.
+ * Seg — contrôle segmenté.
+ * Piste : fond seg-track, radius 8, bordure line-soft.
+ * Segment actif : fond blanc, ombre légère, semibold.
  */
 export function Seg({ options, value, onChange, size = "md", grow }: SegProps) {
-  const fontSize = size === "sm" ? 11.5 : 12.5
-
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 2,
-        padding: 3,
-        background: "#f1f1f3",
-        borderRadius: 8,
-        border: "1px solid #ededf0",
-      }}
-    >
+    <div className="flex gap-0.5 rounded-lg border border-line-soft bg-seg-track p-[3px]">
       {options.map((option) => {
         const isActive = option === value
         return (
@@ -35,22 +25,14 @@ export function Seg({ options, value, onChange, size = "md", grow }: SegProps) {
             key={option}
             type="button"
             onClick={() => onChange?.(option)}
-            style={{
-              flex: grow ? 1 : "none",
-              padding: size === "sm" ? "4px 8px" : "5px 10px",
-              fontSize,
-              fontWeight: isActive ? 600 : 500,
-              color: isActive ? "#18181b" : "#52525b",
-              background: isActive ? "#ffffff" : "transparent",
-              border: "none",
-              borderRadius: 5,
-              cursor: "pointer",
-              boxShadow: isActive
-                ? "0 1px 2px rgba(24,24,27,.08)"
-                : "none",
-              whiteSpace: "nowrap",
-              lineHeight: 1.2,
-            }}
+            className={cn(
+              "cursor-pointer rounded-[5px] leading-tight whitespace-nowrap transition-colors",
+              grow ? "flex-1" : "flex-none",
+              size === "sm" ? "px-2 py-1 text-[11.5px]" : "px-2.5 py-[5px] text-[12.5px]",
+              isActive
+                ? "bg-white font-semibold text-ink shadow-[0_1px_2px_rgba(24,24,27,.08)]"
+                : "font-medium text-ink-2"
+            )}
           >
             {option}
           </button>

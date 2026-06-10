@@ -31,7 +31,7 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: "#f7f7f8", fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif' }}>
       {/* Top bar */}
       <div style={{ height: 52, background: "#fff", borderBottom: "1px solid #e4e4e7", display: "flex", alignItems: "center", gap: 14, padding: "0 24px", flexShrink: 0 }}>
-        <PepiteLogo size={21} textSize={14.5} />
+        <PepiteLogo size="md" />
         <span style={{ color: "#e4e4e7" }}>/</span>
         <span style={{ fontSize: 13, fontWeight: 500, color: "#8e8e98" }}>Réglages</span>
       </div>

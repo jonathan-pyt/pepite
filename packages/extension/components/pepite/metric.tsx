@@ -1,5 +1,7 @@
 import * as React from "react"
 
+import { cn } from "@/lib/utils"
+
 type Tone = "good" | "warn" | "bad" | "accent"
 
 export interface MetricProps {
@@ -10,64 +12,40 @@ export interface MetricProps {
   big?: boolean
 }
 
-const toneColors: Record<Tone, string> = {
-  good: "#16a34a",
-  warn: "#d97706",
-  bad: "#dc2626",
-  accent: "#0f766e",
+const toneClass: Record<Tone, string> = {
+  good: "text-good",
+  warn: "text-warn",
+  bad: "text-bad",
+  accent: "text-accent-dark",
 }
 
 /**
  * Metric — small stat card.
- * bg zinc-50 (#fafafa), border #ededf0, radius 8, 11px gray label,
- * 16/19px bold tabular-nums value, tone-colored value.
+ * Fond surface-sub, bordure line-soft, radius 8, label 11px ink-3,
+ * valeur 16/19px bold tabular-nums (couleur selon `tone`).
  */
 export function Metric({ label, value, sub, tone, big = false }: MetricProps) {
-  const valueColor = tone ? toneColors[tone] : "#18181b"
-
   return (
     <div
-      style={{
-        padding: big ? "12px 14px" : "10px 12px",
-        background: "#fafafa",
-        border: "1px solid #ededf0",
-        borderRadius: 8,
-        minWidth: 0,
-      }}
+      className={cn(
+        "min-w-0 rounded-lg border border-line-soft bg-surface-sub",
+        big ? "px-3.5 py-3" : "px-3 py-2.5"
+      )}
     >
-      <div
-        style={{
-          fontSize: 11,
-          color: "#8e8e98",
-          fontWeight: 560,
-          marginBottom: 4,
-          letterSpacing: ".01em",
-        }}
-      >
+      <div className="mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3">
         {label}
       </div>
       <div
-        style={{
-          fontSize: big ? 19 : 16,
-          fontWeight: 680,
-          color: valueColor,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.1,
-          fontVariantNumeric: "tabular-nums",
-        }}
+        className={cn(
+          "font-bold leading-[1.1] tracking-[-0.02em] tabular-nums",
+          big ? "text-[19px]" : "text-base",
+          tone ? toneClass[tone] : "text-ink"
+        )}
       >
         {value}
       </div>
       {sub != null && (
-        <div
-          style={{
-            fontSize: 10.5,
-            color: "#8e8e98",
-            marginTop: 3,
-            lineHeight: 1.4,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
+        <div className="mt-[3px] text-[10.5px] leading-[1.4] text-ink-3 tabular-nums">
           {sub}
         </div>
       )}
