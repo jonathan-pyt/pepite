@@ -106,9 +106,8 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const [quick, setQuick] = useState<BadgeState>("loading");
   const [parsedListing, setParsedListing] = useState<import("@pepite/core").Listing | null>(null);
 
-  if (!isLeboncoinListingPage(url)) return null;
-
   useEffect(() => {
+    if (!isLeboncoinListingPage(url)) return;
     let cancelled = false;
 
     async function run() {
@@ -134,6 +133,8 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     void run();
     return () => { cancelled = true; };
   }, [url, viaFetch]);
+
+  if (!isLeboncoinListingPage(url)) return null;
 
   if (quick === "error") return null;
 
@@ -173,14 +174,14 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const medianPpm2 = quick?.market?.medianPricePerM2 ?? null;
   const gapPct = quick?.marketGapPct ?? null;
 
-  const hasNoPropertyType = parsedListing ? parsedListing.propertyType === undefined : false;
   const hasMarket = quick !== null && quick.market !== null;
 
   let marketSubLine: string | null = null;
-  if (quick === null && hasNoPropertyType) {
-    marketSubLine = "Type de bien non comparé (parking, terrain…)";
-  } else if (quick === null || (!hasMarket && quick !== null)) {
-    marketSubLine = "Marché inconnu (pas assez de ventes)";
+  if (!hasMarket) {
+    marketSubLine =
+      parsedListing?.propertyType === undefined
+        ? "Type de bien non comparé (parking, terrain…)"
+        : "Marché inconnu (pas assez de ventes)";
   }
 
   const showPriceDetails = hasScore && listingPpm2 !== null && medianPpm2 !== null;
@@ -217,7 +218,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
                 marginTop: 1,
               }}>
                 {gapPct !== null
-                  ? `${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} % vs marché`
+                  ? `${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1).replace(".", ",")} % vs marché`
                   : "marché inconnu"}
               </div>
               {showPriceDetails && (
@@ -227,7 +228,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
                   fontVariantNumeric: "tabular-nums",
                   marginTop: 1,
                 }}>
-                  {listingPpm2} €/m² · secteur {medianPpm2} €/m²
+                  {listingPpm2?.toLocaleString("fr-FR")} €/m² · secteur {medianPpm2?.toLocaleString("fr-FR")} €/m²
                 </div>
               )}
               {showUnusualGap && (
