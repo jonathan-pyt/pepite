@@ -8,7 +8,10 @@ import { detectSite } from "./sites";
 /** Schema mirroring the extractable fields of a Listing. */
 const extractionSchema = z.object({
   title: z.string().describe("Titre de l'annonce"),
-  price: z.number().describe("Prix de vente en euros (nombre, sans symbole ni séparateur)"),
+  price: z
+    .number()
+    .nullable()
+    .describe("Prix de vente en euros (nombre, sans symbole ni séparateur). null si la page ne contient pas une annonce identifiable."),
   surface: z.number().nullable().describe("Surface habitable en m²"),
   rooms: z.number().nullable().describe("Nombre de pièces"),
   propertyType: z
@@ -36,6 +39,7 @@ const SYSTEM_PROMPT = `Tu es un extracteur de données d'annonces immobilières 
 À partir du texte brut d'une page d'annonce, tu renvoies UNIQUEMENT les informations réellement présentes.
 Règles strictes :
 - N'INVENTE JAMAIS une valeur. Si une donnée n'est pas explicitement présente, renvoie null (ou un tableau vide pour attributes).
+- Le titre doit être celui de l'ANNONCE (type de bien, surface, ville) — jamais le titre générique du site. Si la page ne contient pas une annonce immobilière identifiable, renvoie price: null.
 - Le prix est exprimé en euros, sous forme de nombre entier (ex : 289000), sans symbole, espace ni séparateur de milliers.
 - La surface est en m² (nombre).
 - propertyType vaut « Appartement » ou « Maison » uniquement si le type est clairement indiqué, sinon null.
@@ -63,6 +67,10 @@ function str(value: string | null | undefined): string | undefined {
 }
 
 function toListing(ex: Extraction, url: string): Listing {
+  if (ex.price === null) {
+    throw new Error("generic: page sans annonce identifiable");
+  }
+
   const site = detectSite(url) ?? "generic";
   const city = str(ex.city);
   const postalCode = str(ex.postalCode);

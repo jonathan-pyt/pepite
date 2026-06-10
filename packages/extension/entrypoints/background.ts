@@ -228,11 +228,16 @@ export default defineBackground(() => {
             try {
               listing = await extractListingGeneric(req.pageText, req.url, cfg);
             } catch (e) {
-              setTabState(tabId, {
-                status: "error",
-                error: e instanceof Error ? e.message : String(e),
-              });
-              return sendResponse(null);
+              // Pas d'annonce identifiable ou extraction invalide → silencieux côté badge.
+              return sendResponse({ error: "EXTRACTION_FAIBLE" });
+            }
+            // Garde qualité : résultat trop pauvre pour être présenté.
+            if (
+              !listing.price ||
+              listing.price < 5000 ||
+              (!listing.surface && !listing.rooms && !listing.propertyType)
+            ) {
+              return sendResponse({ error: "EXTRACTION_FAIBLE" });
             }
             sendResponse(await runListingPipeline(tabId, listing));
             return;

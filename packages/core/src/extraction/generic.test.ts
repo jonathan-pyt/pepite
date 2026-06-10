@@ -127,6 +127,13 @@ describe("extractListingGeneric", () => {
     expect(listing.ges).toBeUndefined();
   });
 
+  it("price null → throw 'generic: page sans annonce identifiable'", async () => {
+    const noListing = { ...fullExtraction, price: null };
+    await expect(
+      extractListingGeneric("texte", url, cfg, mockReturning(noListing)),
+    ).rejects.toThrow("generic: page sans annonce identifiable");
+  });
+
   it("garbage non parsable → NoObjectGeneratedError propagée", async () => {
     const garbage = new MockLanguageModelV3({
       doGenerate: async () => ({

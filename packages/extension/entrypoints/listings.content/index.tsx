@@ -41,6 +41,44 @@ const GENERIC_PARSERS: Partial<Record<Site, (doc: Document, url: string) => List
   citya: parseCitya,
 };
 
+/**
+ * Attend que le DOM SPA soit hydraté avec un contenu substantiel.
+ * Poll toutes les 500 ms jusqu'à :
+ *  - innerText > 1500 chars ET stable sur deux polls consécutifs → résout true
+ *  - timeout 20 s ET texte < 600 chars → résout false (page vide / splash écran)
+ * La promesse est annulée proprement si `cancelledRef.current` passe à true.
+ */
+function waitForContent(cancelledRef: { current: boolean }): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const POLL_MS = 500;
+    const MAX_POLLS = 40; // 20 s
+    const STABLE_THRESHOLD = 1500;
+    const FALLBACK_THRESHOLD = 600;
+    let polls = 0;
+    let prevLen = -1;
+
+    function check() {
+      if (cancelledRef.current) return resolve(false);
+      const len = document.body?.innerText?.length ?? 0;
+      polls += 1;
+
+      if (len > STABLE_THRESHOLD && len === prevLen) {
+        return resolve(true);
+      }
+
+      prevLen = len;
+
+      if (polls >= MAX_POLLS) {
+        return resolve(len >= FALLBACK_THRESHOLD);
+      }
+
+      setTimeout(check, POLL_MS);
+    }
+
+    setTimeout(check, POLL_MS);
+  });
+}
+
 /** Prépare le texte de page pour l'extracteur LLM (titre + meta description + texte principal). */
 function collectPageText(): string {
   const title = document.title ?? "";
@@ -84,6 +122,9 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     // on refait un fetch HTML frais. Pour les autres sites, on relit le DOM live.
     const forceViaFetch = site === "leboncoin" && (viaFetch || nonce > 0);
 
+    // cancelledRef permet à waitForContent de détecter l'annulation.
+    const cancelledRef = { current: false };
+
     async function run() {
       try {
         if (site === "leboncoin") {
@@ -100,6 +141,15 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
           const q = await sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing });
           if (cancelled) return;
           setQuick(q ?? null);
+          return;
+        }
+
+        // Attendre que le SPA soit hydraté avant de tenter le parseur ou l'extraction générique.
+        const ready = await waitForContent(cancelledRef);
+        if (cancelled) return;
+        if (!ready) {
+          // Page trop vide après 20 s (splash écran, contenu bloqué) → badge masqué.
+          setQuick(null);
           return;
         }
 
@@ -145,6 +195,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     void run();
     return () => {
       cancelled = true;
+      cancelledRef.current = true;
     };
   }, [url, viaFetch, nonce, site, onListing]);
 
