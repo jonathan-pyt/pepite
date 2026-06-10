@@ -70,13 +70,18 @@ export default defineBackground(() => {
           case "LISTING_DETECTED": {
             const tabId = sender.tab?.id;
             if (tabId === undefined) return sendResponse(null);
+            const url = req.listing.url;
             setTabState(tabId, { status: "quick-running", listing: req.listing });
             try {
               await idbRepository.saveListing(req.listing);
               const quick = await runQuickAnalysis(req.listing);
+              // résultat périmé, une autre annonce a pris la main
+              if (tabStates.get(tabId)?.listing?.url !== url) return sendResponse(null);
               setTabState(tabId, { status: "quick-done", listing: req.listing, quick });
               sendResponse(quick);
             } catch (e) {
+              // résultat périmé, une autre annonce a pris la main
+              if (tabStates.get(tabId)?.listing?.url !== url) return sendResponse(null);
               setTabState(tabId, {
                 status: "error",
                 listing: req.listing,
@@ -134,6 +139,9 @@ export default defineBackground(() => {
             }
             return;
           }
+          default:
+            sendResponse(null);
+            return;
         }
       })();
       return true; // réponse asynchrone
