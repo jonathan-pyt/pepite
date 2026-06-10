@@ -46,6 +46,10 @@ const fakeAnalysis = {
     airbnb: "Potentiel saisonnier correct, vérifier la réglementation locale.",
     coloc: "3 pièces adapté à une coloc à 2, demande locale à vérifier.",
   },
+  checklistVisite: [
+    "Demander les 3 derniers PV d'AG de la copropriété",
+    "Vérifier le montant des charges mensuelles et le fonds travaux",
+  ],
 };
 
 describe("analyzeListing", () => {
@@ -70,6 +74,9 @@ describe("analyzeListing", () => {
     expect(result.pointsVigilance[0]!.niveau).toBe("info");
     expect(result.negociation.cibleBasse).toBe(272_000);
     expect(result.profils["locatif-nu"]).toBeTruthy();
+    expect(Array.isArray(result.checklistVisite)).toBe(true);
+    expect(result.checklistVisite!.length).toBeGreaterThan(0);
+    expect(result.checklistVisite![0]).toContain("PV d'AG");
   });
 });
 
@@ -412,5 +419,22 @@ describe("buildAnalysisPrompt", () => {
   it("points de vigilance : instruction sur l'ancienneté de l'annonce présente", () => {
     const prompt = buildAnalysisPrompt(listing, quick);
     expect(prompt).toContain("ancienneté de l'annonce");
+  });
+
+  // ── Checklist visite ─────────────────────────────────────────────────────
+
+  it("consigne checklist visite présente dans l'attendu", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("checklistVisite");
+  });
+
+  it("consigne checklist : spécifique au bien, pas générique", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("spécifique");
+  });
+
+  it("consigne checklist : entre 5 et 10 éléments demandés", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("5 à 10");
   });
 });

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { GlobalScore, Report } from "@pepite/core";
-import { scoreLabel } from "@pepite/core";
+import { scoreLabel, estimateAcquisitionCost } from "@pepite/core";
 import {
   Check,
   ChevronDown,
@@ -10,6 +10,7 @@ import {
   Stethoscope,
   Bus,
   Trees,
+  Square,
 } from "lucide-react";
 import { idbRepository } from "@/lib/repository-idb";
 import {
@@ -76,7 +77,9 @@ function RSection({ id, num, title, children }: RSectionProps) {
 const TOC_BASE = [
   ["synthese", "Synthèse IA"],
   ["prix", "Prix & marché"],
+  ["cout", "Coût total d'acquisition"],
   ["vigilance", "Points de vigilance"],
+  ["checklist", "Checklist visite"],
   ["nego", "Négociation"],
   ["profils", "Selon votre projet"],
 ] as const;
@@ -374,8 +377,41 @@ export default function App() {
             )}
           </RSection>
 
-          {/* ── 3. Points de vigilance ── */}
-          <RSection id="vigilance" num={3} title="Points de vigilance">
+          {/* ── 3. Coût total d'acquisition ── */}
+          {(() => {
+            const acq = estimateAcquisitionCost(listing);
+            return (
+              <RSection id="cout" num={3} title="Coût total d'acquisition">
+                <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  <Metric
+                    label="Prix affiché"
+                    value={`${acq.prix.toLocaleString("fr-FR")} €`}
+                  />
+                  <Metric
+                    label={`Frais de notaire (~${acq.fraisNotairePct} %)`}
+                    value={`${acq.fraisNotaire.toLocaleString("fr-FR")} €`}
+                  />
+                  <Metric
+                    label="Total estimé"
+                    value={`${acq.total.toLocaleString("fr-FR")} €`}
+                    tone="accent"
+                  />
+                  {acq.taxeFonciereAnnuelle !== undefined && (
+                    <Metric
+                      label="Taxe foncière / an"
+                      value={`${acq.taxeFonciereAnnuelle.toLocaleString("fr-FR")} €`}
+                    />
+                  )}
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-ink-3">
+                  Estimation hors frais de dossier/garantie bancaire. Annonces de particulier ou prix hors honoraires : vérifier si les frais d&apos;agence sont inclus.
+                </p>
+              </RSection>
+            );
+          })()}
+
+          {/* ── 4. Points de vigilance ── */}
+          <RSection id="vigilance" num={4} title="Points de vigilance">
             <div className="flex flex-col gap-2.5">
               {analysis.pointsVigilance.map((p, i) => (
                 <WarnItem
@@ -388,8 +424,22 @@ export default function App() {
             </div>
           </RSection>
 
-          {/* ── 4. Négociation ── */}
-          <RSection id="nego" num={4} title="Négociation">
+          {/* ── 5. Checklist visite ── */}
+          {analysis.checklistVisite && analysis.checklistVisite.length > 0 && (
+            <RSection id="checklist" num={5} title="Checklist visite">
+              <div className="flex flex-col gap-2">
+                {analysis.checklistVisite.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <Square className="mt-[2px] size-[13px] shrink-0 text-ink-3" />
+                    <span className="text-[13px] leading-relaxed text-ink-2">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </RSection>
+          )}
+
+          {/* ── 6. Négociation ── */}
+          <RSection id="nego" num={6} title="Négociation">
             <div className="grid grid-cols-[auto_1fr] items-start gap-6">
               {/* Fourchette card */}
               <div className="min-w-[200px] rounded-[11px] border border-accent-border bg-accent-soft px-[18px] py-4">
@@ -425,9 +475,9 @@ export default function App() {
             </div>
           </RSection>
 
-          {/* ── 5. Selon votre projet ── */}
+          {/* ── 7. Selon votre projet ── */}
           {analysis.profils && (
-            <RSection id="profils" num={5} title="Selon votre projet">
+            <RSection id="profils" num={7} title="Selon votre projet">
               <div className="flex flex-col gap-5">
                 {(["residence", "locatif-nu", "airbnb", "coloc"] as const).map((key) => (
                   <div key={key}>
@@ -443,7 +493,7 @@ export default function App() {
             </RSection>
           )}
 
-          {/* ── 6. Quartier ── */}
+          {/* ── 8. Quartier ── */}
           {enrichments?.neighborhood && (() => {
             const nb = enrichments.neighborhood!;
             type CatKey = "ecoles" | "commerces" | "sante" | "transports" | "espacesVerts";
@@ -454,7 +504,7 @@ export default function App() {
               { key: "transports", label: "Transports", Icon: Bus },
               { key: "espacesVerts", label: "Espaces verts", Icon: Trees },
             ];
-            const sectionNum = 6;
+            const sectionNum = 8;
             return (
               <RSection id="quartier" num={sectionNum} title={`Quartier (rayon ${nb.radiusM} m)`}>
                 {isApproximateLocation(listing.location.precision) && (
@@ -505,11 +555,11 @@ export default function App() {
             );
           })()}
 
-          {/* ── 7. Risques recensés ── */}
+          {/* ── 9. Risques recensés ── */}
           {enrichments?.risks && (() => {
             const risks = enrichments.risks!;
             const hasAny = risks.naturels.length > 0 || risks.technologiques.length > 0;
-            const sectionNum = enrichments?.neighborhood ? 7 : 6;
+            const sectionNum = enrichments?.neighborhood ? 9 : 8;
             return (
               <RSection id="risques" num={sectionNum} title="Risques recensés">
                 {!hasAny ? (
@@ -528,11 +578,11 @@ export default function App() {
             );
           })()}
 
-          {/* ── 8. Marché locatif ── */}
+          {/* ── 10. Marché locatif ── */}
           {enrichments?.rent && (() => {
             const rent = enrichments.rent!;
             const prevCount = (enrichments?.neighborhood ? 1 : 0) + (enrichments?.risks ? 1 : 0);
-            const sectionNum = 6 + prevCount;
+            const sectionNum = 8 + prevCount;
             const rendementBrut =
               listing.price && listing.surface && rent.fiable
                 ? ((rent.loyerM2 * listing.surface * 12) / listing.price * 100).toFixed(1)
@@ -593,7 +643,7 @@ export default function App() {
               (enrichments?.neighborhood ? 1 : 0) +
               (enrichments?.risks ? 1 : 0) +
               (enrichments?.rent ? 1 : 0);
-            const sectionNum = 6 + prevCount;
+            const sectionNum = 8 + prevCount;
             return (
               <RSection id="recap" num={sectionNum} title="Récapitulatif du score">
                 <div className="overflow-hidden rounded-[9px] border border-line-soft">

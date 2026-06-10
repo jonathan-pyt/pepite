@@ -122,6 +122,11 @@ export const analysisSchema = z.object({
     airbnb: z.string().describe("Avis courte durée (potentiel, contraintes réglementaires à vérifier)"),
     coloc: z.string().describe("Avis colocation (adéquation pièces/surface, demande locale)"),
   }),
+  checklistVisite: z
+    .array(z.string())
+    .describe(
+      "Points à vérifier sur place ou à demander au vendeur/agent, spécifiques à CE bien (copro : PV d'AG, charges, fonds travaux ; maison : toiture, assainissement ; selon DPE : isolation, menuiseries ; selon annonce : éléments flous à clarifier). 5 à 10 éléments concrets et actionnables.",
+    ),
 });
 export type AnalysisResult = z.infer<typeof analysisSchema>;
 

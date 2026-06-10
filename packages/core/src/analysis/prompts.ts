@@ -162,5 +162,13 @@ Exploite toutes les caractéristiques et la description : équipements (piscine,
 - ${PROFILE_LABEL["residence"]}
 - ${PROFILE_LABEL["locatif-nu"]}
 - ${PROFILE_LABEL["airbnb"]}
-- ${PROFILE_LABEL["coloc"]}`;
+- ${PROFILE_LABEL["coloc"]}
+
+## Checklist visite (checklistVisite)
+Génère une liste de 5 à 10 points concrets et actionnables, spécifiques à CE bien — pas une liste générique recopiée. Exemples d'axes selon le bien :
+- Copropriété : PV des 3 dernières AG, montant des charges, fonds travaux (article 17-1), procédures en cours.
+- Maison individuelle : état de la toiture, type d'assainissement (collectif/individuel — état de la fosse), isolation des combles.
+- DPE F ou G : nature du système de chauffage, état des menuiseries, isolation, estimation travaux.
+- Éléments flous de l'annonce ou absents de la description : clarifier sur place ou auprès de l'agent.
+Chaque point doit être actionnable (« Demander X », « Vérifier Y »), jamais générique (pas « vérifier l'état général »).`;
 }
