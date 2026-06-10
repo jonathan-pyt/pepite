@@ -1,4 +1,4 @@
-import type { Listing, QuickAnalysis, UsageProfile } from "../types";
+import type { Enrichments, Listing, NeighborhoodStats, QuickAnalysis, RentInfo, RiskReport, UsageProfile } from "../types";
 
 export const PROFILE_LABEL: Record<UsageProfile, string> = {
   residence: "achat en résidence principale",
@@ -23,9 +23,47 @@ function dpeLine(listing: Listing): string {
   return "DPE : non renseigné";
 }
 
+function buildNeighborhoodSection(n: NeighborhoodStats): string {
+  function catLine(label: string, cat: { count: number; nearest: { name: string; distanceM: number }[] }): string {
+    const nearestStr = cat.nearest.length > 0
+      ? ` (${cat.nearest.map((p) => `${p.name} à ${p.distanceM} m`).join(", ")})`
+      : "";
+    return `- ${label} : ${cat.count}${nearestStr}`;
+  }
+  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap)
+${catLine("Écoles", n.ecoles)}
+${catLine("Commerces", n.commerces)}
+${catLine("Santé", n.sante)}
+${catLine("Transports", n.transports)}
+${catLine("Espaces verts", n.espacesVerts)}`;
+}
+
+function buildRisksSection(r: RiskReport): string {
+  const all = [...r.naturels, ...r.technologiques];
+  if (all.length === 0) {
+    return `## Risques recensés sur la commune (Géorisques)
+- Aucun risque naturel ou technologique présent sur cette commune.`;
+  }
+  const lines = all.map((item) => `- ${item.libelle} : ${item.statut}`).join("\n");
+  return `## Risques recensés sur la commune (Géorisques)
+${lines}`;
+}
+
+function buildRentSection(rent: RentInfo): string {
+  const fiabilite = rent.fiable
+    ? `observé sur la commune (${rent.nbAnnonces} annonces)`
+    : "extrapolé (maille) — prudence";
+  const zoneStr = rent.zoneAbc ? `\n- Zone ABC : ${rent.zoneAbc}` : "";
+  return `## Marché locatif (carte des loyers 2025)
+- Loyer médian prédit : ${rent.loyerM2} €/m² CC
+- Intervalle de confiance 80 % : ${rent.loyerM2Bas} – ${rent.loyerM2Haut} €/m²
+- Fiabilité : ${fiabilite}${zoneStr}`;
+}
+
 export function buildAnalysisPrompt(
   listing: Listing,
   quick: QuickAnalysis,
+  enrichments?: Enrichments,
   now: Date = new Date(),
 ): string {
   const market = quick.market;
@@ -45,6 +83,18 @@ export function buildAnalysisPrompt(
     listing.attributes && listing.attributes.length > 0
       ? `\n- Caractéristiques complètes :\n${listing.attributes.map((a) => `  - ${a.label} : ${a.value}`).join("\n")}`
       : "";
+
+  const neighborhoodBlock = enrichments?.neighborhood
+    ? buildNeighborhoodSection(enrichments.neighborhood)
+    : `## Quartier (rayon 800 m, OpenStreetMap)\n- données quartier indisponibles`;
+
+  const risksBlock = enrichments?.risks
+    ? buildRisksSection(enrichments.risks)
+    : `## Risques recensés sur la commune (Géorisques)\n- données risques indisponibles`;
+
+  const rentBlock = enrichments?.rent
+    ? buildRentSection(enrichments.rent)
+    : `## Marché locatif (carte des loyers 2025)\n- données loyers indisponibles`;
 
   return `Nous sommes le ${dateStr}.
 
@@ -67,6 +117,12 @@ ${
     : "- Données DVF insuffisantes dans la zone : ne chiffre l'écart au marché que si la description le permet, et signale cette limite."
 }
 
+${neighborhoodBlock}
+
+${risksBlock}
+
+${rentBlock}
+
 ## Règles pour la négociation
 
 - Tiens compte de l'ancienneté de chaque vente comparable : le marché évolue, une vente d'il y a 2-3 ans ne reflète pas nécessairement les prix actuels.
@@ -74,6 +130,8 @@ ${
 - Si le prix demandé est égal ou inférieur à la médiane des ventes comparables : le dire explicitement, et proposer une marge faible voire nulle (cibleBasse proche du prix demandé). Ne JAMAIS proposer une décote importante sur un bien déjà sous le marché.
 - Formuler la recommandation en termes de VALEUR estimée et de défendabilité (« vaut plutôt autour de… au vu de… »), pas en promesse (« négociable à… »).
 - Si les données marché sont absentes ou peu fiables (confiance basse, type non comparé), dire que la marge ne peut pas être chiffrée sérieusement.
+- Pour le profil locatif-nu : si des données loyers sont disponibles (ci-dessus), calculer un rendement brut indicatif (loyer médian × surface × 12 / prix demandé) et l'afficher comme estimation ; indiquer l'incertitude si fiabilité maille. Si les données loyers sont indisponibles, le dire explicitement sans inventer de chiffre.
+- Pour le profil Airbnb : pas de données courte durée fournies — ne pas inventer de taux d'occupation ni de revenu estimé ; se limiter aux éléments objectifs de l'annonce et aux contraintes réglementaires.
 
 ## Attendu
 Remplis le schéma demandé : synthèse globale (2-3 paragraphes), recommandation en une phrase,

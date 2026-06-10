@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MockLanguageModelV3 } from "ai/test";
 import { analyzeListing } from "./analyze";
 import { buildAnalysisPrompt } from "./prompts";
-import type { Listing, QuickAnalysis } from "../types";
+import type { Enrichments, Listing, QuickAnalysis } from "../types";
 
 const listing = {
   url: "https://www.leboncoin.fr/ad/ventes_immobilieres/1",
@@ -96,7 +96,7 @@ describe("buildAnalysisPrompt", () => {
   });
 
   it("inclut la date du jour dans le prompt", () => {
-    const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10"));
+    const prompt = buildAnalysisPrompt(listing, quick, undefined, new Date("2026-06-10"));
     expect(prompt).toContain("10 juin 2026");
   });
 
@@ -108,14 +108,14 @@ describe("buildAnalysisPrompt", () => {
         { label: "Piscine", value: "Oui" },
       ],
     };
-    const prompt = buildAnalysisPrompt(listingWithAttrs, quick, new Date("2026-06-10"));
+    const prompt = buildAnalysisPrompt(listingWithAttrs, quick, undefined, new Date("2026-06-10"));
     expect(prompt).toContain("Caractéristiques complètes");
     expect(prompt).toContain("Salle de bain : 5");
     expect(prompt).toContain("Piscine : Oui");
   });
 
   it("omet la rubrique Caractéristiques quand attributes absent ou vide", () => {
-    const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10")); // no attributes
+    const prompt = buildAnalysisPrompt(listing, quick, undefined, new Date("2026-06-10")); // no attributes
     expect(prompt).not.toContain("Caractéristiques complètes");
   });
 
@@ -125,7 +125,7 @@ describe("buildAnalysisPrompt", () => {
       dpe: undefined,
       location: { rawAddress: "Saint-Denis 97400", city: "Saint-Denis", postalCode: "97400" },
     };
-    const prompt = buildAnalysisPrompt(listingOm, quick);
+    const prompt = buildAnalysisPrompt(listingOm, quick, undefined);
     expect(prompt).toContain("non applicable (outre-mer");
     expect(prompt).not.toContain("DPE : non renseigné");
   });
@@ -157,5 +157,104 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("2 à 5 %");
     expect(prompt).toContain("JAMAIS");
     expect(prompt).toContain("sous le marché");
+  });
+
+  // ── Q6 : sections enrichissements ────────────────────────────────────────────
+
+  const fullEnrichments: Enrichments = {
+    neighborhood: {
+      radiusM: 800,
+      ecoles: { count: 5, nearest: [{ name: "École Jules Ferry", distanceM: 210 }] },
+      commerces: { count: 7, nearest: [{ name: "Monoprix", distanceM: 150 }] },
+      sante: { count: 3, nearest: [{ name: "Pharmacie de la Gare", distanceM: 320 }] },
+      transports: { count: 19, nearest: [{ name: "Gare de Nantes", distanceM: 480 }] },
+      espacesVerts: { count: 4, nearest: [{ name: "Jardin des Plantes", distanceM: 600 }] },
+    },
+    risks: {
+      naturels: [
+        { libelle: "Inondation", statut: "Commune concernée" },
+        { libelle: "Radon", statut: "Zone 3 — potentiel élevé" },
+      ],
+      technologiques: [],
+    },
+    rent: {
+      loyerM2: 12.5,
+      loyerM2Bas: 10.8,
+      loyerM2Haut: 14.2,
+      fiable: true,
+      nbAnnonces: 87,
+      zoneAbc: "B1",
+    },
+  };
+
+  it("section Quartier : count et nom du plus proche visible", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("Quartier");
+    expect(prompt).toContain("800 m");
+    expect(prompt).toContain("École Jules Ferry");
+    expect(prompt).toContain("210");
+    expect(prompt).toContain("19"); // transports count
+  });
+
+  it("section Risques : libellés et statuts présents", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("Risques");
+    expect(prompt).toContain("Inondation");
+    expect(prompt).toContain("Radon");
+    expect(prompt).toContain("Commune concernée");
+  });
+
+  it("section Marché locatif : loyer médian, IC, fiabilité et zone ABC", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("locatif");
+    expect(prompt).toContain("12.5");
+    expect(prompt).toContain("10.8");
+    expect(prompt).toContain("14.2");
+    expect(prompt).toContain("observé");
+    expect(prompt).toContain("87");
+    expect(prompt).toContain("B1");
+  });
+
+  it("section Quartier : données indisponibles quand neighborhood absent", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, { risks: fullEnrichments.risks });
+    expect(prompt).toContain("données quartier indisponibles");
+    expect(prompt).not.toContain("École Jules Ferry");
+  });
+
+  it("section Risques : données indisponibles quand risks absent", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, { neighborhood: fullEnrichments.neighborhood });
+    expect(prompt).toContain("données risques indisponibles");
+    expect(prompt).not.toContain("Inondation");
+  });
+
+  it("section Marché locatif : données indisponibles quand rent absent", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, { neighborhood: fullEnrichments.neighborhood });
+    expect(prompt).toContain("données loyers indisponibles");
+    expect(prompt).not.toContain("12.5");
+  });
+
+  it("toutes les sections absentes (enrichments undefined) → 3 lignes indisponibles", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, undefined);
+    expect(prompt).toContain("données quartier indisponibles");
+    expect(prompt).toContain("données risques indisponibles");
+    expect(prompt).toContain("données loyers indisponibles");
+  });
+
+  it("consigne rendement brut présente dans les règles", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("rendement brut");
+  });
+
+  it("consigne Airbnb : pas de données courte durée", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("pas de données courte durée");
+  });
+
+  it("loyer extrapolé (maille) → fiabilité prudence", () => {
+    const mailleEnrichments: Enrichments = {
+      rent: { ...fullEnrichments.rent!, fiable: false, nbAnnonces: 0 },
+    };
+    const prompt = buildAnalysisPrompt(listing, quick, mailleEnrichments);
+    expect(prompt).toContain("extrapolé");
   });
 });
