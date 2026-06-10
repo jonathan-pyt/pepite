@@ -2,10 +2,29 @@ import "@/assets/tailwind.css";
 import ReactDOM from "react-dom/client";
 import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
-import { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml, type QuickAnalysis } from "@pepite/core";
-import { Loader2 } from "lucide-react";
+import {
+  detectSite,
+  isListingPage,
+  parseBienici,
+  parseCitya,
+  parseLeboncoin,
+  parseLeboncoinHtml,
+  parseSeloger,
+  type Listing,
+  type QuickAnalysis,
+  type Site,
+} from "@pepite/core";
+import { Loader2, KeyRound } from "lucide-react";
 import { PepiteMark, ScoreRing } from "@/components/pepite";
 import { sendRequest, type PepiteContentRequest } from "@/lib/messages";
+
+/** Domaines couverts par le content script (doivent rester alignés avec `matches`). */
+export const LISTING_MATCHES = [
+  "*://*.leboncoin.fr/*",
+  "*://*.seloger.com/*",
+  "*://*.bienici.com/*",
+  "*://*.citya.com/*",
+];
 
 /* ---------- helpers ---------- */
 
@@ -14,6 +33,22 @@ function scoreLabelText(score: number): string {
   if (score >= 65) return "Bon";
   if (score >= 45) return "Moyen";
   return "Faible";
+}
+
+const GENERIC_PARSERS: Partial<Record<Site, (doc: Document, url: string) => Listing>> = {
+  seloger: parseSeloger,
+  bienici: parseBienici,
+  citya: parseCitya,
+};
+
+/** Prépare le texte de page pour l'extracteur LLM (titre + meta description + texte principal). */
+function collectPageText(): string {
+  const title = document.title ?? "";
+  const meta =
+    document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
+  const body = document.body?.innerText ?? "";
+  const text = [title, meta, body].filter(Boolean).join("\n\n");
+  return text.slice(0, 12_000);
 }
 
 /* ---------- Mini Pépite wordmark (variante sourdine) ---------- */
@@ -29,46 +64,89 @@ function MiniWordmark() {
 
 /* ---------- Badge component ---------- */
 
-type BadgeState = QuickAnalysis | null | "loading" | "error";
+type BadgeState = QuickAnalysis | null | "loading" | "error" | "needs-key";
 
 const CARD_CLASS =
   "fixed right-4 top-24 z-[2147483000] inline-flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-line bg-white px-3 py-2.5 text-ink shadow-pepite-lg select-none";
 
 function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const [quick, setQuick] = useState<BadgeState>("loading");
-  const [parsedListing, setParsedListing] = useState<import("@pepite/core").Listing | null>(null);
+  const [parsedListing, setParsedListing] = useState<Listing | null>(null);
   const [nonce, setNonce] = useState(0);
 
+  const site = detectSite(url);
+  const onListing = isListingPage(url);
+
   useEffect(() => {
-    if (!isLeboncoinListingPage(url)) return;
+    if (!onListing) return;
     let cancelled = false;
-    const forceViaFetch = viaFetch || nonce > 0;
+    // Pour Leboncoin, une navigation SPA ne ré-hydrate pas toujours le DOM :
+    // on refait un fetch HTML frais. Pour les autres sites, on relit le DOM live.
+    const forceViaFetch = site === "leboncoin" && (viaFetch || nonce > 0);
 
     async function run() {
       try {
-        let listing: import("@pepite/core").Listing;
-        if (!forceViaFetch) {
-          listing = parseLeboncoin(document, url);
-        } else {
-          const resp = await fetch(url, { credentials: "include" });
-          const html = await resp.text();
-          listing = parseLeboncoinHtml(html, url);
+        if (site === "leboncoin") {
+          let listing: Listing;
+          if (!forceViaFetch) {
+            listing = parseLeboncoin(document, url);
+          } else {
+            const resp = await fetch(url, { credentials: "include" });
+            const html = await resp.text();
+            listing = parseLeboncoinHtml(html, url);
+          }
+          if (cancelled) return;
+          setParsedListing(listing);
+          const q = await sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing });
+          if (cancelled) return;
+          setQuick(q ?? null);
+          return;
         }
+
+        // Sites à parseur dédié : on tente le DOM live, fallback extraction générique.
+        const parser = site ? GENERIC_PARSERS[site] : undefined;
+        let listing: Listing | null = null;
+        if (parser) {
+          try {
+            listing = parser(document, url);
+          } catch {
+            listing = null; // structure inconnue → fallback générique
+          }
+        }
+
+        if (listing) {
+          if (cancelled) return;
+          setParsedListing(listing);
+          const q = await sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing });
+          if (cancelled) return;
+          setQuick(q ?? null);
+          return;
+        }
+
+        // Fallback : extraction générique LLM côté background (nécessite une clé API).
+        const pageText = collectPageText();
+        const resp = await sendRequest<QuickAnalysis | { error: string } | null>({
+          type: "EXTRACT_GENERIC",
+          url,
+          pageText,
+        });
         if (cancelled) return;
-        setParsedListing(listing);
-        const q = await sendRequest<QuickAnalysis | null>({ type: "LISTING_DETECTED", listing });
-        if (cancelled) return;
-        setQuick(q ?? null);
+        if (resp && typeof resp === "object" && "error" in resp) {
+          setQuick(resp.error === "NO_API_KEY" ? "needs-key" : "error");
+          return;
+        }
+        setQuick((resp as QuickAnalysis | null) ?? null);
       } catch {
         if (!cancelled) setQuick("error");
       }
     }
 
-    // Reset to loading when nonce bumps (re-detect)
     if (nonce > 0) setQuick("loading");
     void run();
-    return () => { cancelled = true; };
-  }, [url, viaFetch, nonce]);
+    return () => {
+      cancelled = true;
+    };
+  }, [url, viaFetch, nonce, site, onListing]);
 
   // Register REDETECT message listener
   useEffect(() => {
@@ -77,7 +155,6 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
       if (m?.type === "REDETECT") {
         setNonce((n) => n + 1);
       }
-      // Return nothing/undefined so other listeners' sendResponse flows are unaffected
     };
     browser.runtime.onMessage.addListener(listener);
     return () => {
@@ -85,9 +162,32 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     };
   }, []);
 
-  if (!isLeboncoinListingPage(url)) return null;
+  if (!onListing) return null;
 
   if (quick === "error") return null;
+
+  /* Needs API key state (site sans parseur dédié, extraction générique payante) */
+  if (quick === "needs-key") {
+    return (
+      <div
+        className={CARD_CLASS}
+        role="button"
+        title="Ouvrir les réglages Pépite"
+        onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
+      >
+        <PepiteMark className="size-[24px]" />
+        <div>
+          <div className="flex items-center gap-[7px]">
+            <KeyRound className="size-[13px] shrink-0 text-accent" />
+            <span className="text-[12.5px] font-semibold text-ink">Clé API requise</span>
+          </div>
+          <div className="mt-0.5 text-[10.5px] text-ink-3">
+            Clé API requise pour analyser ce site
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* Loading state */
   if (quick === "loading") {
@@ -113,7 +213,6 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   /* Result state */
   const hasScore = quick !== null && quick.score !== null;
 
-  // Determine sub lines
   const listingPpm2 = quick?.listingPricePerM2 ?? null;
   const medianPpm2 = quick?.market?.medianPricePerM2 ?? null;
   const gapPct = quick?.marketGapPct ?? null;
@@ -163,7 +262,8 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
               </div>
               {showPriceDetails && (
                 <div className="mt-px text-[10.5px] text-ink-3 tabular-nums">
-                  {listingPpm2?.toLocaleString("fr-FR")} €/m² · secteur {medianPpm2?.toLocaleString("fr-FR")} €/m²
+                  {listingPpm2?.toLocaleString("fr-FR")} €/m² · secteur{" "}
+                  {medianPpm2?.toLocaleString("fr-FR")} €/m²
                 </div>
               )}
               {showUnusualGap && (
@@ -173,9 +273,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
               )}
             </>
           ) : (
-            <div className="mt-px text-[11px] text-ink-3">
-              {marketSubLine ?? "marché inconnu"}
-            </div>
+            <div className="mt-px text-[11px] text-ink-3">{marketSubLine ?? "marché inconnu"}</div>
           )}
         </div>
       </div>
@@ -184,7 +282,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
 }
 
 export default defineContentScript({
-  matches: ["*://*.leboncoin.fr/*"],
+  matches: LISTING_MATCHES,
   cssInjectionMode: "ui",
   async main(ctx) {
     let root: ReactDOM.Root | null = null;

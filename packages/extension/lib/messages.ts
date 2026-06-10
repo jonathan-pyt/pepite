@@ -21,6 +21,7 @@ export interface TabState {
 
 export type PepiteRequest =
   | { type: "LISTING_DETECTED"; listing: Listing }
+  | { type: "EXTRACT_GENERIC"; url: string; pageText: string }
   | { type: "GET_TAB_STATE"; tabId?: number }
   | { type: "RUN_FULL_ANALYSIS"; tabId: number }
   | { type: "OPEN_SIDE_PANEL" };

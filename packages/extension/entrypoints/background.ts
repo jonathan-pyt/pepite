@@ -3,12 +3,13 @@ import {
   buildQuickAnalysis,
   computeGlobalScore,
   computeMarketStats,
+  extractListingGeneric,
   fetchCommuneSales,
   fetchNeighborhood,
   fetchRentInfo,
   fetchRisks,
   geocode,
-  isLeboncoinListingPage,
+  isListingPage,
   type DvfSale,
   type Enrichments,
   type GeoPoint,
@@ -35,11 +36,11 @@ function setTabState(tabId: number, state: TabState) {
 }
 
 /**
- * If the tab is on a Leboncoin listing page but its state is still idle (e.g.
+ * If the tab is on a supported listing page but its state is still idle (e.g.
  * after service-worker death), ask the content script to re-detect the listing.
  */
 function ensureTabState(tabId: number, url: string | undefined) {
-  if (!url || !isLeboncoinListingPage(url)) return;
+  if (!url || !isListingPage(url)) return;
   if (tabStates.get(tabId)?.listing) return;
   void browser.tabs.sendMessage(tabId, { type: "REDETECT" }).catch(() => {});
 }
@@ -160,6 +161,32 @@ async function buildEnrichments(
   return enrichments;
 }
 
+/**
+ * Shared quick pipeline for a freshly extracted listing: persist it, run the
+ * quick (no-LLM) analysis, update tab state, and resolve with the QuickAnalysis.
+ * Returns null when the result is stale (another listing took over the tab).
+ */
+async function runListingPipeline(tabId: number, listing: Listing): Promise<QuickAnalysis | null> {
+  const url = listing.url;
+  setTabState(tabId, { status: "quick-running", listing });
+  try {
+    await idbRepository.saveListing(listing);
+    const { quick, point } = await runQuickAnalysis(listing);
+    // résultat périmé, une autre annonce a pris la main
+    if (tabStates.get(tabId)?.listing?.url !== url) return null;
+    setTabState(tabId, { status: "quick-done", listing, quick, point: point ?? undefined });
+    return quick;
+  } catch (e) {
+    if (tabStates.get(tabId)?.listing?.url !== url) return null;
+    setTabState(tabId, {
+      status: "error",
+      listing,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return null;
+  }
+}
+
 export default defineBackground(() => {
   // browser.sidePanel is typed by @wxt-dev/browser (Chrome 114+, MV3)
   void browser.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -187,25 +214,27 @@ export default defineBackground(() => {
           case "LISTING_DETECTED": {
             const tabId = sender.tab?.id;
             if (tabId === undefined) return sendResponse(null);
-            const url = req.listing.url;
-            setTabState(tabId, { status: "quick-running", listing: req.listing });
+            sendResponse(await runListingPipeline(tabId, req.listing));
+            return;
+          }
+          case "EXTRACT_GENERIC": {
+            const tabId = sender.tab?.id;
+            if (tabId === undefined) return sendResponse(null);
+            const settings = await getSettings();
+            const cfg = toLlmConfig(settings);
+            // L'extraction générique coûte un appel LLM : sans clé, on ne tente rien.
+            if (!cfg) return sendResponse({ error: "NO_API_KEY" });
+            let listing: Listing;
             try {
-              await idbRepository.saveListing(req.listing);
-              const { quick, point } = await runQuickAnalysis(req.listing);
-              // résultat périmé, une autre annonce a pris la main
-              if (tabStates.get(tabId)?.listing?.url !== url) return sendResponse(null);
-              setTabState(tabId, { status: "quick-done", listing: req.listing, quick, point: point ?? undefined });
-              sendResponse(quick);
+              listing = await extractListingGeneric(req.pageText, req.url, cfg);
             } catch (e) {
-              // résultat périmé, une autre annonce a pris la main
-              if (tabStates.get(tabId)?.listing?.url !== url) return sendResponse(null);
               setTabState(tabId, {
                 status: "error",
-                listing: req.listing,
                 error: e instanceof Error ? e.message : String(e),
               });
-              sendResponse(null);
+              return sendResponse(null);
             }
+            sendResponse(await runListingPipeline(tabId, listing));
             return;
           }
           case "GET_TAB_STATE": {
