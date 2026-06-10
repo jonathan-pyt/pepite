@@ -66,6 +66,7 @@ export interface MarketStats {
   confidence: "high" | "medium" | "low";
   comparables: Comparable[];
   medianOnSimilar?: boolean;
+  windowMonths?: number;
 }
 
 export interface QuickAnalysis {

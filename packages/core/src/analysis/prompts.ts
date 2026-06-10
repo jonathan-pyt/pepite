@@ -62,13 +62,14 @@ Analyse ce bien pour un acheteur particulier.
 ## Marché local (transactions notariées DVF)
 ${
   market
-    ? `- Médiane du secteur : ${market.medianPricePerM2} €/m² (${market.sampleSize} ventes, rayon ${market.radiusM} m, confiance ${market.confidence})
+    ? `- Médiane du secteur : ${market.medianPricePerM2} €/m² (${market.sampleSize} ventes${market.windowMonths === 18 ? " des 18 derniers mois" : " des 3 dernières années"}, rayon ${market.radiusM} m, confiance ${market.confidence})
 - Prix demandé : ${quick.listingPricePerM2} €/m², soit ${quick.marketGapPct! >= 0 ? "+" : ""}${quick.marketGapPct!.toFixed(1)} % vs médiane${comparablesBlock}`
     : "- Données DVF insuffisantes dans la zone : ne chiffre l'écart au marché que si la description le permet, et signale cette limite."
 }
 
 ## Règles pour la négociation
 
+- Tiens compte de l'ancienneté de chaque vente comparable : le marché évolue, une vente d'il y a 2-3 ans ne reflète pas nécessairement les prix actuels.
 - La marge de négociation se DÉDUIT des données, elle ne s'invente pas. En France, la marge habituelle constatée est de 2 à 5 % ; au-delà de 8-10 %, il faut des arguments objectifs forts (surcote manifeste vs ventes DVF comparables, annonce ancienne, travaux lourds, DPE F/G).
 - Si le prix demandé est égal ou inférieur à la médiane des ventes comparables : le dire explicitement, et proposer une marge faible voire nulle (cibleBasse proche du prix demandé). Ne JAMAIS proposer une décote importante sur un bien déjà sous le marché.
 - Formuler la recommandation en termes de VALEUR estimée et de défendabilité (« vaut plutôt autour de… au vu de… »), pas en promesse (« négociable à… »).

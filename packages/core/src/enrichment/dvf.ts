@@ -97,12 +97,28 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
+const RECENT_MONTHS = 18;
+
+function isRecent(date: string, now: Date): boolean {
+  // date is "YYYY-MM-DD"
+  const saleDate = new Date(date);
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - RECENT_MONTHS);
+  return saleDate >= cutoff;
+}
+
+export interface ComputeMarketStatsOpts {
+  surface?: number;
+  now?: Date;
+}
+
 export function computeMarketStats(
   sales: DvfSale[],
   center: { lat: number; lon: number },
   type: PropertyType,
-  surface?: number,
+  opts: ComputeMarketStatsOpts = {},
 ): MarketStats | null {
+  const { surface, now = new Date() } = opts;
   const typed = sales.filter((s) => s.type === type);
   for (const radiusM of RADII_M) {
     const inRadius: Comparable[] = typed
@@ -122,7 +138,6 @@ export function computeMarketStats(
     // Partition par surface similaire (±30 %) si surface fournie
     let similar: Comparable[];
     let others: Comparable[];
-    let medianOnSimilar: boolean;
 
     if (surface !== undefined) {
       const threshold = 0.3 * surface;
@@ -132,15 +147,45 @@ export function computeMarketStats(
       others = kept
         .filter((s) => Math.abs(s.surface - surface) > threshold)
         .map((s) => ({ ...s, similar: false }));
-      medianOnSimilar = similar.length >= MIN_SAMPLE;
     } else {
       similar = kept.map((s) => ({ ...s, similar: true }));
       others = [];
-      medianOnSimilar = false;
     }
 
-    // Médiane : sur similaires si suffisants, sinon sur tout kept
-    const medianSource = medianOnSimilar ? similar : kept;
+    // Hiérarchie de recency (premier niveau avec ≥ MIN_SAMPLE l'emporte)
+    // Niveau 1 : similaires récents
+    // Niveau 2 : similaires (toutes dates)
+    // Niveau 3 : récents toutes surfaces
+    // Niveau 4 : tout kept
+    let medianSource: Comparable[];
+    let medianOnSimilar: boolean;
+    let windowMonths: number;
+
+    const similarRecent = similar.filter((s) => isRecent(s.date, now));
+    const allRecent = kept.filter((s) => isRecent(s.date, now));
+
+    if (surface !== undefined && similarRecent.length >= MIN_SAMPLE) {
+      // Niveau 1
+      medianSource = similarRecent;
+      medianOnSimilar = true;
+      windowMonths = 18;
+    } else if (surface !== undefined && similar.length >= MIN_SAMPLE) {
+      // Niveau 2
+      medianSource = similar;
+      medianOnSimilar = true;
+      windowMonths = 36;
+    } else if (allRecent.length >= MIN_SAMPLE) {
+      // Niveau 3
+      medianSource = allRecent;
+      medianOnSimilar = false;
+      windowMonths = 18;
+    } else {
+      // Niveau 4
+      medianSource = kept;
+      medianOnSimilar = false;
+      windowMonths = 36;
+    }
+
     const finalMedian = median(medianSource.map((s) => s.pricePerM2));
     const sampleSize = medianSource.length;
 
@@ -156,6 +201,7 @@ export function computeMarketStats(
       confidence: sampleSize >= 30 ? "high" : sampleSize >= MIN_SAMPLE ? "medium" : "low",
       comparables,
       medianOnSimilar,
+      windowMonths,
     };
   }
   return null;

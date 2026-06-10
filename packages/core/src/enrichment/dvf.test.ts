@@ -120,7 +120,7 @@ describe("computeMarketStats — surface similaire", () => {
       [...similarSales, ...otherSales],
       { lat: 47.2251, lon: -1.5265 },
       "Appartement",
-      60,
+      { surface: 60 },
     );
     expect(stats).not.toBeNull();
     expect(stats!.medianOnSimilar).toBe(true);
@@ -149,7 +149,7 @@ describe("computeMarketStats — surface similaire", () => {
       [...similarSales, ...otherSales],
       { lat: 47.2251, lon: -1.5265 },
       "Appartement",
-      60,
+      { surface: 60 },
     );
     expect(stats).not.toBeNull();
     expect(stats!.medianOnSimilar).toBe(false);
@@ -162,7 +162,7 @@ describe("computeMarketStats — surface similaire", () => {
   it("sans surface → comportement identique à l'ancien (medianOnSimilar false, tous similar !== false)", () => {
     const sales = Array.from({ length: 15 }, (_, i) => fakeSale({ pricePerM2: 4500 + i * 50 }));
     const statsOld = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement");
-    const statsNew = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement", undefined);
+    const statsNew = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement", {});
     expect(statsNew).not.toBeNull();
     expect(statsNew!.medianOnSimilar).toBeFalsy();
     // every comparable should have similar !== false
@@ -170,6 +170,96 @@ describe("computeMarketStats — surface similaire", () => {
     // results match old behavior
     expect(statsNew!.medianPricePerM2).toBe(statsOld!.medianPricePerM2);
     expect(statsNew!.sampleSize).toBe(statsOld!.sampleSize);
+  });
+});
+
+const NOW = new Date("2026-06-10");
+
+describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
+  it("niveau 1 : 12 similaires récents → médiane sur les récents, windowMonths 18", () => {
+    // 12 ventes similaires récentes (~3 mois avant now)
+    const recentSimilar = Array.from({ length: 12 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    // 8 ventes similaires anciennes (3 ans, prix différent)
+    const oldSimilar = Array.from({ length: 8 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 3000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSimilar, ...oldSimilar],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.windowMonths).toBe(18);
+    expect(stats!.sampleSize).toBe(12);
+    expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
+  });
+
+  it("niveau 2 : 4 similaires récents + 8 similaires anciens → médiane sur les 12 similaires, windowMonths 36", () => {
+    // 4 similaires récents (< MIN_SAMPLE=10)
+    const recentSimilar = Array.from({ length: 4 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    // 8 similaires anciens → total similaires = 12 ≥ MIN_SAMPLE
+    const oldSimilar = Array.from({ length: 8 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSimilar, ...oldSimilar],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.sampleSize).toBe(12);
+    expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
+  });
+
+  it("niveau 3 : pas de surface, 15 récents + 10 anciens → médiane sur les récents, windowMonths 18", () => {
+    // 15 ventes récentes toutes surfaces
+    const recentSales = Array.from({ length: 15 }, () =>
+      fakeSale({ pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    // 10 ventes anciennes, prix différent
+    const oldSales = Array.from({ length: 10 }, () =>
+      fakeSale({ pricePerM2: 3000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSales, ...oldSales],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { now: NOW },
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(false);
+    expect(stats!.windowMonths).toBe(18);
+    expect(stats!.sampleSize).toBe(15);
+    expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
+  });
+
+  it("niveau 4 : pas de surface, 5 récents + 6 anciens → tout kept, windowMonths 36", () => {
+    // 5 récents (< MIN_SAMPLE) + 6 anciens → total = 11, recent seul insuffisant
+    const recentSales = Array.from({ length: 5 }, () =>
+      fakeSale({ pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    const oldSales = Array.from({ length: 6 }, () =>
+      fakeSale({ pricePerM2: 5000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSales, ...oldSales],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { now: NOW },
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(false);
+    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.sampleSize).toBe(11);
   });
 });
 
