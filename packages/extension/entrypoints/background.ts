@@ -52,20 +52,32 @@ async function getSalesCached(citycode: string): Promise<DvfSale[]> {
   return sales;
 }
 
+/**
+ * Resolve the best GeoPoint for a listing:
+ * - If the listing already has lat/lon (district centroid or address), keep those coordinates.
+ * - Always geocode the rawAddress to obtain the citycode; merge the citycode into the listing point
+ *   so that enrichments (DVF, risks, rent) use the correct commune code while neighbourhood
+ *   queries use the listing's more precise coordinates.
+ */
+async function resolvePoint(listing: Listing): Promise<GeoPoint | null> {
+  const hasCoords = !!listing.location.lat && !!listing.location.lon;
+
+  // Geocode to get citycode (always needed for DVF / enrichment APIs).
+  const geo = await geocode(listing.location.rawAddress);
+  if (!geo) return null;
+
+  if (hasCoords) {
+    // Prefer the listing's own coordinates (district centroid or address-level precision)
+    // but use the geocoder's citycode so commune-level APIs work correctly.
+    return { ...geo, lat: listing.location.lat!, lon: listing.location.lon! };
+  }
+  return geo;
+}
+
 /** Returns both the quick analysis and the resolved GeoPoint for later reuse. */
 async function runQuickAnalysis(listing: Listing): Promise<{ quick: QuickAnalysis; point: GeoPoint | null }> {
-  const rawPoint =
-    listing.location.lat && listing.location.lon
-      ? { lat: listing.location.lat, lon: listing.location.lon, citycode: "" as string, label: "", score: 1, precision: "housenumber" as const }
-      : await geocode(listing.location.rawAddress);
-  if (!rawPoint) return { quick: buildQuickAnalysis(listing, null), point: null };
-
-  let point = rawPoint;
-  if (!point.citycode) {
-    const geo = await geocode(listing.location.rawAddress);
-    if (geo) point = geo;
-    else return { quick: buildQuickAnalysis(listing, null), point: null };
-  }
+  const point = await resolvePoint(listing);
+  if (!point) return { quick: buildQuickAnalysis(listing, null), point: null };
   if (!point.citycode) return { quick: buildQuickAnalysis(listing, null), point: null };
 
   if (!listing.propertyType) return { quick: buildQuickAnalysis(listing, null), point };
@@ -204,8 +216,13 @@ export default defineBackground(() => {
 
             setTabState(req.tabId, { ...prev, status: "full-running" });
             try {
-              // Build enrichments when we have a resolved GeoPoint
-              const point = prev.point;
+              // Recompute point if it was not resolved during quick analysis
+              // (e.g. after a service-worker restart or when geocoding failed transiently).
+              let point = prev.point ?? null;
+              if (!point) {
+                point = await resolvePoint(prev.listing);
+                if (point) setTabState(req.tabId, { ...prev, status: "full-running", point });
+              }
               const enrichments: Enrichments | undefined = point
                 ? await buildEnrichments(point, prev.listing)
                 : undefined;
