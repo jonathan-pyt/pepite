@@ -118,4 +118,36 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt(listing, quick, new Date("2026-06-10")); // no attributes
     expect(prompt).not.toContain("Caractéristiques complètes");
   });
+
+  it("DPE outre-mer (97x) absent → non applicable, pas non renseigné", () => {
+    const listingOm: Listing = {
+      ...listing,
+      dpe: undefined,
+      location: { rawAddress: "Saint-Denis 97400", city: "Saint-Denis", postalCode: "97400" },
+    };
+    const prompt = buildAnalysisPrompt(listingOm, quick);
+    expect(prompt).toContain("non applicable (outre-mer");
+    expect(prompt).not.toContain("DPE : non renseigné");
+  });
+
+  it("DPE métropole absent → non renseigné", () => {
+    const listingNoDpe: Listing = {
+      ...listing,
+      dpe: undefined,
+    };
+    const prompt = buildAnalysisPrompt(listingNoDpe, quick);
+    expect(prompt).toContain("DPE : non renseigné");
+    expect(prompt).not.toContain("non applicable");
+  });
+
+  it("DPE présent en outre-mer → valeur inchangée", () => {
+    const listingOmWithDpe: Listing = {
+      ...listing,
+      dpe: "D",
+      location: { rawAddress: "Pointe-à-Pitre 97110", city: "Pointe-à-Pitre", postalCode: "97110" },
+    };
+    const prompt = buildAnalysisPrompt(listingOmWithDpe, quick);
+    expect(prompt).toContain("DPE : D");
+    expect(prompt).not.toContain("non applicable");
+  });
 });

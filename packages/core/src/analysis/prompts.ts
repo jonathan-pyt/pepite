@@ -12,6 +12,17 @@ Tu raisonnes à partir des données fournies (annonce + transactions DVF réelle
 si une donnée manque, dis-le plutôt que de supposer. Ton ton est direct, factuel, sans jargon inutile.
 Tu réponds en français.`;
 
+function dpeLine(listing: Listing): string {
+  if (listing.dpe !== undefined) {
+    return `DPE : ${listing.dpe}`;
+  }
+  const postal = listing.location.postalCode ?? "";
+  if (postal.startsWith("97") || postal.startsWith("98")) {
+    return "DPE : non applicable (outre-mer — méthode DPE non publiée pour ce territoire, opposabilité prévue 2028+ ; ne pas traiter l'absence de DPE comme un point de vigilance)";
+  }
+  return "DPE : non renseigné";
+}
+
 export function buildAnalysisPrompt(
   listing: Listing,
   quick: QuickAnalysis,
@@ -41,7 +52,7 @@ Analyse ce bien pour un acheteur particulier.
 - Prix demandé : ${listing.price.toLocaleString("fr-FR")} €
 - Surface : ${listing.surface ?? "inconnue"} m² · Pièces : ${listing.rooms ?? "?"} · Type : ${listing.propertyType ?? "?"}
 - Localisation : ${listing.location.rawAddress}
-- DPE : ${listing.dpe ?? "non renseigné"} · GES : ${listing.ges ?? "non renseigné"}
+- ${dpeLine(listing)} · GES : ${listing.ges ?? "non renseigné"}
 - Publiée le : ${listing.publishedAt ?? "date inconnue"}
 - Description : ${listing.description.slice(0, 2500)}${attributesBlock}
 
