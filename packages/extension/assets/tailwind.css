@@ -41,6 +41,49 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ── Pépite design tokens (mockups: design/project/mockups/shared.jsx) ──
+   Light-only, literal values so utilities like bg-page / text-ink / border-line
+   resolve everywhere — including the content-script shadow root. */
+@theme {
+  /* surfaces */
+  --color-page: #f7f7f8;
+  --color-surface-sub: #fafafa;
+  --color-line: #e4e4e7;
+  --color-line-soft: #ededf0;
+  /* texte */
+  --color-ink: #18181b;
+  --color-ink-2: #52525b;
+  --color-ink-3: #8e8e98;
+  /* accent teal (complète --primary) */
+  --color-accent: #0d9488;
+  --color-accent-dark: #0f766e;
+  --color-accent-soft: #f0fdfa;
+  --color-accent-border: #99f6e4;
+  /* sémantique */
+  --color-good: #16a34a;
+  --color-good-soft: #f0fdf4;
+  --color-good-border: #bbf7d0;
+  --color-warn: #d97706;
+  --color-warn-soft: #fffbeb;
+  --color-warn-border: #fde68a;
+  --color-bad: #dc2626;
+  --color-bad-soft: #fef2f2;
+  --color-bad-border: #fecaca;
+  /* segmented control track */
+  --color-seg-track: #f1f1f3;
+  /* score-ring track */
+  --color-ring-track: #ececef;
+  /* police système (mockups) */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif;
+  /* radius Pépite */
+  --radius-pepite: 10px;
+  --radius-pepite-sm: 7px;
+  /* shadows Pépite */
+  --shadow-pepite: 0 1px 2px rgba(24, 24, 27, 0.05), 0 4px 12px rgba(24, 24, 27, 0.05);
+  --shadow-pepite-lg: 0 4px 10px rgba(24, 24, 27, 0.08), 0 16px 40px rgba(24, 24, 27, 0.12);
+  --shadow-pepite-card: 0 1px 2px rgba(24, 24, 27, 0.04), 0 4px 12px rgba(24, 24, 27, 0.05);
+}
+
 /* Zinc base theme — shadow DOM compatible (:host for web components) */
 :root,
 :host {
@@ -77,6 +120,13 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+@layer base {
+  :root,
+  :host {
+    font-family: var(--font-sans);
+  }
 }
 
 .dark {
