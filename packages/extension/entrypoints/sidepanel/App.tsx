@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import type { AnalysisResult, UsageProfile } from "@pepite/core";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sendRequest, type TabState } from "@/lib/messages";
+import {
+  PepiteLogo,
+  ScoreRing,
+  Seg,
+  Metric,
+  WarnItem,
+} from "@/components/pepite";
+
+// ─── Profile definitions ────────────────────────────────────────────────────
 
 const PROFILES: { id: UsageProfile; label: string }[] = [
   { id: "residence", label: "Résidence" },
@@ -12,6 +18,71 @@ const PROFILES: { id: UsageProfile; label: string }[] = [
   { id: "airbnb", label: "Airbnb" },
   { id: "coloc", label: "Coloc" },
 ];
+
+// ─── Tiny spinner ────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 14 14"
+      style={{
+        animation: "spin 0.8s linear infinite",
+        flexShrink: 0,
+        display: "block",
+      }}
+    >
+      <circle
+        cx={7}
+        cy={7}
+        r={5.5}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity={0.25}
+        strokeWidth={2}
+      />
+      <path
+        d="M7 1.5A5.5 5.5 0 0 1 12.5 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </svg>
+  );
+}
+
+// ─── Section title ───────────────────────────────────────────────────────────
+
+function SecTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 9,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 650,
+          color: "#8e8e98",
+          textTransform: "uppercase",
+          letterSpacing: ".06em",
+        }}
+      >
+        {children}
+      </span>
+      {right}
+    </div>
+  );
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [tabId, setTabId] = useState<number | null>(null);
@@ -38,7 +109,11 @@ export default function App() {
       setState(r.state);
     });
     const listener = (msg: { type?: string; tabId?: number; state?: TabState }) => {
-      if (msg.type === "TAB_STATE_CHANGED" && msg.state && (currentTabId === null || msg.tabId === currentTabId)) {
+      if (
+        msg.type === "TAB_STATE_CHANGED" &&
+        msg.state &&
+        (currentTabId === null || msg.tabId === currentTabId)
+      ) {
         setState(msg.state);
       }
     };
@@ -49,7 +124,11 @@ export default function App() {
   async function runFullAnalysis() {
     if (tabId === null) return;
     setError(null);
-    const res = await sendRequest<{ reportId?: string; analysis?: AnalysisResult; error?: string }>({
+    const res = await sendRequest<{
+      reportId?: string;
+      analysis?: AnalysisResult;
+      error?: string;
+    }>({
       type: "RUN_FULL_ANALYSIS",
       tabId,
       profile,
@@ -64,92 +143,394 @@ export default function App() {
     }
   }
 
+  // ── State: idle / no listing ─────────────────────────────────────────────
+
   if (state.status === "idle" || !state.listing) {
     return (
-      <div className="p-4 text-sm text-muted-foreground">
-        Ouvre une annonce immobilière Leboncoin pour lancer l'analyse.
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 32px",
+          textAlign: "center",
+          gap: 12,
+          minHeight: "100vh",
+          background: "#ffffff",
+        }}
+      >
+        <PepiteLogo size={36} withText={true} textSize={18} />
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "#8e8e98",
+            lineHeight: 1.6,
+            margin: 0,
+          }}
+        >
+          Ouvre une annonce immobilière Leboncoin pour lancer l&apos;analyse.
+        </p>
       </div>
     );
   }
 
+  // ── Active listing ────────────────────────────────────────────────────────
+
   const { listing, quick } = state;
+
+  const segLabels = PROFILES.map((p) => p.label);
+  const activeLabel = PROFILES.find((p) => p.id === profile)?.label ?? segLabels[0];
+
+  function handleSegChange(label: string) {
+    const found = PROFILES.find((p) => p.label === label);
+    if (found) setProfile(found.id);
+  }
+
+  // Market gap tone
+  const gapTone =
+    quick?.marketGapPct !== null && quick?.marketGapPct !== undefined
+      ? quick.marketGapPct < 0
+        ? ("good" as const)
+        : ("warn" as const)
+      : undefined;
+
+  const gapValue =
+    quick?.marketGapPct !== null && quick?.marketGapPct !== undefined
+      ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1).replace(".", ",")} %`
+      : "—";
+
   return (
-    <div className="flex flex-col gap-3 p-4 text-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h1 className="font-semibold leading-tight">{listing.title}</h1>
-          <p className="text-muted-foreground">{listing.location.rawAddress}</p>
-        </div>
-        {quick?.score !== null && quick?.score !== undefined && (
-          <Badge variant={quick.score >= 65 ? "default" : "destructive"}>{quick.score}/100</Badge>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        padding: 0,
+        fontSize: 13,
+        background: "#ffffff",
+        minHeight: "100vh",
+      }}
+    >
+      {/* ── Top bar: logo ─────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 14px",
+          borderBottom: "1px solid #ededf0",
+          flexShrink: 0,
+        }}
+      >
+        <PepiteLogo size={20} withText={true} textSize={14} />
+      </div>
+
+      {/* ── Header: listing title + score ring ───────────────────────────── */}
+      <div
+        style={{
+          padding: "14px 16px",
+          borderBottom: "1px solid #ededf0",
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+        }}
+      >
+        {quick?.score !== null && quick?.score !== undefined ? (
+          <ScoreRing score={quick.score} size={54} stroke={5} sub="/100" />
+        ) : (
+          <div
+            style={{
+              width: 54,
+              height: 54,
+              flexShrink: 0,
+              borderRadius: "50%",
+              border: "1px solid #ededf0",
+              background: "#fafafa",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#8e8e98",
+            }}
+          >
+            —
+          </div>
         )}
-      </div>
-
-      {state.status === "quick-running" && <p>Analyse du marché en cours…</p>}
-
-      {quick && (
-        <div className="grid grid-cols-2 gap-2">
-          <Card><CardHeader className="p-3 pb-0"><CardTitle className="text-xs font-medium text-muted-foreground">Prix</CardTitle></CardHeader>
-            <CardContent className="p-3 pt-1 font-semibold tabular-nums">{listing.price.toLocaleString("fr-FR")} €</CardContent></Card>
-          <Card><CardHeader className="p-3 pb-0"><CardTitle className="text-xs font-medium text-muted-foreground">Prix/m²</CardTitle></CardHeader>
-            <CardContent className="p-3 pt-1 font-semibold tabular-nums">{quick.listingPricePerM2 ? `${quick.listingPricePerM2.toLocaleString("fr-FR")} €` : "—"}</CardContent></Card>
-          <Card><CardHeader className="p-3 pb-0"><CardTitle className="text-xs font-medium text-muted-foreground">Médiane secteur</CardTitle></CardHeader>
-            <CardContent className="p-3 pt-1 font-semibold tabular-nums">{quick.market ? `${quick.market.medianPricePerM2.toLocaleString("fr-FR")} €/m²` : "—"}</CardContent></Card>
-          <Card><CardHeader className="p-3 pb-0"><CardTitle className="text-xs font-medium text-muted-foreground">Écart marché</CardTitle></CardHeader>
-            <CardContent className={`p-3 pt-1 font-semibold tabular-nums ${quick.marketGapPct !== null && quick.marketGapPct < 0 ? "text-green-600" : "text-amber-600"}`}>
-              {quick.marketGapPct !== null ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1)} %` : "—"}</CardContent></Card>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#18181b",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.3,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {listing.title}
+          </div>
+          <div style={{ fontSize: 11.5, color: "#8e8e98", marginTop: 2 }}>
+            {listing.location.rawAddress}
+          </div>
         </div>
-      )}
-
-      <div className="flex gap-1">
-        {PROFILES.map((p) => (
-          <Button key={p.id} size="sm" variant={profile === p.id ? "default" : "outline"} onClick={() => setProfile(p.id)}>
-            {p.label}
-          </Button>
-        ))}
       </div>
 
-      {state.status !== "full-running" ? (
-        <Button onClick={runFullAnalysis} disabled={!quick}>Analyse complète (IA)</Button>
-      ) : (
-        <Button disabled>Analyse IA en cours…</Button>
-      )}
+      {/* ── Main content area ─────────────────────────────────────────────── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 16px 16px" }}>
 
-      {error && (
-        <p className="text-destructive">
-          {error}{" "}
-          {error.includes("Clé API") && (
-            <button className="underline" onClick={() => browser.runtime.openOptionsPage()}>Ouvrir les réglages</button>
+        {/* ── Quick-running state ─────────────────────────────────────────── */}
+        {state.status === "quick-running" && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12.5,
+              color: "#52525b",
+            }}
+          >
+            <Spinner />
+            Analyse du marché en cours…
+          </div>
+        )}
+
+        {/* ── Seg profils ─────────────────────────────────────────────────── */}
+        {quick && (
+          <Seg
+            options={segLabels}
+            value={activeLabel}
+            onChange={handleSegChange}
+            size="sm"
+            grow
+          />
+        )}
+
+        {/* ── Metrics grid ────────────────────────────────────────────────── */}
+        {quick && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <Metric
+              label="Prix"
+              value={`${listing.price.toLocaleString("fr-FR")} €`}
+            />
+            <Metric
+              label="Prix/m²"
+              value={
+                quick.listingPricePerM2
+                  ? `${quick.listingPricePerM2.toLocaleString("fr-FR")} €`
+                  : "—"
+              }
+            />
+            <Metric
+              label="Médiane secteur"
+              value={
+                quick.market
+                  ? `${quick.market.medianPricePerM2.toLocaleString("fr-FR")} €/m²`
+                  : "—"
+              }
+              sub={
+                quick.market
+                  ? `${quick.market.sampleSize} ventes · ${quick.market.radiusM} m`
+                  : undefined
+              }
+            />
+            <Metric
+              label="Écart marché"
+              value={gapValue}
+              tone={gapTone}
+            />
+          </div>
+        )}
+
+        {/* ── Error block ─────────────────────────────────────────────────── */}
+        {error && (
+          <div
+            style={{
+              background: error.includes("Clé API") ? "#fffbeb" : "#fef2f2",
+              border: `1px solid ${error.includes("Clé API") ? "#fde68a" : "#fecaca"}`,
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontSize: 12,
+              color: error.includes("Clé API") ? "#b45309" : "#b91c1c",
+              lineHeight: 1.55,
+            }}
+          >
+            {error}{" "}
+            {error.includes("Clé API") && (
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  color: "inherit",
+                  fontSize: "inherit",
+                  fontFamily: "inherit",
+                }}
+                onClick={() => browser.runtime.openOptionsPage()}
+              >
+                Ouvrir les réglages
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Analyse IA block ─────────────────────────────────────────────── */}
+        {analysis && (
+          <div
+            style={{
+              background: "#fafafa",
+              border: "1px solid #ededf0",
+              borderRadius: 8,
+              padding: "11px 13px",
+            }}
+          >
+            <SecTitle
+              right={
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 560,
+                    color: "#8e8e98",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  IA
+                </span>
+              }
+            >
+              Analyse IA
+            </SecTitle>
+            <p
+              style={{
+                fontSize: 12.5,
+                lineHeight: 1.6,
+                color: "#52525b",
+                margin: 0,
+                whiteSpace: "pre-line",
+              }}
+            >
+              {analysis.synthese}
+            </p>
+          </div>
+        )}
+
+        {/* ── Points de vigilance ─────────────────────────────────────────── */}
+        {analysis && analysis.pointsVigilance.length > 0 && (
+          <div>
+            <SecTitle>Points de vigilance</SecTitle>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {analysis.pointsVigilance.map((p, i) => (
+                <WarnItem
+                  key={i}
+                  tone={
+                    p.niveau === "critique"
+                      ? "bad"
+                      : p.niveau === "attention"
+                        ? "warn"
+                        : "info"
+                  }
+                  title={p.titre}
+                  sub={p.detail}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Action buttons ───────────────────────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+          {state.status !== "full-running" ? (
+            <button
+              onClick={runFullAnalysis}
+              disabled={!quick}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "10px 16px",
+                fontSize: 13,
+                fontWeight: 560,
+                borderRadius: 7,
+                cursor: quick ? "pointer" : "not-allowed",
+                background: quick ? "#0d9488" : "#f4f4f5",
+                color: quick ? "#ffffff" : "#8e8e98",
+                border: quick ? "1px solid #0f766e" : "1px solid #e4e4e7",
+                opacity: quick ? 1 : 0.7,
+                width: "100%",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Analyse complète (IA)
+            </button>
+          ) : (
+            <button
+              disabled
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "10px 16px",
+                fontSize: 13,
+                fontWeight: 560,
+                borderRadius: 7,
+                cursor: "not-allowed",
+                background: "#f4f4f5",
+                color: "#8e8e98",
+                border: "1px solid #e4e4e7",
+                width: "100%",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Spinner />
+              Analyse IA en cours…
+            </button>
           )}
-        </p>
-      )}
 
-      {analysis && (
-        <div className="flex flex-col gap-2">
-          <Card>
-            <CardHeader className="p-3 pb-1"><CardTitle className="text-sm">Synthèse</CardTitle></CardHeader>
-            <CardContent className="p-3 pt-0 whitespace-pre-line">{analysis.synthese}</CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="p-3 pb-1"><CardTitle className="text-sm">Points de vigilance</CardTitle></CardHeader>
-            <CardContent className="p-3 pt-0">
-              <ul className="flex flex-col gap-1">
-                {analysis.pointsVigilance.map((p, i) => (
-                  <li key={i}>
-                    <span className={p.niveau === "critique" ? "text-destructive font-medium" : p.niveau === "attention" ? "text-amber-600 font-medium" : "font-medium"}>{p.titre}</span>
-                    <span className="text-muted-foreground"> — {p.detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
           {reportId && (
-            <Button variant="outline" onClick={() => window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))}>
+            <button
+              onClick={() =>
+                window.open(browser.runtime.getURL(`/rapport.html?id=${reportId}`))
+              }
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "9px 16px",
+                fontSize: 13,
+                fontWeight: 560,
+                borderRadius: 7,
+                cursor: "pointer",
+                background: "#ffffff",
+                color: "#18181b",
+                border: "1px solid #e4e4e7",
+                boxShadow: "0 1px 2px rgba(24,24,27,.04)",
+                width: "100%",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
+            >
               Voir le rapport complet
-            </Button>
+            </button>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
