@@ -88,6 +88,11 @@ function capitalizeAddress(raw: string): string {
   return raw.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
+/** True when the listing location is not an exact address */
+function isApproximateLocation(precision: string | undefined): boolean {
+  return precision !== undefined && precision !== "address" && precision !== "housenumber";
+}
+
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
   const [othersOpen, setOthersOpen] = useState(false);
@@ -168,6 +173,13 @@ export default function App() {
                   {listing.price.toLocaleString("fr-FR")} €
                 </span>
               </div>
+
+              {/* Approximate position notice */}
+              {isApproximateLocation(listing.location.precision) && (
+                <div className="mt-1 text-[11.5px] leading-snug text-ink-3">
+                  Position approximative (quartier {listing.location.district ?? "non précisé"}) — adresse exacte non communiquée par l&apos;annonce.
+                </div>
+              )}
 
               {/* DPE chip */}
               {listing.dpe && (
@@ -439,6 +451,11 @@ export default function App() {
             const sectionNum = 6;
             return (
               <RSection id="quartier" num={sectionNum} title={`Quartier (rayon ${nb.radiusM} m)`}>
+                {isApproximateLocation(listing.location.precision) && (
+                  <div className="mb-3 text-[11.5px] leading-snug text-ink-3">
+                    Position approximative (quartier {listing.location.district ?? "non précisé"}) — adresse exacte non communiquée par l&apos;annonce.
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                   {categories.map(({ key, label, Icon }) => {
                     const cat = nb[key];
