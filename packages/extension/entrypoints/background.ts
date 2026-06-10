@@ -24,6 +24,16 @@ function setTabState(tabId: number, state: TabState) {
     .catch(() => {}); // personne n'écoute → normal
 }
 
+/**
+ * If the tab is on a Leboncoin listing page but its state is still idle (e.g.
+ * after service-worker death), ask the content script to re-detect the listing.
+ */
+function ensureTabState(tabId: number, url: string | undefined) {
+  if (!url || !isLeboncoinListingPage(url)) return;
+  if (tabStates.get(tabId)?.listing) return;
+  void browser.tabs.sendMessage(tabId, { type: "REDETECT" }).catch(() => {});
+}
+
 async function getSalesCached(citycode: string): Promise<DvfSale[]> {
   const key = `dvf:${citycode}`;
   const cached = await idbRepository.getCache<DvfSale[]>(key);
@@ -72,7 +82,10 @@ export default defineBackground(() => {
       // Handle synchronously (user-gesture context must not cross an await)
       if (req.type === "OPEN_SIDE_PANEL") {
         const tabId = sender.tab?.id;
-        if (tabId !== undefined) void browser.sidePanel.open({ tabId }).catch(() => {});
+        if (tabId !== undefined) {
+          void browser.sidePanel.open({ tabId }).catch(() => {});
+          ensureTabState(tabId, sender.tab?.url);
+        }
         sendResponse(null);
         return false;
       }
@@ -104,16 +117,17 @@ export default defineBackground(() => {
             return;
           }
           case "GET_TAB_STATE": {
-            const tabId =
-              req.tabId ??
-              (await browser.tabs.query({ active: true, currentWindow: true }))[0]?.id;
-            sendResponse({
-              tabId,
-              state:
-                tabId !== undefined
-                  ? (tabStates.get(tabId) ?? { status: "idle" })
-                  : { status: "idle" },
-            });
+            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            const tabId = req.tabId ?? tabs[0]?.id;
+            const tabUrl = tabs[0]?.url;
+            const resolvedState =
+              tabId !== undefined
+                ? (tabStates.get(tabId) ?? { status: "idle" })
+                : { status: "idle" as const };
+            if (tabId !== undefined && resolvedState.status === "idle") {
+              ensureTabState(tabId, tabUrl);
+            }
+            sendResponse({ tabId, state: resolvedState });
             return;
           }
           case "RUN_FULL_ANALYSIS": {

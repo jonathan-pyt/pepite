@@ -1,10 +1,11 @@
 import "@/assets/tailwind.css";
 import ReactDOM from "react-dom/client";
 import { useEffect, useState } from "react";
+import { browser } from "wxt/browser";
 import { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml, type QuickAnalysis } from "@pepite/core";
 import { Loader2 } from "lucide-react";
 import { PepiteMark, ScoreRing } from "@/components/pepite";
-import { sendRequest } from "@/lib/messages";
+import { sendRequest, type PepiteContentRequest } from "@/lib/messages";
 
 /* ---------- helpers ---------- */
 
@@ -36,15 +37,17 @@ const CARD_CLASS =
 function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const [quick, setQuick] = useState<BadgeState>("loading");
   const [parsedListing, setParsedListing] = useState<import("@pepite/core").Listing | null>(null);
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!isLeboncoinListingPage(url)) return;
     let cancelled = false;
+    const forceViaFetch = viaFetch || nonce > 0;
 
     async function run() {
       try {
         let listing: import("@pepite/core").Listing;
-        if (!viaFetch) {
+        if (!forceViaFetch) {
           listing = parseLeboncoin(document, url);
         } else {
           const resp = await fetch(url, { credentials: "include" });
@@ -61,9 +64,26 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
       }
     }
 
+    // Reset to loading when nonce bumps (re-detect)
+    if (nonce > 0) setQuick("loading");
     void run();
     return () => { cancelled = true; };
-  }, [url, viaFetch]);
+  }, [url, viaFetch, nonce]);
+
+  // Register REDETECT message listener
+  useEffect(() => {
+    const listener = (msg: unknown) => {
+      const m = msg as PepiteContentRequest;
+      if (m?.type === "REDETECT") {
+        setNonce((n) => n + 1);
+      }
+      // Return nothing/undefined so other listeners' sendResponse flows are unaffected
+    };
+    browser.runtime.onMessage.addListener(listener);
+    return () => {
+      browser.runtime.onMessage.removeListener(listener);
+    };
+  }, []);
 
   if (!isLeboncoinListingPage(url)) return null;
 
