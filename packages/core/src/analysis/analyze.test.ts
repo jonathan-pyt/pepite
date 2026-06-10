@@ -401,4 +401,16 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt(listingAddr, quick, enrichments, new Date("2026-06-10"));
     expect(prompt).not.toContain("autour du point approximatif");
   });
+
+  // ── Vigilance : date de publication et limite artificielle ────────────────
+
+  it("points de vigilance : instruction jamais artificiellement limitée présente", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("jamais artificiellement limitée");
+  });
+
+  it("points de vigilance : instruction sur l'ancienneté de l'annonce présente", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain("ancienneté de l'annonce");
+  });
 });

@@ -88,13 +88,17 @@ export const analysisSchema = z.object({
     .describe(
       "Recommandation en une phrase, formulée en termes de valeur estimée et de défendabilité — ex. « Au vu des ventes du secteur, ce bien se situe dans les prix du marché ; marge de négociation limitée (2-3 %) » ou « Le bien paraît surcoté d'environ X % par rapport aux ventes comparables — une offre vers Y € est défendable ». Ne jamais formuler de promesses assertives du type « négociable à X € ».",
     ),
-  pointsVigilance: z.array(
-    z.object({
-      titre: z.string(),
-      detail: z.string(),
-      niveau: z.enum(["info", "attention", "critique"]),
-    }),
-  ),
+  pointsVigilance: z
+    .array(
+      z.object({
+        titre: z.string(),
+        detail: z.string(),
+        niveau: z.enum(["info", "attention", "critique"]),
+      }),
+    )
+    .describe(
+      "Liste TOUS les points de vigilance pertinents (généralement 4 à 8, pas de limite) — inclure SYSTÉMATIQUEMENT un point sur la date de publication de l'annonce.",
+    ),
   negociation: z.object({
     cibleBasse: z
       .number()

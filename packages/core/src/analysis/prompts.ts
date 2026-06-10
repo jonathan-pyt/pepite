@@ -155,7 +155,7 @@ ${rentBlock}
 
 ## Attendu
 Remplis le schéma demandé : synthèse globale (2-3 paragraphes), recommandation en une phrase,
-points de vigilance concrets (DPE, copropriété, travaux, quartier, éléments suspects de l'annonce),
+points de vigilance concrets (DPE, copropriété, travaux, quartier, éléments suspects de l'annonce) — liste exhaustive (4 à 8 selon le bien, jamais artificiellement limitée à 3). Inclure SYSTÉMATIQUEMENT un point sur l'ancienneté de l'annonce : publiée le {date fournie plus haut} — une annonce récente (< 2 semaines) limite la marge de négociation ; une annonce ancienne (> 2 mois) est un levier (pourquoi ne se vend-elle pas ?) ; si la date est inconnue, le dire et suggérer de la demander.
 négociation (cibleBasse, cibleHaute en euros, arguments factuels tirés des données),
 et un avis distinct par profil d'usage (1 paragraphe solide chacun, fondé uniquement sur les données fournies — si un loyer ou rendement ne peut pas être estimé à partir des données, le dire).
 Exploite toutes les caractéristiques et la description : équipements (piscine, extérieur, salles de bain, stationnement…), atouts et défauts implicites — un acheteur ne doit rien rater d'important.
