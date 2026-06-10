@@ -106,6 +106,73 @@ describe("computeMarketStats", () => {
   });
 });
 
+describe("computeMarketStats — surface similaire", () => {
+  it("médiane sur les 12 similaires quand ≥ MIN_SAMPLE, others marqués similar:false", () => {
+    // 12 ventes à 65 m² (similaires à 60 m², ±30 % = ±18 m²) à pricePerM2 = 5000
+    // 5 ventes à 20 m² (éloignées, |20-60|=40 > 18) — même pricePerM2 pour passer le filtre MAD
+    const similarSales = Array.from({ length: 12 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000 }),
+    );
+    const otherSales = Array.from({ length: 5 }, () =>
+      fakeSale({ surface: 20, pricePerM2: 5100 }),
+    );
+    const stats = computeMarketStats(
+      [...similarSales, ...otherSales],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      60,
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.sampleSize).toBe(12);
+    expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
+    // similar ones come first, others (similar:false) come after
+    const similarComps = stats!.comparables.filter((c) => c.similar !== false);
+    const otherComps = stats!.comparables.filter((c) => c.similar === false);
+    expect(similarComps.length).toBeGreaterThan(0);
+    expect(otherComps.length).toBeGreaterThan(0);
+    // similar first
+    const firstOtherIdx = stats!.comparables.findIndex((c) => c.similar === false);
+    const lastSimilarIdx = stats!.comparables.map((c) => c.similar !== false).lastIndexOf(true);
+    expect(lastSimilarIdx).toBeLessThan(firstOtherIdx);
+  });
+
+  it("médiane sur tout kept quand similaires < MIN_SAMPLE, medianOnSimilar false", () => {
+    // 4 similaires (< 10) + 12 autres → médiane sur tout kept
+    const similarSales = Array.from({ length: 4 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000 }),
+    );
+    const otherSales = Array.from({ length: 12 }, () =>
+      fakeSale({ surface: 20, pricePerM2: 8000 }),
+    );
+    const stats = computeMarketStats(
+      [...similarSales, ...otherSales],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      60,
+    );
+    expect(stats).not.toBeNull();
+    expect(stats!.medianOnSimilar).toBe(false);
+    // sampleSize = total kept (16), medianPricePerM2 blended (not 5000 nor 8000 alone)
+    expect(stats!.sampleSize).toBe(16);
+    // median of [5000×4, 8000×12] = 8000 (the majority)
+    expect(stats!.medianPricePerM2).not.toBeCloseTo(5000, -1);
+  });
+
+  it("sans surface → comportement identique à l'ancien (medianOnSimilar false, tous similar !== false)", () => {
+    const sales = Array.from({ length: 15 }, (_, i) => fakeSale({ pricePerM2: 4500 + i * 50 }));
+    const statsOld = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement");
+    const statsNew = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement", undefined);
+    expect(statsNew).not.toBeNull();
+    expect(statsNew!.medianOnSimilar).toBeFalsy();
+    // every comparable should have similar !== false
+    expect(statsNew!.comparables.every((c) => c.similar !== false)).toBe(true);
+    // results match old behavior
+    expect(statsNew!.medianPricePerM2).toBe(statsOld!.medianPricePerM2);
+    expect(statsNew!.sampleSize).toBe(statsOld!.sampleSize);
+  });
+});
+
 describe("fetchCommuneSales", () => {
   it("agrège plusieurs années et tolère un 404", async () => {
     const header = readFileSync(

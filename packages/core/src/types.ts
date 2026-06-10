@@ -56,6 +56,7 @@ export interface DvfSale {
 
 export interface Comparable extends DvfSale {
   distanceM: number;
+  similar?: boolean;
 }
 
 export interface MarketStats {
@@ -64,6 +65,7 @@ export interface MarketStats {
   radiusM: number;
   confidence: "high" | "medium" | "low";
   comparables: Comparable[];
+  medianOnSimilar?: boolean;
 }
 
 export interface QuickAnalysis {

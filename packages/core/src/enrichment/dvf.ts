@@ -101,6 +101,7 @@ export function computeMarketStats(
   sales: DvfSale[],
   center: { lat: number; lon: number },
   type: PropertyType,
+  surface?: number,
 ): MarketStats | null {
   const typed = sales.filter((s) => s.type === type);
   for (const radiusM of RADII_M) {
@@ -118,16 +119,43 @@ export function computeMarketStats(
     const kept = inRadius.filter((s) => Math.abs(s.pricePerM2 - med) <= 3 * mad);
     if (kept.length === 0) return null;
 
-    const finalMedian = median(kept.map((s) => s.pricePerM2));
-    const sampleSize = kept.length;
+    // Partition par surface similaire (±30 %) si surface fournie
+    let similar: Comparable[];
+    let others: Comparable[];
+    let medianOnSimilar: boolean;
+
+    if (surface !== undefined) {
+      const threshold = 0.3 * surface;
+      similar = kept
+        .filter((s) => Math.abs(s.surface - surface) <= threshold)
+        .map((s) => ({ ...s, similar: true }));
+      others = kept
+        .filter((s) => Math.abs(s.surface - surface) > threshold)
+        .map((s) => ({ ...s, similar: false }));
+      medianOnSimilar = similar.length >= MIN_SAMPLE;
+    } else {
+      similar = kept.map((s) => ({ ...s, similar: true }));
+      others = [];
+      medianOnSimilar = false;
+    }
+
+    // Médiane : sur similaires si suffisants, sinon sur tout kept
+    const medianSource = medianOnSimilar ? similar : kept;
+    const finalMedian = median(medianSource.map((s) => s.pricePerM2));
+    const sampleSize = medianSource.length;
+
+    // Comparables : jusqu'à 10 similaires + 6 autres (triés par distance dans chaque groupe)
+    const topSimilar = similar.sort((a, b) => a.distanceM - b.distanceM).slice(0, 10);
+    const topOthers = others.sort((a, b) => a.distanceM - b.distanceM).slice(0, 6);
+    const comparables = [...topSimilar, ...topOthers];
+
     return {
       medianPricePerM2: Math.round(finalMedian),
       sampleSize,
       radiusM,
       confidence: sampleSize >= 30 ? "high" : sampleSize >= MIN_SAMPLE ? "medium" : "low",
-      comparables: kept
-        .sort((a, b) => a.distanceM - b.distanceM)
-        .slice(0, 10),
+      comparables,
+      medianOnSimilar,
     };
   }
   return null;

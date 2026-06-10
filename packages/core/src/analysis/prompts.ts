@@ -32,8 +32,11 @@ export function buildAnalysisPrompt(
   const comparablesBlock =
     market && market.comparables.length > 0
       ? `\n- Ventes comparables :\n${market.comparables
-          .map((c) => `- ${c.date} · ${c.type} ${c.surface} m² · ${c.price.toLocaleString("fr-FR")} € (${Math.round(c.pricePerM2)} €/m²) · à ${c.distanceM} m`)
-          .join("\n")}`
+          .map((c) => {
+            const line = `- ${c.date} · ${c.type} ${c.surface} m² · ${c.price.toLocaleString("fr-FR")} € (${Math.round(c.pricePerM2)} €/m²) · à ${c.distanceM} m`;
+            return c.similar === false ? `${line} (surface éloignée du bien)` : line;
+          })
+          .join("\n")}${market.medianOnSimilar ? `\n- Médiane calculée sur les ${market.sampleSize} ventes de surface comparable (±30 %).` : ""}`
       : "";
 
   const dateStr = now.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
