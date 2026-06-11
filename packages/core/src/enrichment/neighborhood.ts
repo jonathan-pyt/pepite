@@ -9,6 +9,9 @@ const OVERPASS_ENDPOINTS = [
 const USER_AGENT = "Pepite-extension/0.2 (analyse immobiliere perso)";
 const DEFAULT_RADIUS_M = 800;
 const DEFAULT_TIMEOUT = 15;
+// Timeout client (légèrement > timeout serveur Overpass de 15 s) : sans lui,
+// un endpoint qui ne répond pas bloque indéfiniment la requête.
+const CLIENT_TIMEOUT_MS = 20_000;
 
 function buildQuery(lat: number, lon: number, radiusM: number): string {
   const r = radiusM;
@@ -159,7 +162,12 @@ export async function fetchNeighborhood(
   let lastError: unknown;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
-      const res = await fetchFn(endpoint, { method: "POST", headers, body });
+      const res = await fetchFn(endpoint, {
+        method: "POST",
+        headers,
+        body,
+        signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
+      });
       if (!res.ok) {
         lastError = new Error(`Overpass ${endpoint} responded ${res.status}`);
         continue;

@@ -119,6 +119,7 @@ describe("fetchNeighborhood", () => {
     expect(url).toBe("https://overpass-api.de/api/interpreter");
     expect((init.headers as Record<string, string>)["User-Agent"]).toMatch(/Pepite-extension/);
     expect(init.method).toBe("POST");
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(stats.ecoles.count).toBe(3);
   });
 
