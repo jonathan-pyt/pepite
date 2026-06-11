@@ -41,6 +41,7 @@ export { RESTYLE_STYLES, getRestyleStyle, type RestyleStyle } from "./restyle/st
 export {
   restyleImage,
   buildRestylePrompt,
+  restyleStyleLabel,
   RESTYLE_IMAGE_MODEL,
   type RestyleImageInput,
   type RestyleImageOutput,

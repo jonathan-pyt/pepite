@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MockLanguageModelV3 } from "ai/test";
-import { buildRestylePrompt, restyleImage } from "./restyle";
+import { buildRestylePrompt, restyleImage, restyleStyleLabel } from "./restyle";
 import { buildRestyleCostPrompt, estimateRestyleCost } from "./cost";
 import { RESTYLE_STYLES, getRestyleStyle } from "./styles";
 import type { Listing } from "../types";
@@ -71,6 +71,12 @@ describe("buildRestylePrompt", () => {
     expect(prompt).toContain("Murs vert sauge, parquet clair conservé");
   });
 
+  it("combine preset + texte libre : la description reste, le custom complète", () => {
+    const prompt = buildRestylePrompt({ preset: "Scandinave", custom: "beaucoup de plantes" });
+    expect(prompt).toContain(getRestyleStyle("Scandinave")!.description);
+    expect(prompt).toContain("Précisions supplémentaires du client : beaucoup de plantes");
+  });
+
   it("mentionne la pièce quand roomHint est fourni", () => {
     const prompt = buildRestylePrompt({ preset: "Bohème" }, "séjour");
     expect(prompt).toContain("séjour");
@@ -78,6 +84,25 @@ describe("buildRestylePrompt", () => {
 
   it("rejette un preset inconnu avec une erreur claire", () => {
     expect(() => buildRestylePrompt({ preset: "Gothique" })).toThrow("Style inconnu");
+  });
+
+  it("rejette un style vide (ni preset ni custom) avec une erreur claire", () => {
+    expect(() => buildRestylePrompt({})).toThrow("Style manquant");
+    expect(() => buildRestylePrompt({ custom: "   " })).toThrow("Style manquant");
+  });
+});
+
+describe("restyleStyleLabel", () => {
+  it("reflète preset seul, combinaison et custom seul", () => {
+    expect(restyleStyleLabel({ preset: "Scandinave" })).toBe("Scandinave");
+    expect(restyleStyleLabel({ preset: "Scandinave", custom: "plantes" })).toBe(
+      "Scandinave (personnalisé)",
+    );
+    expect(restyleStyleLabel({ custom: "murs vert sauge" })).toBe("Style personnalisé");
+  });
+
+  it("rejette un style vide", () => {
+    expect(() => restyleStyleLabel({})).toThrow("Style manquant");
   });
 });
 

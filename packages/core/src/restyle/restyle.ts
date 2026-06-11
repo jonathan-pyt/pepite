@@ -11,8 +11,12 @@ import { getRestyleStyle } from "./styles";
  */
 export const RESTYLE_IMAGE_MODEL = "gemini-2.5-flash-image";
 
-/** Style demandé : preset connu (cf. RESTYLE_STYLES) ou description libre. */
-export type RestyleStyleChoice = { preset: string } | { custom: string };
+/**
+ * Style demandé : preset connu (cf. RESTYLE_STYLES) et/ou précisions libres.
+ * Au moins l'un des deux est requis ; quand les deux sont fournis, le texte
+ * libre COMPLÈTE le preset (il ne le remplace pas).
+ */
+export type RestyleStyleChoice = { preset?: string; custom?: string };
 
 export interface RestyleImageInput {
   apiKey: string;
@@ -26,14 +30,30 @@ export interface RestyleImageOutput {
   mediaType: string;
 }
 
+/**
+ * Libellé d'affichage du style choisi : « Scandinave », « Scandinave
+ * (personnalisé) » si preset + précisions, « Style personnalisé » si texte seul.
+ */
+export function restyleStyleLabel(style: RestyleStyleChoice): string {
+  const custom = style.custom?.trim();
+  if (style.preset) return custom ? `${style.preset} (personnalisé)` : style.preset;
+  if (custom) return "Style personnalisé";
+  throw new Error("Style manquant : choisissez un preset ou décrivez le style souhaité.");
+}
+
 export function buildRestylePrompt(style: RestyleStyleChoice, roomHint?: string): string {
+  const custom = style.custom?.trim();
   let styleText: string;
-  if ("preset" in style) {
+  if (style.preset) {
     const preset = getRestyleStyle(style.preset);
     if (!preset) throw new Error(`Style inconnu : « ${style.preset} »`);
-    styleText = preset.description;
+    styleText = custom
+      ? `${preset.description}\nPrécisions supplémentaires du client : ${custom}`
+      : preset.description;
+  } else if (custom) {
+    styleText = custom;
   } else {
-    styleText = style.custom;
+    throw new Error("Style manquant : choisissez un preset ou décrivez le style souhaité.");
   }
   const piece = roomHint ? `cette pièce (${roomHint})` : "cette pièce";
   return `Redessine la photo fournie, issue d'une annonce immobilière, pour montrer ${piece} redécorée.
