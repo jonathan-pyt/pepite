@@ -62,6 +62,8 @@ Puis `chrome://extensions` → Mode développeur → « Charger l'extension non 
 
 **Configuration** : icône Pépite → clic droit → Options → choisir un provider (Gemini / Claude / OpenAI) et coller votre clé API. Le score prix fonctionne sans clé ; l'analyse IA, l'extraction générique et le Restyle en demandent une (Restyle = Gemini uniquement, ~0,04 $/image).
 
+> **Pas de clé API ?** Créez une clé Gemini gratuite en 2 minutes sur [Google AI Studio](https://aistudio.google.com/apikey) ([documentation](https://ai.google.dev/gemini-api/docs/api-key)). ⚠️ Le palier gratuit est limité en débit (quelques requêtes par minute et un quota journalier) — largement suffisant pour analyser des annonces au fil de vos recherches, mais le Restyle (génération d'image) peut nécessiter d'activer la facturation selon les quotas du moment.
+
 ## Architecture
 
 ```
