@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import type { Report } from "@pepite/core";
 import { ArrowLeft, ImageOff, SearchX } from "lucide-react";
 import { DPEChip, PageShell, ScoreRing, scoreColorClass } from "@/components/pepite";
+import { formatPctFr } from "@/lib/format";
 import { useCompare, type CompareSlot } from "@/lib/hooks/use-compare";
 
 const NIVEAU_DOT: Record<string, string> = {
@@ -136,8 +137,7 @@ export default function App() {
         const gap = r.quick.marketGapPct!;
         return (
           <span className={`font-bold tabular-nums ${gap < 0 ? "text-good" : "text-warn"}`}>
-            {gap > 0 ? "+" : ""}
-            {gap.toFixed(1)} %
+            {formatPctFr(gap)} %
           </span>
         );
       },
@@ -221,8 +221,8 @@ export default function App() {
       has: (r) => r.analysis.pointsVigilance.length > 0,
       render: (r) => (
         <div className="flex flex-col gap-1.5">
-          {r.analysis.pointsVigilance.slice(0, 3).map((p, i) => (
-            <div key={i} className="flex items-center gap-1.5">
+          {r.analysis.pointsVigilance.slice(0, 3).map((p) => (
+            <div key={p.titre} className="flex items-center gap-1.5">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${NIVEAU_DOT[p.niveau] ?? "bg-warn"}`}
               />

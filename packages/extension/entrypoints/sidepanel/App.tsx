@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
+import { formatPctFr } from "@/lib/format";
 import { useTabState } from "@/lib/hooks/use-tab-state";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ export default function App() {
 
   const gapValue =
     quick?.marketGapPct !== null && quick?.marketGapPct !== undefined
-      ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1).replace(".", ",")} %`
+      ? `${formatPctFr(quick.marketGapPct)} %`
       : "—";
 
   const isApiKeyError = error?.includes("Clé API") ?? false;
@@ -317,9 +318,9 @@ export default function App() {
           <div>
             <SecTitle>Points de vigilance</SecTitle>
             <div className="flex flex-col gap-2.5">
-              {analysis.pointsVigilance.map((p, i) => (
+              {analysis.pointsVigilance.map((p) => (
                 <WarnItem
-                  key={i}
+                  key={p.titre}
                   tone={
                     p.niveau === "critique"
                       ? "bad"

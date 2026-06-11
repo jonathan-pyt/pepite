@@ -21,6 +21,7 @@ import {
   Trees,
   Square,
 } from "lucide-react";
+import { formatPctFr } from "@/lib/format";
 import { idbRepository, listRestylesByUrl, type RestyleRecord } from "@/lib/repository-idb";
 import {
   BeforeAfter,
@@ -99,9 +100,15 @@ const TOC_BASE = [
 
 const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_72px_1.6fr]";
 
-/** Capitalize each word of an address string */
+/**
+ * Capitalize each word of an address string (Unicode-aware).
+ * `\b\w` casse sur les accents : « letchis » donnait « LetchiS ».
+ * On capitalise la première lettre après début de chaîne, espace ou tiret.
+ */
 function capitalizeAddress(raw: string): string {
-  return raw.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  return raw
+    .toLowerCase()
+    .replace(/(^|[\s-])(\p{L})/gu, (_m, sep: string, letter: string) => sep + letter.toUpperCase());
 }
 
 /** True when the listing location is not an exact address */
@@ -324,9 +331,7 @@ export default function App() {
               <Metric
                 label="Écart"
                 value={
-                  quick.marketGapPct !== null
-                    ? `${quick.marketGapPct > 0 ? "+" : ""}${quick.marketGapPct.toFixed(1)} %`
-                    : "—"
+                  quick.marketGapPct !== null ? `${formatPctFr(quick.marketGapPct)} %` : "—"
                 }
                 tone={
                   quick.marketGapPct !== null
@@ -494,9 +499,9 @@ export default function App() {
           {/* ── 4. Points de vigilance ── */}
           <RSection id="vigilance" num={4} title="Points de vigilance">
             <div className="flex flex-col gap-2.5">
-              {analysis.pointsVigilance.map((p, i) => (
+              {analysis.pointsVigilance.map((p) => (
                 <WarnItem
-                  key={i}
+                  key={p.titre}
                   tone={NIVEAU_TONE[p.niveau] ?? "warn"}
                   title={p.titre}
                   sub={p.detail}
@@ -509,8 +514,8 @@ export default function App() {
           {analysis.checklistVisite && analysis.checklistVisite.length > 0 && (
             <RSection id="checklist" num={5} title="Checklist visite">
               <div className="flex flex-col gap-2">
-                {analysis.checklistVisite.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
+                {analysis.checklistVisite.map((item) => (
+                  <div key={item} className="flex items-start gap-2.5">
                     <Square className="mt-[2px] size-[13px] shrink-0 text-ink-3" />
                     <span className="text-[13px] leading-relaxed text-ink-2">{item}</span>
                   </div>
@@ -543,8 +548,8 @@ export default function App() {
                   Arguments à utiliser en visite
                 </div>
                 <div className="flex flex-col gap-2">
-                  {analysis.negociation.arguments.map((arg, i) => (
-                    <div key={i} className="flex gap-2.5">
+                  {analysis.negociation.arguments.map((arg) => (
+                    <div key={arg} className="flex gap-2.5">
                       <Check className="mt-[3px] size-[14px] shrink-0 text-accent-dark" />
                       <span className="text-[12.5px] leading-relaxed text-ink-2">
                         {arg}
@@ -722,8 +727,9 @@ export default function App() {
                         {/* Nearest POI list */}
                         {cat.nearest.length > 0 && (
                           <div className="mt-2.5 flex flex-col gap-1.5 border-t border-line-soft pt-2.5">
-                            {cat.nearest.map((poi, i) => (
-                              <span key={i} className="line-clamp-2 text-[12px] leading-[1.35] text-ink-2">
+                            {/* nearest est dédoublonné par nom dans le core → clé stable */}
+                            {cat.nearest.map((poi) => (
+                              <span key={poi.name} className="line-clamp-2 text-[12px] leading-[1.35] text-ink-2">
                                 {poi.name}
                               </span>
                             ))}
@@ -754,11 +760,12 @@ export default function App() {
                   <p className="text-[13px] text-ink-3">Aucun risque recensé sur la commune.</p>
                 ) : (
                   <div className="flex flex-col gap-2.5">
-                    {risks.naturels.map((r, i) => (
-                      <WarnItem key={`n-${i}`} tone="warn" title={r.libelle} sub={r.statut} />
+                    {/* libellés uniques par section (clés d'objet Géorisques) */}
+                    {risks.naturels.map((r) => (
+                      <WarnItem key={`n-${r.libelle}`} tone="warn" title={r.libelle} sub={r.statut} />
                     ))}
-                    {risks.technologiques.map((r, i) => (
-                      <WarnItem key={`t-${i}`} tone="info" title={r.libelle} sub={r.statut} />
+                    {risks.technologiques.map((r) => (
+                      <WarnItem key={`t-${r.libelle}`} tone="info" title={r.libelle} sub={r.statut} />
                     ))}
                   </div>
                 )}
