@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { parseDvfCsv, computeMarketStats, fetchCommuneSales } from "./dvf";
+import { parseDvfCsv, computeMarketStats, fetchCommuneSales, haversineM } from "./dvf";
 
 const csv = readFileSync(
   join(dirname(fileURLToPath(import.meta.url)), "fixtures/dvf-sample.csv"),
@@ -49,6 +49,46 @@ describe("parseDvfCsv", () => {
     const malformed = parseDvfCsv(csv + "\n2024-9,2024-08-01,bad");
     expect(malformed).toHaveLength(sales.length);
     expect(malformed.map((s) => s.idMutation)).not.toContain("2024-9");
+  });
+
+  it("rejette tout type_local autre qu'Appartement/Maison (pas de cast aveugle)", () => {
+    // Réutilise une ligne valide du fixture en remplaçant le type_local
+    // par une valeur hors habitation : la mutation ne doit produire aucune vente.
+    const lines = csv.trim().split("\n");
+    const header = lines[0]!;
+    const validLine = lines[1]!; // mutation 2024-1, Appartement
+    const localCommercial = validLine
+      .replace("2024-1", "2024-X")
+      .replace("Appartement", "Local industriel. commercial ou assimilé");
+    const parsed = parseDvfCsv([header, localCommercial].join("\n"));
+    expect(parsed).toHaveLength(0);
+    // et chaque vente parsée porte un type strictement habitation
+    for (const s of sales) {
+      expect(["Appartement", "Maison"]).toContain(s.type);
+    }
+  });
+});
+
+describe("haversineM", () => {
+  it("calcule une distance plausible entre deux points valides", () => {
+    // Nantes centre → ~1,1 km vers l'est
+    const d = haversineM(47.2184, -1.5536, 47.2184, -1.539);
+    expect(d).toBeGreaterThan(1000);
+    expect(d).toBeLessThan(1300);
+  });
+
+  it("lève sur des coordonnées non finies", () => {
+    expect(() => haversineM(Number.NaN, -1.55, 47.2, -1.55)).toThrow(/coordonnées invalides/);
+    expect(() => haversineM(47.2, -1.55, 47.2, Number.POSITIVE_INFINITY)).toThrow(
+      /coordonnées invalides/,
+    );
+  });
+
+  it("lève sur des coordonnées hors plage (|lat|>90, |lon|>180)", () => {
+    // Cas réel : coordonnées corrompues renvoyées pour les DOM
+    expect(() => haversineM(947.4, 55.5, -21.1, 55.5)).toThrow(/coordonnées invalides/);
+    expect(() => haversineM(-21.1, 555.5, -21.1, 55.5)).toThrow(/coordonnées invalides/);
+    expect(() => haversineM(-21.1, 55.5, 91, 55.5)).toThrow(/coordonnées invalides/);
   });
 });
 
@@ -260,6 +300,97 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
     expect(stats!.medianOnSimilar).toBe(false);
     expect(stats!.windowMonths).toBe(36);
     expect(stats!.sampleSize).toBe(11);
+  });
+});
+
+describe("computeMarketStats — transitions de la hiérarchie de récence", () => {
+  // MIN_SAMPLE = 10 : chaque test force la bascule d'un niveau au suivant
+  // en plaçant le niveau supérieur juste sous le seuil.
+
+  it("reste au niveau 1 avec exactement 10 similaires récents", () => {
+    const recentSimilar = Array.from({ length: 10 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    const oldSimilar = Array.from({ length: 8 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 3000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSimilar, ...oldSimilar],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.windowMonths).toBe(18);
+    expect(stats!.sampleSize).toBe(10);
+    expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
+  });
+
+  it("niveau 1 → 2 : 9 similaires récents (< 10) → médiane sur les similaires toutes dates", () => {
+    const recentSimilar = Array.from({ length: 9 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    // 9 récents + 6 anciens = 15 similaires ≥ 10 → niveau 2
+    const oldSimilar = Array.from({ length: 6 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...recentSimilar, ...oldSimilar],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.sampleSize).toBe(15);
+  });
+
+  it("niveau 2 → 3 : 9 similaires toutes dates (< 10) mais 12 récents toutes surfaces → récents", () => {
+    // 9 similaires (4 récents + 5 anciens) : niveaux 1 et 2 inaccessibles.
+    const similar = [
+      ...Array.from({ length: 4 }, () =>
+        fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
+      ),
+      ...Array.from({ length: 5 }, () =>
+        fakeSale({ surface: 65, pricePerM2: 5000, date: "2023-01-01" }),
+      ),
+    ];
+    // 8 autres surfaces récentes → récents toutes surfaces = 4 + 8 = 12 ≥ 10 → niveau 3
+    const othersRecent = Array.from({ length: 8 }, () =>
+      fakeSale({ surface: 20, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    const stats = computeMarketStats(
+      [...similar, ...othersRecent],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats!.medianOnSimilar).toBe(false);
+    expect(stats!.windowMonths).toBe(18);
+    expect(stats!.sampleSize).toBe(12);
+  });
+
+  it("niveau 3 → 4 : 9 récents toutes surfaces (< 10) → tout l'échantillon retenu", () => {
+    // 5 similaires anciens + 4 autres récents + 5 autres anciens :
+    // similaires = 5 < 10, récents toutes surfaces = 4 < 10 → niveau 4 (tout kept = 14)
+    const oldSimilar = Array.from({ length: 5 }, () =>
+      fakeSale({ surface: 65, pricePerM2: 5000, date: "2023-01-01" }),
+    );
+    const othersRecent = Array.from({ length: 4 }, () =>
+      fakeSale({ surface: 20, pricePerM2: 5000, date: "2026-03-01" }),
+    );
+    const othersOld = Array.from({ length: 5 }, () =>
+      fakeSale({ surface: 20, pricePerM2: 5000, date: "2023-01-01" }),
+    );
+    const stats = computeMarketStats(
+      [...oldSimilar, ...othersRecent, ...othersOld],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now: NOW },
+    );
+    expect(stats!.medianOnSimilar).toBe(false);
+    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.sampleSize).toBe(14);
   });
 });
 

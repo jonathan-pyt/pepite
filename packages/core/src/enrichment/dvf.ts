@@ -1,5 +1,9 @@
 import type { DvfSale, PropertyType, Comparable, MarketStats } from "../types";
 
+function isHousingType(t: string | undefined): t is PropertyType {
+  return t === "Appartement" || t === "Maison";
+}
+
 const PRICE_PER_M2_MIN = 500;
 const PRICE_PER_M2_MAX = 20_000;
 const SURFACE_MIN = 9;
@@ -40,13 +44,13 @@ export function parseDvfCsv(csv: string): DvfSale[] {
 
   const sales: DvfSale[] = [];
   for (const [id, rows] of byMutation) {
-    const housing = rows.filter((cells) => {
-      const t = cells[idx.typeLocal];
-      return t === "Appartement" || t === "Maison";
-    });
+    const housing = rows.filter((cells) => isHousingType(cells[idx.typeLocal]));
     // exactement 1 local d'habitation, sinon prix non ventilable (vente en bloc)
     if (housing.length !== 1) continue;
     const cells = housing[0]!;
+    const typeLocal = cells[idx.typeLocal];
+    // Validation explicite (et narrowing TS) : seuls Appartement/Maison passent.
+    if (!isHousingType(typeLocal)) continue;
     // allowlist volontaire : seul "Vente" passe (exclut Adjudication, Échange, VEFA…)
     if (cells[idx.nature] !== "Vente") continue;
 
@@ -68,7 +72,7 @@ export function parseDvfCsv(csv: string): DvfSale[] {
       surface,
       rooms: Number(cells[idx.pieces]) || 0,
       pricePerM2,
-      type: cells[idx.typeLocal] as PropertyType,
+      type: typeLocal,
       lat,
       lon,
       address: [cells[idx.numero], cells[idx.voie]].filter(Boolean).join(" "),
@@ -82,6 +86,18 @@ const MIN_SAMPLE = 10;
 export const DVF_YEARS = [2023, 2024, 2025]; // fenêtre geo-dvf : 2021-2025 vérifiée 2026-06-10
 
 export function haversineM(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  // Fail-fast sur coordonnées invalides plutôt qu'une distance fausse silencieuse
+  // (cas réel observé : coordonnées corrompues renvoyées par des APIs pour les DOM).
+  if (
+    !Number.isFinite(aLat) || !Number.isFinite(aLon) ||
+    !Number.isFinite(bLat) || !Number.isFinite(bLon) ||
+    Math.abs(aLat) > 90 || Math.abs(bLat) > 90 ||
+    Math.abs(aLon) > 180 || Math.abs(bLon) > 180
+  ) {
+    throw new Error(
+      `haversineM: coordonnées invalides (${aLat}, ${aLon}) → (${bLat}, ${bLon})`,
+    );
+  }
   const R = 6_371_000;
   const dLat = ((bLat - aLat) * Math.PI) / 180;
   const dLon = ((bLon - aLon) * Math.PI) / 180;
@@ -107,6 +123,14 @@ function percentileNearestRank(sorted: number[], p: number): number {
 }
 
 const RECENT_MONTHS = 18;
+
+// MAD nul (tous les prix identiques, fréquent sur petits échantillons) :
+// fallback à 15 % de la médiane — ordre de grandeur d'une dispersion locale
+// typique, pour que le filtre médiane ± 3×MAD reste actif.
+const MAD_FALLBACK_RATIO = 0.15;
+
+// Surface « similaire » : ±30 % de la surface du bien analysé.
+const SURFACE_TOLERANCE = 0.3;
 
 function isRecent(date: string, now: Date): boolean {
   // date is "YYYY-MM-DD"
@@ -140,7 +164,7 @@ export function computeMarketStats(
     // filtre aberrants : médiane ± 3×MAD
     const prices = inRadius.map((s) => s.pricePerM2);
     const med = median(prices);
-    const mad = median(prices.map((p) => Math.abs(p - med))) || med * 0.15;
+    const mad = median(prices.map((p) => Math.abs(p - med))) || med * MAD_FALLBACK_RATIO;
     const kept = inRadius.filter((s) => Math.abs(s.pricePerM2 - med) <= 3 * mad);
     if (kept.length === 0) return null;
 
@@ -149,7 +173,7 @@ export function computeMarketStats(
     let others: Comparable[];
 
     if (surface !== undefined) {
-      const threshold = 0.3 * surface;
+      const threshold = SURFACE_TOLERANCE * surface;
       similar = kept
         .filter((s) => Math.abs(s.surface - surface) <= threshold)
         .map((s) => ({ ...s, similar: true }));
