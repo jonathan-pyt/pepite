@@ -242,6 +242,7 @@ export default function App() {
     <PageShell
       breadcrumb="Comparateur"
       maxWidth="rapport"
+      logoHref={browser.runtime.getURL("/historique.html")}
       topRight={
         <a
           href={browser.runtime.getURL("/historique.html")}

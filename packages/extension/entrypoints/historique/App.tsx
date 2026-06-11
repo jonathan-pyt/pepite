@@ -104,12 +104,10 @@ function HistoryCard({ group, selected, selectionFull, onToggleSelect, onDelete 
 
       {/* Actions */}
       <div className="flex shrink-0 items-center gap-1.5 border-l border-line-soft pl-4">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => window.open(browser.runtime.getURL(`/rapport.html?id=${latest.id}`))}
-        >
-          Voir le rapport
+        <Button variant="secondary" size="sm" asChild>
+          <a href={browser.runtime.getURL(`/rapport.html?id=${latest.id}`)}>
+            Voir le rapport
+          </a>
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -157,6 +155,7 @@ export default function App() {
     <PageShell
       breadcrumb="Historique"
       maxWidth="rapport"
+      logoHref={browser.runtime.getURL("/historique.html")}
       topRight={
         groups.length > 0 ? (
           <span>
@@ -200,17 +199,23 @@ export default function App() {
                 {selectedIds.length > 1 ? "s" : ""}
                 {selectedIds.length < 2 && " — sélectionne-en au moins 2"}
               </span>
-              <Button
-                disabled={selectedIds.length < 2}
-                onClick={() =>
-                  window.open(
-                    browser.runtime.getURL(`/comparateur.html?ids=${selectedIds.join(",")}`),
-                  )
-                }
-              >
-                <GitCompareArrows />
-                Comparer ({selectedIds.length})
-              </Button>
+              {selectedIds.length < 2 ? (
+                <Button disabled>
+                  <GitCompareArrows />
+                  Comparer ({selectedIds.length})
+                </Button>
+              ) : (
+                <Button asChild>
+                  <a
+                    href={browser.runtime.getURL(
+                      `/comparateur.html?ids=${selectedIds.join(",")}`,
+                    )}
+                  >
+                    <GitCompareArrows />
+                    Comparer ({selectedIds.length})
+                  </a>
+                </Button>
+              )}
             </div>
           )}
         </>

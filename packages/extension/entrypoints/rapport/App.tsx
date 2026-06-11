@@ -175,31 +175,26 @@ export default function App() {
   return (
     <PageShell
       maxWidth="rapport"
+      logoHref={browser.runtime.getURL("/historique.html")}
       topRight={
         <div className="flex items-center gap-3">
           <span>Rapport généré le {generatedAt}</span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => window.open(browser.runtime.getURL("/historique.html"))}
-          >
-            <History />
-            Historique
+          <Button variant="secondary" size="sm" asChild>
+            <a href={browser.runtime.getURL("/historique.html")}>
+              <History />
+              Historique
+            </a>
           </Button>
           {listing.photos.length > 0 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                window.open(
-                  browser.runtime.getURL(
-                    `/restyle.html?url=${encodeURIComponent(report.listingUrl)}`,
-                  ),
-                )
-              }
-            >
-              <Sparkles />
-              Restyle IA
+            <Button variant="secondary" size="sm" asChild>
+              <a
+                href={browser.runtime.getURL(
+                  `/restyle.html?url=${encodeURIComponent(report.listingUrl)}`,
+                )}
+              >
+                <Sparkles />
+                Restyle IA
+              </a>
             </Button>
           )}
         </div>

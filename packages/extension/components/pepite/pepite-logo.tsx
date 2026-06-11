@@ -9,6 +9,8 @@ export interface PepiteLogoProps {
   /** Taille logique : sm (barre latérale), md (barres options/rapport), lg (écran vide). */
   size?: PepiteLogoSize
   withText?: boolean
+  /** Rend le logo cliquable (lien même onglet vers le hub Historique). */
+  href?: string
   className?: string
 }
 
@@ -30,10 +32,11 @@ const textSize: Record<PepiteLogoSize, string> = {
 export function PepiteLogo({
   size = "md",
   withText = true,
+  href,
   className,
 }: PepiteLogoProps) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
+  const content = (
+    <>
       <PepiteMark className={iconSize[size]} />
 
       {withText && (
@@ -46,6 +49,20 @@ export function PepiteLogo({
           Pépite
         </span>
       )}
-    </div>
+    </>
   )
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        aria-label="Pépite — ouvrir l'historique"
+        className={cn("flex cursor-pointer items-center gap-2 no-underline", className)}
+      >
+        {content}
+      </a>
+    )
+  }
+
+  return <div className={cn("flex items-center gap-2", className)}>{content}</div>
 }

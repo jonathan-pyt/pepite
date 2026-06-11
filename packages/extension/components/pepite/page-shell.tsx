@@ -10,6 +10,8 @@ export interface PageShellProps {
   topRight?: React.ReactNode
   /** Largeur maximale de la colonne de contenu. */
   maxWidth?: "options" | "rapport"
+  /** Rend le logo cliquable (lien même onglet vers le hub Historique). */
+  logoHref?: string
   children: React.ReactNode
 }
 
@@ -26,12 +28,13 @@ export function PageShell({
   breadcrumb,
   topRight,
   maxWidth = "options",
+  logoHref,
   children,
 }: PageShellProps) {
   return (
     <div className="min-h-screen bg-page">
       <div className="sticky top-0 z-10 flex h-[52px] items-center gap-3.5 border-b border-line bg-white px-7">
-        <PepiteLogo size="md" />
+        <PepiteLogo size="md" href={logoHref} />
         {breadcrumb && (
           <>
             <span className="text-line">/</span>
