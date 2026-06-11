@@ -114,9 +114,16 @@ export function parseOverpass(
   function toCategory(items: { name?: string; distanceM: number }[]): PoiCategory {
     const sorted = [...items].sort((a, b) => a.distanceM - b.distanceM);
     const named = sorted.filter((item) => item.name !== undefined) as { name: string; distanceM: number }[];
+    // Dédoublonnage par nom (ex. arrêts de bus jumeaux, un par sens) — on garde le plus proche
+    const seenNames = new Set<string>();
+    const unique = named.filter((item) => {
+      if (seenNames.has(item.name)) return false;
+      seenNames.add(item.name);
+      return true;
+    });
     return {
       count: items.length,
-      nearest: named.slice(0, 3).map(({ name, distanceM }) => ({ name, distanceM })),
+      nearest: unique.slice(0, 3).map(({ name, distanceM }) => ({ name, distanceM })),
     };
   }
 

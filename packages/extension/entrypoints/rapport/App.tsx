@@ -540,6 +540,11 @@ export default function App() {
                                 {poi.name}
                               </span>
                             ))}
+                            {cat.count > cat.nearest.length && (
+                              <span className="text-[11px] text-ink-3">
+                                +{cat.count - cat.nearest.length} autre{cat.count - cat.nearest.length > 1 ? "s" : ""} dans le rayon
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>

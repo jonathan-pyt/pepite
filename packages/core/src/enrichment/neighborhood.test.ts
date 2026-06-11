@@ -58,6 +58,21 @@ describe("parseOverpass", () => {
     expect(stats.transports.count).toBe(3);
   });
 
+  it("nearest déduplique par nom (arrêts jumeaux, un par sens) mais le count les garde", () => {
+    // Deux arrêts physiques distincts (ids différents) nommés pareil : un seul dans nearest,
+    // celui le plus proche ; le count reste 2.
+    const json = {
+      elements: [
+        { type: "node", id: 7001, lat: 48.8605, lon: 2.336, tags: { highway: "bus_stop", name: "Pierre Aubert" } },
+        { type: "node", id: 7002, lat: 48.861, lon: 2.336, tags: { highway: "bus_stop", name: "Pierre Aubert" } },
+      ],
+    };
+    const stats = parseOverpass(json, CENTER_LAT, CENTER_LON, RADIUS_M);
+    expect(stats.transports.count).toBe(2);
+    // un seul élément : le plus proche des deux
+    expect(stats.transports.nearest).toEqual([{ name: "Pierre Aubert", distanceM: 56 }]);
+  });
+
   it("utilise le center des ways pour calculer la distance", () => {
     const stats = parseOverpass(fixtureJson, CENTER_LAT, CENTER_LON, RADIUS_M);
 
