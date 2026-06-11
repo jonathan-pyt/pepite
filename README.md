@@ -23,9 +23,11 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 Pas encore sur le Chrome Web Store — installation en mode développeur :
 
 ```bash
-git clone <ce repo> && cd immo-analyse
+git clone https://github.com/jonathan-pyt/pepite.git
+cd pepite
 pnpm install
-pnpm build        # depuis packages/extension
+cd packages/extension
+pnpm build
 ```
 
 Puis `chrome://extensions` → activer le « Mode développeur » → « Charger l'extension non empaquetée » → sélectionner `packages/extension/.output/chrome-mv3`.
