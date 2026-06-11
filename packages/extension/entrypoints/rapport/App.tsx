@@ -3,11 +3,13 @@ import { browser } from "wxt/browser";
 import type { GlobalScore, Report } from "@pepite/core";
 import { estimateAcquisitionCost } from "@pepite/core";
 import {
+  Building2,
   Check,
   ChevronDown,
   ChevronUp,
   Copy,
   History,
+  LandPlot,
   Loader2,
   Mail,
   RefreshCw,
@@ -107,6 +109,12 @@ function isApproximateLocation(precision: string | undefined): boolean {
   return precision !== undefined && precision !== "address" && precision !== "housenumber";
 }
 
+/** Libellé court du type de zone PLU (U = urbaine, AU = à urbaniser, A = agricole, N = naturelle) */
+function pluTypeLabel(typezone: string): string | undefined {
+  if (typezone.startsWith("AU")) return "zone à urbaniser";
+  return { U: "zone urbaine", A: "zone agricole", N: "zone naturelle" }[typezone.charAt(0)];
+}
+
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
   const [othersOpen, setOthersOpen] = useState(false);
@@ -146,6 +154,8 @@ export default function App() {
   const { listing, quick, analysis } = report;
   const enrichments = report.enrichments;
   const globalScore: GlobalScore | undefined = report.globalScore;
+  // La section Quartier s'affiche dès qu'une donnée de contexte existe (POI, commune ou PLU).
+  const hasQuartierSection = !!(enrichments?.neighborhood || enrichments?.commune || enrichments?.plu);
 
   const generatedAt = new Date(report.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -207,7 +217,7 @@ export default function App() {
           </div>
           {[
             ...TOC_BASE,
-            ...(enrichments?.neighborhood ? [["quartier", "Quartier"] as const] : []),
+            ...(hasQuartierSection ? [["quartier", "Quartier"] as const] : []),
             ...(enrichments?.risks ? [["risques", "Risques recensés"] as const] : []),
             ...(enrichments?.rent ? [["locatif", "Marché locatif"] as const] : []),
             ...(globalScore !== undefined ? [["recap", "Récapitulatif du score"] as const] : []),
@@ -467,6 +477,17 @@ export default function App() {
                       value={`${acq.taxeFonciereAnnuelle.toLocaleString("fr-FR")} €`}
                     />
                   )}
+                  {enrichments?.taxeFonciere && (
+                    <Metric
+                      label={`Taux TF communal ${enrichments.taxeFonciere.exercice}`}
+                      value={`${enrichments.taxeFonciere.tauxGlobalTfb.toLocaleString("fr-FR")} %`}
+                      sub={`taux global TFB${
+                        enrichments.taxeFonciere.tauxTeom !== null
+                          ? ` + TEOM ${enrichments.taxeFonciere.tauxTeom.toLocaleString("fr-FR")} %`
+                          : ""
+                      } — montant exact selon la valeur cadastrale`}
+                    />
+                  )}
                 </div>
                 <p className="text-[11.5px] leading-relaxed text-ink-3">
                   Estimation hors frais de dossier/garantie bancaire. Annonces de particulier ou prix hors honoraires : vérifier si les frais d&apos;agence sont inclus.
@@ -625,8 +646,10 @@ export default function App() {
           )}
 
           {/* ── 9. Quartier ── */}
-          {enrichments?.neighborhood && (() => {
-            const nb = enrichments.neighborhood!;
+          {hasQuartierSection && (() => {
+            const nb = enrichments?.neighborhood;
+            const commune = enrichments?.commune;
+            const plu = enrichments?.plu;
             type CatKey = "ecoles" | "commerces" | "sante" | "transports" | "espacesVerts";
             const categories: { key: CatKey; label: string; Icon: React.ElementType }[] = [
               { key: "ecoles", label: "Écoles", Icon: School },
@@ -637,12 +660,50 @@ export default function App() {
             ];
             const sectionNum = 9;
             return (
-              <RSection id="quartier" num={sectionNum} title={`Quartier (rayon ${nb.radiusM} m)`}>
-                {isApproximateLocation(listing.location.precision) && (
+              <RSection
+                id="quartier"
+                num={sectionNum}
+                title={nb ? `Quartier (rayon ${nb.radiusM} m)` : "Quartier"}
+              >
+                {(commune || plu) && (
+                  <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-line-soft bg-surface-sub px-3.5 py-2.5">
+                    {commune && (
+                      <span className="flex items-center gap-1.5 text-[12px] text-ink-2">
+                        <Building2 className="size-[13px] shrink-0 text-ink-3" />
+                        <span className="font-semibold text-ink">{commune.nom}</span>
+                        <span className="text-ink-3 tabular-nums">
+                          {commune.population.toLocaleString("fr-FR")} hab ·{" "}
+                          {commune.densityPerKm2.toLocaleString("fr-FR")} hab/km²
+                        </span>
+                      </span>
+                    )}
+                    {plu && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex cursor-help items-center gap-1.5 text-[12px] text-ink-2">
+                              <LandPlot className="size-[13px] shrink-0 text-ink-3" />
+                              <span className="text-ink-3">Zone PLU</span>
+                              <span className="font-semibold text-ink">{plu.libelle}</span>
+                              {pluTypeLabel(plu.typezone) && (
+                                <span className="text-ink-3">({pluTypeLabel(plu.typezone)})</span>
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Types de zone PLU : U = urbaine, AU = à urbaniser, A = agricole, N = naturelle.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                )}
+                {nb && isApproximateLocation(listing.location.precision) && (
                   <div className="mb-3 text-[11.5px] leading-snug text-ink-3">
                     Position approximative (quartier {listing.location.district ?? "non précisé"}) — adresse exacte non communiquée par l&apos;annonce.
                   </div>
                 )}
+                {nb && (
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {categories.map(({ key, label, Icon }) => {
                     const cat = nb[key];
@@ -682,6 +743,7 @@ export default function App() {
                     );
                   })}
                 </div>
+                )}
               </RSection>
             );
           })()}
@@ -690,7 +752,7 @@ export default function App() {
           {enrichments?.risks && (() => {
             const risks = enrichments.risks!;
             const hasAny = risks.naturels.length > 0 || risks.technologiques.length > 0;
-            const sectionNum = enrichments?.neighborhood ? 10 : 9;
+            const sectionNum = hasQuartierSection ? 10 : 9;
             return (
               <RSection id="risques" num={sectionNum} title="Risques recensés">
                 {!hasAny ? (
@@ -712,7 +774,7 @@ export default function App() {
           {/* ── 11. Marché locatif ── */}
           {enrichments?.rent && (() => {
             const rent = enrichments.rent!;
-            const prevCount = (enrichments?.neighborhood ? 1 : 0) + (enrichments?.risks ? 1 : 0);
+            const prevCount = (hasQuartierSection ? 1 : 0) + (enrichments?.risks ? 1 : 0);
             const sectionNum = 9 + prevCount;
             const rendementBrut =
               listing.price && listing.surface && rent.fiable
@@ -771,7 +833,7 @@ export default function App() {
           {/* ── Récapitulatif du score ── */}
           {globalScore !== undefined && (() => {
             const prevCount =
-              (enrichments?.neighborhood ? 1 : 0) +
+              (hasQuartierSection ? 1 : 0) +
               (enrichments?.risks ? 1 : 0) +
               (enrichments?.rent ? 1 : 0);
             const sectionNum = 9 + prevCount;
@@ -818,7 +880,7 @@ export default function App() {
           {/* ── Restyles IA ── */}
           {restyles.length > 0 && (() => {
             const prevCount =
-              (enrichments?.neighborhood ? 1 : 0) +
+              (hasQuartierSection ? 1 : 0) +
               (enrichments?.risks ? 1 : 0) +
               (enrichments?.rent ? 1 : 0) +
               (globalScore !== undefined ? 1 : 0);
