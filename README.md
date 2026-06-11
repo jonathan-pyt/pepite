@@ -18,6 +18,26 @@ Extension Chrome open source d'analyse de biens immobiliers en France. Ouvrez un
 
 Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites immobiliers (Bien'ici…) via extraction IA générique (nécessite une clé API).
 
+## Galerie
+
+*Captures sur un bien fictif de démonstration (photos d'illustration générées).*
+
+**Rapport complet** — synthèse IA, score global et recommandation :
+
+![Rapport — synthèse](.github/screenshots/rapport-synthese.png)
+
+| Prix & marché (ventes DVF réelles, coût d'acquisition) | Quartier, risques et contexte communal |
+|---|---|
+| ![Prix & marché](.github/screenshots/rapport-marche.png) | ![Quartier](.github/screenshots/rapport-quartier.png) |
+
+**Studio Restyle IA** — photo de l'annonce redécorée par Gemini, slider avant/après, variantes et estimation travaux :
+
+![Studio Restyle IA](.github/screenshots/restyle-studio.png)
+
+| Historique des analyses | Comparateur côte à côte |
+|---|---|
+| ![Historique](.github/screenshots/historique.png) | ![Comparateur](.github/screenshots/comparateur.png) |
+
 ## Installation
 
 Pas encore sur le Chrome Web Store — installation en mode développeur :
