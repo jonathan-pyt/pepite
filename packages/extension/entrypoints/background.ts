@@ -35,8 +35,42 @@ const TAXE_FONCIERE_CACHE_TTL = 90 * 24 * 3600 * 1000; // 90 jours
 
 const tabStates = new Map<number, TabState>();
 
+/** Clé unique sous laquelle la Map est persistée dans chrome.storage.session. */
+const TAB_STATES_STORAGE_KEY = "tabStates";
+
+/**
+ * Réhydratation lazy de tabStates depuis storage.session après la mort du
+ * service worker MV3. La Map RAM reste le cache de travail ; storage.session
+ * (mémoire navigateur, vidé à sa fermeture) survit aux redémarrages du SW.
+ */
+let hydration: Promise<void> | null = null;
+function hydrateTabStates(): Promise<void> {
+  hydration ??= (async () => {
+    try {
+      const stored = await browser.storage.session.get(TAB_STATES_STORAGE_KEY);
+      const saved = stored[TAB_STATES_STORAGE_KEY] as Record<string, TabState> | undefined;
+      if (!saved) return;
+      for (const [id, state] of Object.entries(saved)) {
+        // La Map RAM (plus fraîche) garde la priorité sur le snapshot persisté.
+        if (!tabStates.has(Number(id))) tabStates.set(Number(id), state);
+      }
+    } catch {
+      // storage.session indisponible → on retombe sur le flux REDETECT existant.
+    }
+  })();
+  return hydration;
+}
+
+/** Écrit le snapshot complet de la Map (TabState est du JSON pur). */
+function persistTabStates() {
+  void browser.storage.session
+    .set({ [TAB_STATES_STORAGE_KEY]: Object.fromEntries(tabStates) })
+    .catch(() => {});
+}
+
 function setTabState(tabId: number, state: TabState) {
   tabStates.set(tabId, state);
+  persistTabStates();
   void browser.runtime
     .sendMessage({ type: "TAB_STATE_CHANGED", tabId, state })
     .catch(() => {}); // personne n'écoute → normal
@@ -252,7 +286,13 @@ export default defineBackground(() => {
   // browser.sidePanel is typed by @wxt-dev/browser (Chrome 114+, MV3)
   void browser.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
-  browser.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
+  browser.tabs.onRemoved.addListener((tabId) => {
+    // Hydrater d'abord : sinon le snapshot persisté serait écrasé par une Map vide.
+    void hydrateTabStates().then(() => {
+      tabStates.delete(tabId);
+      persistTabStates();
+    });
+  });
 
   browser.runtime.onMessage.addListener(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -262,15 +302,21 @@ export default defineBackground(() => {
       // Handle synchronously (user-gesture context must not cross an await)
       if (req.type === "OPEN_SIDE_PANEL") {
         const tabId = sender.tab?.id;
+        const tabUrl = sender.tab?.url;
         if (tabId !== undefined) {
           void browser.sidePanel.open({ tabId }).catch(() => {});
-          ensureTabState(tabId, sender.tab?.url);
+          // ensureTabState n'exige pas le contexte user-gesture : on attend la
+          // réhydratation pour ne pas relancer une détection déjà mémorisée.
+          void hydrateTabStates().then(() => ensureTabState(tabId, tabUrl));
         }
         sendResponse(null);
         return false;
       }
 
       (async () => {
+        // Réveil du service worker : recharger les états d'onglets persistés
+        // avant tout accès à tabStates.
+        await hydrateTabStates();
         switch (req.type) {
           case "LISTING_DETECTED": {
             const tabId = sender.tab?.id;
@@ -394,7 +440,11 @@ export default defineBackground(() => {
             sendResponse(null);
             return;
         }
-      })();
+      })().catch((err: unknown) => {
+        // Garantit une réponse sur tous les chemins : sans elle, l'appelant
+        // resterait suspendu sur un sendMessage sans réponse.
+        sendResponse({ error: err instanceof Error ? err.message : String(err) });
+      });
       return true; // réponse asynchrone
     },
   );
