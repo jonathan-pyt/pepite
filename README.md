@@ -20,7 +20,7 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 
 ## Galerie
 
-*Captures sur un bien fictif de démonstration (photos d'illustration générées).*
+*Captures sur un bien fictif de démonstration — photos [Unsplash](https://unsplash.com/license), données et rendus restyle simulés pour l'illustration.*
 
 **Rapport complet** — synthèse IA, score global et recommandation :
 
