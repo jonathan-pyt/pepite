@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Info, Loader2, RotateCw, Sparkles } from "lucide-react";
+import { History, Info, Loader2, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -84,9 +84,24 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-[13px]">
-      {/* ── Top bar: logo ─────────────────────────────────────────────────── */}
+      {/* ── Top bar: logo + accès historique ──────────────────────────────── */}
       <div className="flex shrink-0 items-center justify-between border-b border-line-soft px-3.5 py-2.5">
         <PepiteLogo size="sm" />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Historique"
+                onClick={() => window.open(browser.runtime.getURL("/historique.html"))}
+              >
+                <History className="size-[15px]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Historique</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}

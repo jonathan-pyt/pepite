@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  History,
   School,
   ShoppingBag,
   Sparkles,
@@ -159,6 +160,14 @@ export default function App() {
       topRight={
         <div className="flex items-center gap-3">
           <span>Rapport généré le {generatedAt}</span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.open(browser.runtime.getURL("/historique.html"))}
+          >
+            <History />
+            Historique
+          </Button>
           {listing.photos.length > 0 && (
             <Button
               variant="secondary"
