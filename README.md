@@ -40,7 +40,15 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 
 ## Installation
 
-Pas encore sur le Chrome Web Store — installation en mode développeur :
+### Installation rapide (zip pré-buildé)
+
+1. Téléchargez `pepiteextension-X.Y.Z-chrome.zip` depuis la [dernière release](https://github.com/jonathan-pyt/pepite/releases/latest) et décompressez-le
+2. Ouvrez `chrome://extensions`, activez le **Mode développeur** (en haut à droite)
+3. « Charger l'extension non empaquetée » → sélectionnez le dossier décompressé
+
+> Pas encore sur le Chrome Web Store : pas de mise à jour automatique, re-téléchargez le zip à chaque release.
+
+### Depuis les sources
 
 ```bash
 git clone https://github.com/jonathan-pyt/pepite.git
@@ -50,7 +58,7 @@ cd packages/extension
 pnpm build
 ```
 
-Puis `chrome://extensions` → activer le « Mode développeur » → « Charger l'extension non empaquetée » → sélectionner `packages/extension/.output/chrome-mv3`.
+Puis `chrome://extensions` → Mode développeur → « Charger l'extension non empaquetée » → `packages/extension/.output/chrome-mv3`.
 
 **Configuration** : icône Pépite → clic droit → Options → choisir un provider (Gemini / Claude / OpenAI) et coller votre clé API. Le score prix fonctionne sans clé ; l'analyse IA, l'extraction générique et le Restyle en demandent une (Restyle = Gemini uniquement, ~0,04 $/image).
 
@@ -90,7 +98,7 @@ cd packages/extension && pnpm dev      # Chrome avec HMR
 | [Géoportail de l'Urbanisme](https://apicarto.ign.fr) | Zonage PLU | Licence ouverte |
 | [data.economie.gouv.fr](https://data.economie.gouv.fr) | Taux de taxe foncière | Licence ouverte |
 
-L'annonce est lue depuis la page que **vous** visitez ; rien n'est envoyé ailleurs que chez votre provider LLM. Clés API stockées en local (`chrome.storage.local`), jamais synchronisées.
+L'annonce est lue depuis la page que **vous** visitez ; rien n'est envoyé ailleurs que chez votre provider LLM. Clés API stockées en local (`chrome.storage.local`), jamais synchronisées. Détails : [politique de confidentialité](PRIVACY.md).
 
 ## Avertissements
 
