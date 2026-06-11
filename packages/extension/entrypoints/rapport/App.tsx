@@ -6,7 +6,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Copy,
   History,
+  Loader2,
+  Mail,
+  RefreshCw,
   School,
   ShoppingBag,
   Sparkles,
@@ -22,9 +26,11 @@ import {
   scoreColorClass,
   PageShell,
   Metric,
+  Seg,
   WarnItem,
   DPEChip,
 } from "@/components/pepite";
+import { NEGOTIATION_TONES, useNegotiation } from "@/lib/hooks/use-negotiation";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -85,6 +91,7 @@ const TOC_BASE = [
   ["vigilance", "Points de vigilance"],
   ["checklist", "Checklist visite"],
   ["nego", "Négociation"],
+  ["mails", "Mails de négociation"],
   ["profils", "Selon votre projet"],
 ] as const;
 
@@ -105,6 +112,7 @@ export default function App() {
   const [othersOpen, setOthersOpen] = useState(false);
   const [restyles, setRestyles] = useState<RestyleRecord[]>([]);
   const [restyleUrls, setRestyleUrls] = useState<Record<string, string>>({});
+  const nego = useNegotiation(report === "loading" ? null : report);
 
   useEffect(() => {
     const id = new URLSearchParams(location.search).get("id");
@@ -532,9 +540,75 @@ export default function App() {
             </div>
           </RSection>
 
-          {/* ── 7. Selon votre projet ── */}
+          {/* ── 7. Mails de négociation ── */}
+          <RSection id="mails" num={7} title="Mails de négociation">
+            {!nego.emails ? (
+              <div className="flex flex-col items-start gap-3">
+                <p className="text-[13px] leading-relaxed text-ink-2">
+                  Générez trois variantes de mail (assertif, modéré, aimable) à adresser au
+                  vendeur ou à l&apos;agent, ancrées dans les chiffres de ce rapport.
+                </p>
+                <Button onClick={() => void nego.generate()} disabled={nego.generating}>
+                  {nego.generating ? <Loader2 className="animate-spin" /> : <Mail />}
+                  {nego.generating ? "Génération en cours…" : "Générer les mails (IA)"}
+                </Button>
+                {nego.error && <p className="text-xs text-bad">{nego.error}</p>}
+              </div>
+            ) : (
+              (() => {
+                const mail = nego.emails[nego.tone];
+                const activeLabel =
+                  NEGOTIATION_TONES.find((t) => t.key === nego.tone)?.label ?? "Assertif";
+                return (
+                  <div>
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <Seg
+                        options={NEGOTIATION_TONES.map((t) => t.label)}
+                        value={activeLabel}
+                        onChange={(label) => {
+                          const next = NEGOTIATION_TONES.find((t) => t.label === label);
+                          if (next) nego.setTone(next.key);
+                        }}
+                      />
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void nego.generate()}
+                          disabled={nego.generating}
+                        >
+                          {nego.generating ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                          Régénérer
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => void nego.copy()}>
+                          {nego.copied ? <Check /> : <Copy />}
+                          {nego.copied ? "Copié ✓" : "Copier"}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-[10px] border border-line">
+                      <div className="border-b border-line-soft bg-surface-sub px-3.5 py-[9px] text-xs text-ink-2">
+                        <span className="text-ink-3">Objet : </span>
+                        <span className="font-semibold text-ink">{mail.objet}</span>
+                      </div>
+                      <div className="whitespace-pre-line bg-white px-3.5 py-[13px] font-mono text-[12.5px] leading-[1.65] text-ink-2">
+                        {mail.corps}
+                      </div>
+                    </div>
+                    {nego.error && <p className="mt-2 text-xs text-bad">{nego.error}</p>}
+                    <p className="mt-2 text-[11px] text-ink-3">
+                      Généré par IA à partir des données du rapport — relisez et personnalisez
+                      avant envoi.
+                    </p>
+                  </div>
+                );
+              })()
+            )}
+          </RSection>
+
+          {/* ── 8. Selon votre projet ── */}
           {analysis.profils && (
-            <RSection id="profils" num={7} title="Selon votre projet">
+            <RSection id="profils" num={8} title="Selon votre projet">
               <div className="flex flex-col gap-5">
                 {(["residence", "locatif-nu", "airbnb", "coloc"] as const).map((key) => (
                   <div key={key}>
@@ -550,7 +624,7 @@ export default function App() {
             </RSection>
           )}
 
-          {/* ── 8. Quartier ── */}
+          {/* ── 9. Quartier ── */}
           {enrichments?.neighborhood && (() => {
             const nb = enrichments.neighborhood!;
             type CatKey = "ecoles" | "commerces" | "sante" | "transports" | "espacesVerts";
@@ -561,7 +635,7 @@ export default function App() {
               { key: "transports", label: "Transports", Icon: Bus },
               { key: "espacesVerts", label: "Espaces verts", Icon: Trees },
             ];
-            const sectionNum = 8;
+            const sectionNum = 9;
             return (
               <RSection id="quartier" num={sectionNum} title={`Quartier (rayon ${nb.radiusM} m)`}>
                 {isApproximateLocation(listing.location.precision) && (
@@ -612,11 +686,11 @@ export default function App() {
             );
           })()}
 
-          {/* ── 9. Risques recensés ── */}
+          {/* ── 10. Risques recensés ── */}
           {enrichments?.risks && (() => {
             const risks = enrichments.risks!;
             const hasAny = risks.naturels.length > 0 || risks.technologiques.length > 0;
-            const sectionNum = enrichments?.neighborhood ? 9 : 8;
+            const sectionNum = enrichments?.neighborhood ? 10 : 9;
             return (
               <RSection id="risques" num={sectionNum} title="Risques recensés">
                 {!hasAny ? (
@@ -635,11 +709,11 @@ export default function App() {
             );
           })()}
 
-          {/* ── 10. Marché locatif ── */}
+          {/* ── 11. Marché locatif ── */}
           {enrichments?.rent && (() => {
             const rent = enrichments.rent!;
             const prevCount = (enrichments?.neighborhood ? 1 : 0) + (enrichments?.risks ? 1 : 0);
-            const sectionNum = 8 + prevCount;
+            const sectionNum = 9 + prevCount;
             const rendementBrut =
               listing.price && listing.surface && rent.fiable
                 ? ((rent.loyerM2 * listing.surface * 12) / listing.price * 100).toFixed(1)
@@ -700,7 +774,7 @@ export default function App() {
               (enrichments?.neighborhood ? 1 : 0) +
               (enrichments?.risks ? 1 : 0) +
               (enrichments?.rent ? 1 : 0);
-            const sectionNum = 8 + prevCount;
+            const sectionNum = 9 + prevCount;
             return (
               <RSection id="recap" num={sectionNum} title="Récapitulatif du score">
                 <div className="overflow-hidden rounded-[9px] border border-line-soft">
@@ -748,7 +822,7 @@ export default function App() {
               (enrichments?.risks ? 1 : 0) +
               (enrichments?.rent ? 1 : 0) +
               (globalScore !== undefined ? 1 : 0);
-            const sectionNum = 8 + prevCount;
+            const sectionNum = 9 + prevCount;
             return (
               <RSection id="restyles" num={sectionNum} title="Restyles IA">
                 <div className="flex flex-col gap-6">

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { NegotiationEmails } from "./analysis/negotiation";
 
 export type Site = "leboncoin" | "seloger" | "bienici" | "citya" | "generic";
 export type UsageProfile = "residence" | "locatif-nu" | "airbnb" | "coloc";
@@ -193,4 +194,5 @@ export interface Report {
   model: string;
   enrichments?: Enrichments;
   globalScore?: GlobalScore;
+  negotiationEmails?: NegotiationEmails;
 }

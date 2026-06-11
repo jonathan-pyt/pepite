@@ -8,6 +8,7 @@ import {
   fetchNeighborhood,
   fetchRentInfo,
   fetchRisks,
+  generateNegotiationEmails,
   geocode,
   isListingPage,
   type DvfSale,
@@ -301,6 +302,28 @@ export default defineBackground(() => {
               const msg = e instanceof Error ? e.message : String(e);
               setTabState(req.tabId, { ...prev, status: "error", error: msg });
               sendResponse({ error: msg });
+            }
+            return;
+          }
+          case "GENERATE_NEGOTIATION_EMAILS": {
+            const report = await idbRepository.getReport(req.reportId);
+            if (!report) return sendResponse({ error: "Rapport introuvable" });
+            const settings = await getSettings();
+            const cfg = toLlmConfig(settings);
+            if (!cfg) return sendResponse({ error: "NO_API_KEY" });
+            try {
+              const emails = await generateNegotiationEmails({
+                listing: report.listing,
+                quick: report.quick,
+                analysis: report.analysis,
+                enrichments: report.enrichments,
+                settings: cfg,
+              });
+              // Persistance sur le rapport existant (même id, pas de nouveau rapport).
+              await idbRepository.saveReport({ ...report, negotiationEmails: emails });
+              sendResponse({ emails });
+            } catch (e) {
+              sendResponse({ error: e instanceof Error ? e.message : String(e) });
             }
             return;
           }

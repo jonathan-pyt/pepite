@@ -22,6 +22,15 @@ export type { GlobalScore, GlobalScoreCritere } from "./types";
 export { createModel, DEFAULT_MODELS, type LlmConfig, type LlmProviderId } from "./analysis/provider";
 export { analyzeListing, type AnalyzeInput } from "./analysis/analyze";
 export { SYSTEM_PROMPT, buildAnalysisPrompt } from "./analysis/prompts";
+export {
+  generateNegotiationEmails,
+  buildNegotiationPrompt,
+  negotiationEmailsSchema,
+  NEGOTIATION_SYSTEM_PROMPT,
+  type NegotiationEmails,
+  type NegotiationPromptInput,
+  type GenerateNegotiationEmailsInput,
+} from "./analysis/negotiation";
 export { RESTYLE_STYLES, getRestyleStyle, type RestyleStyle } from "./restyle/styles";
 export {
   restyleImage,

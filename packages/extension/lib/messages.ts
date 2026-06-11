@@ -24,6 +24,7 @@ export type PepiteRequest =
   | { type: "EXTRACT_GENERIC"; url: string; pageText: string }
   | { type: "GET_TAB_STATE"; tabId?: number }
   | { type: "RUN_FULL_ANALYSIS"; tabId: number }
+  | { type: "GENERATE_NEGOTIATION_EMAILS"; reportId: string }
   | { type: "OPEN_SIDE_PANEL" };
 
 export type PepiteContentRequest = { type: "REDETECT" };
