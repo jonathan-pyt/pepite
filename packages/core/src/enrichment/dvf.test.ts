@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { parseDvfCsv, computeMarketStats, fetchCommuneSales, haversineM } from "./dvf";
+import { parseDvfCsv, computeMarketStats, fetchCommuneSales, haversineM, DVF_YEARS } from "./dvf";
 
 const csv = readFileSync(
   join(dirname(fileURLToPath(import.meta.url)), "fixtures/dvf-sample.csv"),
@@ -215,6 +215,10 @@ describe("computeMarketStats — surface similaire", () => {
 
 const NOW = new Date("2026-06-10");
 
+// Fenêtre « toutes dates » dérivée : du 1er janvier de la première année DVF
+// (2023) à NOW (juin 2026) → (2026-2023)×12 + 5 = 41 mois.
+const ALL_DATES_WINDOW_MONTHS = (NOW.getFullYear() - DVF_YEARS[0]!) * 12 + NOW.getMonth();
+
 describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
   it("niveau 1 : 12 similaires récents → médiane sur les récents, windowMonths 18", () => {
     // 12 ventes similaires récentes (~3 mois avant now)
@@ -238,7 +242,7 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
     expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
   });
 
-  it("niveau 2 : 4 similaires récents + 8 similaires anciens → médiane sur les 12 similaires, windowMonths 36", () => {
+  it("niveau 2 : 4 similaires récents + 8 similaires anciens → médiane sur les 12 similaires, fenêtre toutes dates", () => {
     // 4 similaires récents (< MIN_SAMPLE=10)
     const recentSimilar = Array.from({ length: 4 }, () =>
       fakeSale({ surface: 65, pricePerM2: 5000, date: "2026-03-01" }),
@@ -255,7 +259,7 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
     );
     expect(stats).not.toBeNull();
     expect(stats!.medianOnSimilar).toBe(true);
-    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.windowMonths).toBe(ALL_DATES_WINDOW_MONTHS); // 41 pour NOW=2026-06
     expect(stats!.sampleSize).toBe(12);
     expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
   });
@@ -282,7 +286,7 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
     expect(stats!.medianPricePerM2).toBeCloseTo(5000, 0);
   });
 
-  it("niveau 4 : pas de surface, 5 récents + 6 anciens → tout kept, windowMonths 36", () => {
+  it("niveau 4 : pas de surface, 5 récents + 6 anciens → tout kept, fenêtre toutes dates", () => {
     // 5 récents (< MIN_SAMPLE) + 6 anciens → total = 11, recent seul insuffisant
     const recentSales = Array.from({ length: 5 }, () =>
       fakeSale({ pricePerM2: 5000, date: "2026-03-01" }),
@@ -298,7 +302,7 @@ describe("computeMarketStats — recency (hiérarchie 4 niveaux)", () => {
     );
     expect(stats).not.toBeNull();
     expect(stats!.medianOnSimilar).toBe(false);
-    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.windowMonths).toBe(ALL_DATES_WINDOW_MONTHS); // 41 pour NOW=2026-06
     expect(stats!.sampleSize).toBe(11);
   });
 });
@@ -341,7 +345,7 @@ describe("computeMarketStats — transitions de la hiérarchie de récence", () 
       { surface: 60, now: NOW },
     );
     expect(stats!.medianOnSimilar).toBe(true);
-    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.windowMonths).toBe(ALL_DATES_WINDOW_MONTHS); // 41 pour NOW=2026-06
     expect(stats!.sampleSize).toBe(15);
   });
 
@@ -389,7 +393,7 @@ describe("computeMarketStats — transitions de la hiérarchie de récence", () 
       { surface: 60, now: NOW },
     );
     expect(stats!.medianOnSimilar).toBe(false);
-    expect(stats!.windowMonths).toBe(36);
+    expect(stats!.windowMonths).toBe(ALL_DATES_WINDOW_MONTHS); // 41 pour NOW=2026-06
     expect(stats!.sampleSize).toBe(14);
   });
 });

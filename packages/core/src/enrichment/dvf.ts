@@ -5,7 +5,11 @@ function isHousingType(t: string | undefined): t is PropertyType {
 }
 
 const PRICE_PER_M2_MIN = 500;
-const PRICE_PER_M2_MAX = 20_000;
+// Cap = garde-fou contre les erreurs de saisie grossières uniquement : le
+// filtre statistique (médiane ± 3×MAD) en aval écarte déjà les aberrants.
+// 50 k€/m² couvre l'immobilier prime parisien (un cap à 20 k excluait ~17 %
+// des ventes légitimes à Paris 6e et biaisait la médiane à la baisse).
+const PRICE_PER_M2_MAX = 50_000;
 const SURFACE_MIN = 9;
 const SURFACE_MAX = 400;
 
@@ -152,6 +156,9 @@ export function computeMarketStats(
   opts: ComputeMarketStatsOpts = {},
 ): MarketStats | null {
   const { surface, now = new Date() } = opts;
+  // Fenêtre réelle des niveaux « toutes dates » : du 1er janvier de la
+  // première année DVF chargée jusqu'à now (≈ 41 mois mi-2026, pas 36 en dur).
+  const allDatesWindowMonths = (now.getFullYear() - DVF_YEARS[0]!) * 12 + now.getMonth();
   const typed = sales.filter((s) => s.type === type);
   for (const radiusM of RADII_M) {
     const inRadius: Comparable[] = typed
@@ -206,7 +213,7 @@ export function computeMarketStats(
       // Niveau 2
       medianSource = similar;
       medianOnSimilar = true;
-      windowMonths = 36;
+      windowMonths = allDatesWindowMonths;
     } else if (allRecent.length >= MIN_SAMPLE) {
       // Niveau 3
       medianSource = allRecent;
@@ -216,7 +223,7 @@ export function computeMarketStats(
       // Niveau 4
       medianSource = kept;
       medianOnSimilar = false;
-      windowMonths = 36;
+      windowMonths = allDatesWindowMonths;
     }
 
     const medianPrices = medianSource.map((s) => s.pricePerM2).sort((a, b) => a - b);
