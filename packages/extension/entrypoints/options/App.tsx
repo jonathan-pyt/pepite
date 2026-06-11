@@ -1,4 +1,5 @@
 import { DEFAULT_MODELS, type LlmProviderId } from "@pepite/core";
+import { DatabaseZap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +26,7 @@ const PROVIDERS: { id: LlmProviderId; label: string }[] = [
 ];
 
 export default function App() {
-  const { settings, setSettings, save, saved } = useSettings();
+  const { settings, setSettings, save, saved, clearCaches, cachesCleared } = useSettings();
 
   if (!settings) return null;
 
@@ -88,6 +89,22 @@ export default function App() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Zone discrète : gestion des données techniques locales. */}
+      <div className="mt-6 flex flex-col gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          Données locales
+        </span>
+        <div>
+          <Button variant="secondary" onClick={() => void clearCaches()}>
+            <DatabaseZap />
+            {cachesCleared ? "Caches vidés ✓" : "Vider les caches"}
+          </Button>
+        </div>
+        <p className="text-[11px] leading-relaxed text-ink-3">
+          Données marché, quartier et risques re-téléchargées à la prochaine analyse.
+        </p>
+      </div>
     </PageShell>
   );
 }

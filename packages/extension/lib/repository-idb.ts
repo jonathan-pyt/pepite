@@ -53,6 +53,14 @@ export async function deleteRestyle(id: string): Promise<void> {
   await (await getDb()).delete("restyles", id);
 }
 
+/**
+ * Vide uniquement le store `cache` (données marché, quartier, risques…).
+ * Les rapports, restyles et annonces sont préservés.
+ */
+export async function clearCache(): Promise<void> {
+  await (await getDb()).clear("cache");
+}
+
 export const idbRepository: Repository = {
   async saveListing(listing) {
     await (await getDb()).put("listings", listing);

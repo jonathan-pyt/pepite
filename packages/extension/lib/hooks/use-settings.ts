@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
 
+import { clearCache } from "@/lib/repository-idb"
 import { getSettings, saveSettings, type Settings } from "@/lib/settings"
 
 export interface UseSettings {
@@ -12,6 +13,10 @@ export interface UseSettings {
   save: () => Promise<void>
   /** Vrai pendant ~2 s après une sauvegarde réussie. */
   saved: boolean
+  /** Vide le store IDB `cache` et déclenche le retour visuel « Caches vidés ✓ ». */
+  clearCaches: () => Promise<void>
+  /** Vrai pendant ~2 s après un vidage des caches réussi. */
+  cachesCleared: boolean
 }
 
 /**
@@ -21,6 +26,7 @@ export interface UseSettings {
 export function useSettings(): UseSettings {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [saved, setSaved] = useState(false)
+  const [cachesCleared, setCachesCleared] = useState(false)
 
   useEffect(() => {
     void getSettings().then(setSettings)
@@ -41,5 +47,12 @@ export function useSettings(): UseSettings {
     }, 800)
   }
 
-  return { settings, setSettings, save, saved }
+  // Pas de fermeture d'onglet ici : elle est réservée à l'enregistrement de la clé.
+  async function clearCaches() {
+    await clearCache()
+    setCachesCleared(true)
+    setTimeout(() => setCachesCleared(false), 2000)
+  }
+
+  return { settings, setSettings, save, saved, clearCaches, cachesCleared }
 }
