@@ -192,6 +192,9 @@ describe("buildAnalysisPrompt", () => {
       nbAnnonces: 87,
       zoneAbc: "B1",
     },
+    commune: { nom: "Saint-Denis", population: 155634, densityPerKm2: 1093 },
+    plu: { libelle: "Uavap", typezone: "U" },
+    taxeFonciere: { exercice: "2025", tauxGlobalTfb: 38.97, tauxTeom: 15.8 },
   };
 
   it("section Quartier : count et nom du plus proche visible", () => {
@@ -245,6 +248,55 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("données quartier indisponibles");
     expect(prompt).toContain("données risques indisponibles");
     expect(prompt).toContain("données loyers indisponibles");
+  });
+
+  // ── contexte communal (commune / PLU / taxe foncière) ─────────────────────
+
+  it("section Contexte communal : commune, population et densité", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("Contexte communal");
+    expect(prompt).toContain("Commune : Saint-Denis, 155634 hab (1093 hab/km²)");
+  });
+
+  it("section Contexte communal : zonage PLU avec libellé, typezone et légende U/AU/A/N", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("Zonage PLU : Uavap (U)");
+    expect(prompt).toContain("U = urbaine");
+    expect(prompt).toContain("AU = à urbaniser");
+    expect(prompt).toContain("A = agricole");
+    expect(prompt).toContain("N = naturelle");
+  });
+
+  it("section Contexte communal : taux de taxe foncière + TEOM, consigne charges", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, fullEnrichments);
+    expect(prompt).toContain("Taux global de taxe foncière bâtie 2025 : 38.97 % (+ TEOM 15.8 %)");
+    expect(prompt).toContain("à intégrer dans l'évaluation des charges");
+  });
+
+  it("taxe foncière sans TEOM (tauxTeom null) → pas de mention TEOM", () => {
+    const enrichments: Enrichments = {
+      taxeFonciere: { exercice: "2025", tauxGlobalTfb: 38.97, tauxTeom: null },
+    };
+    const prompt = buildAnalysisPrompt(listing, quick, enrichments);
+    expect(prompt).toContain("Taux global de taxe foncière bâtie 2025 : 38.97 %");
+    expect(prompt).not.toContain("TEOM");
+  });
+
+  it("plu null (interrogé sans zonage) → pas de ligne Zonage PLU", () => {
+    const enrichments: Enrichments = {
+      commune: fullEnrichments.commune,
+      plu: null,
+      taxeFonciere: null,
+    };
+    const prompt = buildAnalysisPrompt(listing, quick, enrichments);
+    expect(prompt).toContain("Commune : Saint-Denis");
+    expect(prompt).not.toContain("Zonage PLU");
+    expect(prompt).not.toContain("taxe foncière bâtie");
+  });
+
+  it("commune/plu/taxe foncière absents → pas de section Contexte communal", () => {
+    const prompt = buildAnalysisPrompt(listing, quick, { neighborhood: fullEnrichments.neighborhood });
+    expect(prompt).not.toContain("Contexte communal");
   });
 
   it("consigne rendement brut présente dans les règles", () => {

@@ -164,10 +164,33 @@ export interface RentInfo {
   zoneAbc?: string; // A bis / A / B1 / B2 / C
 }
 
+export interface CommuneInfo {
+  nom: string;
+  population: number;
+  densityPerKm2: number; // arrondie (surface geo.api.gouv.fr en hectares)
+}
+
+export interface PluZone {
+  libelle: string; // ex. "Uavap", "UP1"
+  typezone: string; // ex. "U", "AU", "A", "N"
+}
+
+export interface TaxeFonciereInfo {
+  exercice: string; // ex. "2025" (exercice le plus récent disponible)
+  tauxGlobalTfb: number; // taux global de taxe foncière bâtie, en %
+  tauxTeom: number | null; // taux plein TEOM en %, null si non publié
+}
+
 export interface Enrichments {
   neighborhood?: NeighborhoodStats;
   risks?: RiskReport;
   rent?: RentInfo;
+  /** absent = non tenté ou échoué */
+  commune?: CommuneInfo;
+  /** absent = non tenté/échoué ; null = interrogé mais aucune zone (pas de PLU numérisé) */
+  plu?: PluZone | null;
+  /** absent = non tenté/échoué ; null = interrogé mais commune sans donnée */
+  taxeFonciere?: TaxeFonciereInfo | null;
 }
 
 export interface GlobalScoreCritere {

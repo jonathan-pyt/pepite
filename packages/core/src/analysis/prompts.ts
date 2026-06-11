@@ -45,6 +45,33 @@ ${catLine("Transports", n.transports)}
 ${catLine("Espaces verts", n.espacesVerts)}`;
 }
 
+/**
+ * Contexte communal (population/densité, zonage PLU, taux de taxe foncière).
+ * Sémantique : champ absent = non tenté/échoué → ligne omise ; null = interrogé
+ * sans donnée → ligne omise aussi (rien d'utile à dire au modèle).
+ * Retourne null quand aucune donnée n'est disponible (section omise).
+ */
+function buildCommuneContextSection(e: Enrichments): string | null {
+  const lines: string[] = [];
+  if (e.commune) {
+    lines.push(`- Commune : ${e.commune.nom}, ${e.commune.population} hab (${e.commune.densityPerKm2} hab/km²)`);
+  }
+  if (e.plu) {
+    lines.push(
+      `- Zonage PLU : ${e.plu.libelle} (${e.plu.typezone}) — types de zone : U = urbaine, AU = à urbaniser, A = agricole, N = naturelle`,
+    );
+  }
+  if (e.taxeFonciere) {
+    const teomStr = e.taxeFonciere.tauxTeom !== null ? ` (+ TEOM ${e.taxeFonciere.tauxTeom} %)` : "";
+    lines.push(
+      `- Taux global de taxe foncière bâtie ${e.taxeFonciere.exercice} : ${e.taxeFonciere.tauxGlobalTfb} %${teomStr} — à intégrer dans l'évaluation des charges`,
+    );
+  }
+  if (lines.length === 0) return null;
+  return `## Contexte communal
+${lines.join("\n")}`;
+}
+
 function buildRisksSection(r: RiskReport): string {
   const all = [...r.naturels, ...r.technologiques];
   if (all.length === 0) {
@@ -95,6 +122,9 @@ export function buildAnalysisPrompt(
     ? buildNeighborhoodSection(enrichments.neighborhood, listing)
     : `## Quartier (rayon 800 m, OpenStreetMap)\n- données quartier indisponibles`;
 
+  const communeContextSection = enrichments ? buildCommuneContextSection(enrichments) : null;
+  const communeContextBlock = communeContextSection ? `\n${communeContextSection}\n` : "";
+
   const risksBlock = enrichments?.risks
     ? buildRisksSection(enrichments.risks)
     : `## Risques recensés sur la commune (Géorisques)\n- données risques indisponibles`;
@@ -135,7 +165,7 @@ ${
 }
 
 ${neighborhoodBlock}
-
+${communeContextBlock}
 ${risksBlock}
 
 ${rentBlock}
