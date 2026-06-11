@@ -10,6 +10,7 @@ export interface Repository {
   getListingByUrl(url: string): Promise<Listing | undefined>;
   saveReport(report: Report): Promise<void>;
   getReport(id: string): Promise<Report | undefined>;
+  deleteReport(id: string): Promise<void>;
   listReports(): Promise<Report[]>;
   getCache<T>(key: string): Promise<T | undefined>;
   setCache<T>(key: string, value: T, ttlMs: number): Promise<void>;

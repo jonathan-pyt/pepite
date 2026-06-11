@@ -66,6 +66,9 @@ export const idbRepository: Repository = {
   async getReport(id) {
     return (await getDb()).get("reports", id);
   },
+  async deleteReport(id) {
+    await (await getDb()).delete("reports", id);
+  },
   async listReports() {
     return (await getDb()).getAll("reports");
   },
