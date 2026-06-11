@@ -16,6 +16,7 @@ import {
 } from "@pepite/core";
 import { Loader2, KeyRound } from "lucide-react";
 import { PepiteMark, ScoreRing } from "@/components/pepite";
+import { formatPctFr } from "@/lib/format";
 import { sendRequest, type PepiteContentRequest } from "@/lib/messages";
 
 /** Domaines couverts par le content script (doivent rester alignés avec `matches`). */
@@ -104,8 +105,10 @@ function MiniWordmark() {
 
 type BadgeState = QuickAnalysis | null | "loading" | "error" | "needs-key" | "extract-failed";
 
+// Vrai <button> (focusable, activable au clavier) — text-left neutralise le
+// text-align:center par défaut des boutons, le reste écrase le style natif.
 const CARD_CLASS =
-  "fixed right-4 top-24 z-[2147483000] inline-flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-line bg-white px-3 py-2.5 text-ink shadow-pepite-lg select-none";
+  "fixed right-4 top-24 z-[2147483000] inline-flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-line bg-white px-3 py-2.5 text-left text-ink shadow-pepite-lg select-none";
 
 function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const [quick, setQuick] = useState<BadgeState>("loading");
@@ -200,7 +203,6 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
       }
     }
 
-    if (nonce > 0) setQuick("loading");
     void run();
     return () => {
       cancelled = true;
@@ -213,7 +215,10 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     const listener = (msg: unknown) => {
       const m = msg as PepiteContentRequest;
       if (m?.type === "REDETECT") {
+        // Reset au moment où le nonce est incrémenté (batché en un seul rendu),
+        // plutôt que de synchroniser quick sur nonce dans l'effet de détection.
         setNonce((n) => n + 1);
+        setQuick("loading");
       }
     };
     browser.runtime.onMessage.addListener(listener);
@@ -229,9 +234,9 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   /* Needs API key state (site sans parseur dédié, extraction générique payante) */
   if (quick === "needs-key") {
     return (
-      <div
+      <button
+        type="button"
         className={CARD_CLASS}
-        role="button"
         title="Ouvrir les réglages Pépite"
         onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
       >
@@ -245,16 +250,16 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
             Clé API requise pour analyser ce site
           </div>
         </div>
-      </div>
+      </button>
     );
   }
 
   /* Échec d'extraction générique : badge neutre et discret, sans score ni chiffres. */
   if (quick === "extract-failed") {
     return (
-      <div
+      <button
+        type="button"
         className={CARD_CLASS}
-        role="button"
         title="Ouvrir le panneau Pépite"
         onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
       >
@@ -262,16 +267,16 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
         <span className="text-[12px] font-medium text-ink-3">
           Extraction impossible sur cette page
         </span>
-      </div>
+      </button>
     );
   }
 
   /* Loading state */
   if (quick === "loading") {
     return (
-      <div
+      <button
+        type="button"
         className={CARD_CLASS}
-        role="button"
         title="Ouvrir l'analyse Pépite"
         onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
       >
@@ -283,7 +288,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
           </div>
           <div className="mt-0.5 text-[10.5px] text-ink-3">calcul en cours…</div>
         </div>
-      </div>
+      </button>
     );
   }
 
@@ -308,9 +313,9 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
   const showUnusualGap = gapPct !== null && Math.abs(gapPct) > 60;
 
   return (
-    <div
+    <button
+      type="button"
       className={CARD_CLASS}
-      role="button"
       title="Ouvrir l'analyse Pépite"
       onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
     >
@@ -334,7 +339,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
               </div>
               <div className="mt-px text-[11px] text-ink-3 tabular-nums">
                 {gapPct !== null
-                  ? `${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1).replace(".", ",")} % vs marché`
+                  ? `${formatPctFr(gapPct)} % vs marché`
                   : "marché inconnu"}
               </div>
               {showPriceDetails && (
@@ -354,7 +359,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
