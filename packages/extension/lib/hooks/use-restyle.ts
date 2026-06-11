@@ -99,6 +99,9 @@ export function useRestyle(): UseRestyle {
 
   // Miroir des object URLs pour la révocation au démontage du studio.
   const urlsRef = useRef<Record<string, string>>({})
+  // Vrai après démontage : generate() en vol ne doit plus créer d'object URL
+  // (il serait orphelin, la révocation du cleanup étant déjà passée).
+  const unmountedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -138,6 +141,7 @@ export function useRestyle(): UseRestyle {
 
   useEffect(
     () => () => {
+      unmountedRef.current = true
       for (const url of Object.values(urlsRef.current)) URL.revokeObjectURL(url)
     },
     [],
@@ -235,6 +239,12 @@ export function useRestyle(): UseRestyle {
         styleLabel: label,
         image,
         createdAt: new Date().toISOString(),
+      }
+      if (unmountedRef.current) {
+        // Studio fermé pendant la génération : on persiste la variante
+        // (rechargée à la prochaine ouverture) sans créer d'object URL orpheline.
+        void saveRestyle(record)
+        return
       }
       const url = URL.createObjectURL(image)
       urlsRef.current[record.id] = url

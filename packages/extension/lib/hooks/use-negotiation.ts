@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { NegotiationEmails, Report } from "@pepite/core"
 
 import { sendRequest } from "@/lib/messages"
@@ -33,16 +33,14 @@ export interface UseNegotiation {
  * (GENERATE_NEGOTIATION_EMAILS dans le background) et gère ton actif + copie.
  */
 export function useNegotiation(report: Report | null): UseNegotiation {
-  const [emails, setEmails] = useState<NegotiationEmails | null>(null)
+  const [generated, setGenerated] = useState<NegotiationEmails | null>(null)
   const [tone, setToneState] = useState<NegotiationTone>("assertif")
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Restaure les mails persistés quand le rapport est chargé.
-  useEffect(() => {
-    setEmails(report?.negotiationEmails ?? null)
-  }, [report])
+  // Dérivé au rendu : mails fraîchement générés, sinon ceux persistés sur le rapport.
+  const emails = generated ?? report?.negotiationEmails ?? null
 
   function setTone(next: NegotiationTone) {
     setToneState(next)
@@ -64,7 +62,7 @@ export function useNegotiation(report: Report | null): UseNegotiation {
       } else if (res.error) {
         setError(res.error)
       } else {
-        setEmails(res.emails ?? null)
+        setGenerated(res.emails ?? null)
       }
     } finally {
       setGenerating(false)
