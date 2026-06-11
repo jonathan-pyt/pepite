@@ -48,9 +48,18 @@ function setTabState(tabId: number, state: TabState) {
  */
 function ensureTabState(tabId: number, url: string | undefined) {
   if (!url || !isListingPage(url)) return;
-  if (tabStates.get(tabId)?.listing) return;
+  // Un état non-idle existe déjà (annonce détectée, ou échec d'extraction
+  // mémorisé) : ne pas relancer la détection — sinon chaque ouverture du side
+  // panel après un échec d'extraction générique re-déclencherait un appel LLM.
+  const state = tabStates.get(tabId);
+  if (state && state.status !== "idle") return;
   void browser.tabs.sendMessage(tabId, { type: "REDETECT" }).catch(() => {});
 }
+
+/** Message d'explication affiché par le side panel quand l'extraction générique échoue. */
+const EXTRACTION_FAILED_MESSAGE =
+  "Pépite n'a pas réussi à identifier une annonce exploitable sur cette page (prix, surface…). " +
+  "Recharge la page une fois l'annonce affichée, ou réessaie sur une autre annonce.";
 
 async function getSalesCached(citycode: string): Promise<DvfSale[]> {
   const key = `dvf:${citycode}`;
@@ -280,7 +289,9 @@ export default defineBackground(() => {
             try {
               listing = await extractListingGeneric(req.pageText, req.url, cfg);
             } catch (e) {
-              // Pas d'annonce identifiable ou extraction invalide → silencieux côté badge.
+              // Pas d'annonce identifiable ou extraction invalide → badge neutre,
+              // et état d'erreur mémorisé pour que le side panel explique.
+              setTabState(tabId, { status: "error", error: EXTRACTION_FAILED_MESSAGE });
               return sendResponse({ error: "EXTRACTION_FAIBLE" });
             }
             // Garde qualité : résultat trop pauvre pour être présenté.
@@ -289,6 +300,7 @@ export default defineBackground(() => {
               listing.price < 5000 ||
               (!listing.surface && !listing.rooms && !listing.propertyType)
             ) {
+              setTabState(tabId, { status: "error", error: EXTRACTION_FAILED_MESSAGE });
               return sendResponse({ error: "EXTRACTION_FAIBLE" });
             }
             sendResponse(await runListingPipeline(tabId, listing));

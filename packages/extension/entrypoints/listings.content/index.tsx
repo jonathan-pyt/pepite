@@ -102,7 +102,7 @@ function MiniWordmark() {
 
 /* ---------- Badge component ---------- */
 
-type BadgeState = QuickAnalysis | null | "loading" | "error" | "needs-key";
+type BadgeState = QuickAnalysis | null | "loading" | "error" | "needs-key" | "extract-failed";
 
 const CARD_CLASS =
   "fixed right-4 top-24 z-[2147483000] inline-flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-line bg-white px-3 py-2.5 text-ink shadow-pepite-lg select-none";
@@ -148,8 +148,9 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
         const ready = await waitForContent(cancelledRef);
         if (cancelled) return;
         if (!ready) {
-          // Page trop vide après 20 s (splash écran, contenu bloqué) → badge masqué.
-          setQuick(null);
+          // Page trop vide après 20 s (splash écran, contenu bloqué) :
+          // aucune annonce identifiable → badge neutre « Extraction impossible ».
+          setQuick("extract-failed");
           return;
         }
 
@@ -174,18 +175,26 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
         }
 
         // Fallback : extraction générique LLM côté background (nécessite une clé API).
-        const pageText = collectPageText();
-        const resp = await sendRequest<QuickAnalysis | { error: string } | null>({
-          type: "EXTRACT_GENERIC",
-          url,
-          pageText,
-        });
-        if (cancelled) return;
-        if (resp && typeof resp === "object" && "error" in resp) {
-          setQuick(resp.error === "NO_API_KEY" ? "needs-key" : "error");
-          return;
+        try {
+          const pageText = collectPageText();
+          const resp = await sendRequest<QuickAnalysis | { error: string } | null>({
+            type: "EXTRACT_GENERIC",
+            url,
+            pageText,
+          });
+          if (cancelled) return;
+          if (resp && typeof resp === "object" && "error" in resp) {
+            setQuick(resp.error === "NO_API_KEY" ? "needs-key" : "extract-failed");
+            return;
+          }
+          // null = pipeline en échec ou résultat périmé côté background →
+          // pas de résultat présentable, badge neutre.
+          setQuick((resp as QuickAnalysis | null) ?? "extract-failed");
+        } catch {
+          // Messaging indisponible (service worker mort…) : même issue côté
+          // utilisateur, l'extraction générique a échoué.
+          if (!cancelled) setQuick("extract-failed");
         }
-        setQuick((resp as QuickAnalysis | null) ?? null);
       } catch {
         if (!cancelled) setQuick("error");
       }
@@ -236,6 +245,23 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
             Clé API requise pour analyser ce site
           </div>
         </div>
+      </div>
+    );
+  }
+
+  /* Échec d'extraction générique : badge neutre et discret, sans score ni chiffres. */
+  if (quick === "extract-failed") {
+    return (
+      <div
+        className={CARD_CLASS}
+        role="button"
+        title="Ouvrir le panneau Pépite"
+        onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
+      >
+        <PepiteMark className="size-[24px]" />
+        <span className="text-[12px] font-medium text-ink-3">
+          Extraction impossible sur cette page
+        </span>
       </div>
     );
   }
