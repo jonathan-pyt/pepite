@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import { RESTYLE_STYLES, type RestyleStyle } from "@pepite/core";
-import { Check, Copy, Eye, FileText, Loader2, Settings, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Eye,
+  FileText,
+  Loader2,
+  Settings,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { BeforeAfter, PepiteLogo } from "@/components/pepite";
 import { Button } from "@/components/ui/button";
@@ -139,7 +149,7 @@ export default function App() {
   if (r.status === "not-found") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-8 text-center">
-        <PepiteLogo size="lg" />
+        <PepiteLogo size="lg" href={browser.runtime.getURL("/historique.html")} />
         <p className="max-w-[420px] text-[13px] leading-relaxed text-ink-3">
           Annonce introuvable — ouvre d&apos;abord une annonce immobilière analysée par
           Pépite, puis relance le Restyle IA depuis le panneau ou le rapport.
@@ -151,7 +161,7 @@ export default function App() {
   if (r.status === "no-key") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-page px-8 text-center">
-        <PepiteLogo size="lg" />
+        <PepiteLogo size="lg" href={browser.runtime.getURL("/historique.html")} />
         <div className="max-w-[440px] rounded-xl border border-line bg-white px-6 py-5 shadow-pepite-card">
           <div className="mb-1.5 text-[14px] font-semibold text-ink">
             Clé Gemini requise
@@ -177,7 +187,7 @@ export default function App() {
     <div className="flex h-screen flex-col bg-page">
       {/* ── Top bar ── */}
       <div className="flex h-[52px] shrink-0 items-center gap-3.5 border-b border-line bg-white px-[22px]">
-        <PepiteLogo size="md" />
+        <PepiteLogo size="md" href={browser.runtime.getURL("/historique.html")} />
         <span className="text-line">/</span>
         <span className="truncate text-[13.5px] font-semibold text-ink">
           Restyle IA · {listing.title}
@@ -186,7 +196,16 @@ export default function App() {
           <Sparkles className="size-[11px]" />
           Gemini · génération d&apos;image
         </span>
-        <div className="ml-auto flex shrink-0 gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {r.reportId && (
+            <a
+              href={browser.runtime.getURL(`/rapport.html?id=${r.reportId}`)}
+              className="mr-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-ink-2 no-underline hover:text-ink"
+            >
+              <ArrowLeft className="size-[14px]" />
+              Rapport
+            </a>
+          )}
           <Button variant="secondary" size="sm" disabled={!r.saved} onClick={handleAddToReport}>
             {addedFeedback ? <Check /> : <FileText />}
             {addedFeedback ? "Ajouté au rapport ✓" : "Ajouter au rapport"}
@@ -244,6 +263,47 @@ export default function App() {
             )}
           </BeforeAfter>
 
+          {/* Galerie des variantes générées (persistées en IDB) */}
+          {r.variants.length > 0 && (
+            <div className="shrink-0">
+              <ColTitle>Variantes</ColTitle>
+              <div className="flex gap-2 overflow-x-auto pt-0.5 pb-1 pl-0.5">
+                {[...r.variants].reverse().map((v) => (
+                  <div key={v.id} className="group relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => r.selectVariant(v.id)}
+                      className={cn(
+                        "relative block h-[74px] w-[118px] cursor-pointer overflow-hidden rounded-lg bg-surface-2",
+                        v.id === r.activeVariantId &&
+                          "outline-[2.5px] outline-offset-[1.5px] outline-accent"
+                      )}
+                      aria-label={`Variante ${v.styleLabel}`}
+                    >
+                      <img
+                        src={r.variantUrls[v.id]}
+                        alt=""
+                        draggable={false}
+                        className="size-full object-cover"
+                      />
+                      <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/65 to-transparent px-1.5 pt-3 pb-[3px] text-left text-[10px] font-medium text-white">
+                        {v.styleLabel}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => r.deleteVariant(v.id)}
+                      aria-label={`Supprimer la variante ${v.styleLabel}`}
+                      className="absolute top-[5px] right-[5px] grid size-5 cursor-pointer place-items-center rounded-md bg-white/90 text-ink-3 opacity-0 shadow-[0_1px_3px_rgba(0,0,0,0.18)] transition-opacity group-hover:opacity-100 hover:text-bad focus-visible:opacity-100"
+                    >
+                      <Trash2 className="size-[11px]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Disclaimer */}
           <div className="flex shrink-0 items-center gap-[7px] text-[11.5px] leading-[1.5] text-ink-3">
             <Eye className="size-[13px] shrink-0" />
@@ -267,22 +327,19 @@ export default function App() {
                 <StyleChip
                   key={s.nom}
                   style={s}
-                  active={!r.custom.trim() && s.nom === r.preset}
-                  onClick={() => {
-                    r.setCustom("");
-                    r.setPreset(s.nom);
-                  }}
+                  active={s.nom === r.preset}
+                  onClick={() => r.togglePreset(s.nom)}
                 />
               ))}
             </div>
           </div>
 
           <div>
-            <ColTitle>Ou décrivez votre déco idéale</ColTitle>
+            <ColTitle>Précisions ou style personnalisé</ColTitle>
             <Textarea
               value={r.custom}
               onChange={(e) => r.setCustom(e.target.value)}
-              placeholder="« Murs vert sauge, parquet clair conservé, banquette sous la fenêtre, beaucoup de plantes… »"
+              placeholder="« Beaucoup de plantes… » pour compléter le style choisi, ou décrivez votre déco idéale sans preset."
               rows={3}
             />
           </div>
@@ -296,7 +353,7 @@ export default function App() {
           <Button
             size="lg"
             className="mt-auto w-full shrink-0"
-            disabled={r.generating}
+            disabled={r.generating || !r.canGenerate}
             onClick={() => void r.generate()}
           >
             {r.generating ? <Loader2 className="animate-spin" /> : <Sparkles />}
