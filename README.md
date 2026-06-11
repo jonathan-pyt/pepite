@@ -42,8 +42,6 @@ packages/core        Logique métier en TypeScript pur (zéro dépendance Chrome
   analysis/          Prompts + appels LLM (AI SDK v6, multi-provider)
   restyle/           Édition d'image Gemini + estimation travaux
 packages/extension   Extension Chrome MV3 (WXT + React 19 + Tailwind v4 + shadcn/ui)
-design/              Maquettes de référence (bundle Claude Design)
-docs/                Spec et plans d'implémentation
 ```
 
 Le découpage core/extension permet de réutiliser toute la logique hors navigateur (tests, CLI, autre front).
