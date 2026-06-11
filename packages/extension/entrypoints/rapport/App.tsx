@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { GlobalScore, Report } from "@pepite/core";
-import { scoreLabel, estimateAcquisitionCost } from "@pepite/core";
+import { estimateAcquisitionCost } from "@pepite/core";
 import {
   Check,
   ChevronDown,
@@ -84,7 +84,7 @@ const TOC_BASE = [
   ["profils", "Selon votre projet"],
 ] as const;
 
-const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_80px_72px]";
+const COMPARABLE_COLS = "grid-cols-[72px_1fr_90px_72px_1.6fr]";
 
 /** Capitalize each word of an address string */
 function capitalizeAddress(raw: string): string {
@@ -206,7 +206,7 @@ export default function App() {
             {/* Right: ScoreRing + label — score global si disponible, sinon score prix */}
             {(globalScore !== undefined || quick.score !== null) && (() => {
               const displayScore = globalScore !== undefined ? globalScore.score : quick.score!;
-              const displayLabel = globalScore !== undefined ? "score global" : scoreLabel(displayScore);
+              const displayLabel = globalScore !== undefined ? "score global" : "score prix";
               return (
                 <div className="flex shrink-0 flex-col items-center gap-1.5 border-l border-line-soft pl-5">
                   <ScoreRing score={displayScore} size={84} stroke={7} sub="/100" />
@@ -247,7 +247,7 @@ export default function App() {
                 }
                 sub={
                   quick.market
-                    ? `${quick.market.sampleSize} ventes · r${quick.market.radiusM} m · ${quick.market.confidence}${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
+                    ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m · ${quick.market.confidence}${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                     : undefined
                 }
               />
@@ -277,7 +277,7 @@ export default function App() {
                   <div
                     className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
                   >
-                    {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                    {["Date", "Bien", "Prix", "€/m²", "Adresse"].map((h) => (
                       <span key={h} className="text-[11px] font-medium text-ink-3">
                         {h}
                       </span>
@@ -303,8 +303,8 @@ export default function App() {
                       </span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="cursor-help underline decoration-dotted underline-offset-2 text-ink-3">
-                            {c.distanceM} m
+                          <span className="min-w-0 cursor-help truncate text-ink-3">
+                            {capitalizeAddress(c.address)}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
@@ -336,7 +336,7 @@ export default function App() {
                         <div
                           className={`grid ${COMPARABLE_COLS} gap-2 border-b border-line-soft bg-surface-sub px-3 py-[7px]`}
                         >
-                          {["Date", "Bien", "Prix", "€/m²", "Distance"].map((h) => (
+                          {["Date", "Bien", "Prix", "€/m²", "Adresse"].map((h) => (
                             <span key={h} className="text-[11px] font-medium text-ink-3">
                               {h}
                             </span>
@@ -361,8 +361,8 @@ export default function App() {
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="cursor-help underline decoration-dotted underline-offset-2 text-ink-3">
-                                  {c.distanceM} m
+                                <span className="min-w-0 cursor-help truncate text-ink-3">
+                                  {capitalizeAddress(c.address)}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
@@ -536,14 +536,9 @@ export default function App() {
                         {cat.nearest.length > 0 && (
                           <div className="mt-2.5 flex flex-col gap-1.5 border-t border-line-soft pt-2.5">
                             {cat.nearest.map((poi, i) => (
-                              <div key={i} className="flex min-w-0 items-baseline justify-between gap-2">
-                                <span className="line-clamp-2 flex-1 text-[12px] leading-[1.35] text-ink-2">
-                                  {poi.name}
-                                </span>
-                                <span className="shrink-0 text-[11px] tabular-nums text-ink-3">
-                                  {poi.distanceM} m
-                                </span>
-                              </div>
+                              <span key={i} className="line-clamp-2 text-[12px] leading-[1.35] text-ink-2">
+                                {poi.name}
+                              </span>
                             ))}
                           </div>
                         )}

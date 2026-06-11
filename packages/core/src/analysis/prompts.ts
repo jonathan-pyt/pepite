@@ -37,7 +37,7 @@ function buildNeighborhoodSection(n: NeighborhoodStats, listing: Listing): strin
   const approxSuffix = isApproximatePrecision(listing.location.precision)
     ? " — autour du point approximatif"
     : "";
-  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap${approxSuffix})
+  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap, distances à vol d'oiseau${approxSuffix})
 ${catLine("Écoles", n.ecoles)}
 ${catLine("Commerces", n.commerces)}
 ${catLine("Santé", n.sante)}
@@ -76,7 +76,7 @@ export function buildAnalysisPrompt(
   const market = quick.market;
   const comparablesBlock =
     market && market.comparables.length > 0
-      ? `\n- Ventes comparables :\n${market.comparables
+      ? `\n- Ventes comparables (distances à vol d'oiseau) :\n${market.comparables
           .map((c) => {
             const line = `- ${c.date} · ${c.type} ${c.surface} m² · ${c.price.toLocaleString("fr-FR")} € (${Math.round(c.pricePerM2)} €/m²) · à ${c.distanceM} m`;
             return c.similar === false ? `${line} (surface éloignée du bien)` : line;
@@ -143,6 +143,7 @@ ${rentBlock}
 ## Règles pour la négociation
 
 - Tiens compte de l'ancienneté de chaque vente comparable : le marché évolue, une vente d'il y a 2-3 ans ne reflète pas nécessairement les prix actuels.
+- Ne cite jamais ces distances en mètres dans ta rédaction : elles sont à vol d'oiseau et ne reflètent pas les trajets réels.
 - La marge de négociation se DÉDUIT des données, elle ne s'invente pas. En France, la marge habituelle constatée est de 2 à 5 % ; au-delà de 8-10 %, il faut des arguments objectifs forts (surcote manifeste vs ventes DVF comparables, annonce ancienne, travaux lourds, DPE F/G).
 - Si le prix demandé est égal ou inférieur à la médiane des ventes comparables : le dire explicitement, et proposer une marge faible voire nulle (cibleBasse proche du prix demandé). Ne JAMAIS proposer une décote importante sur un bien déjà sous le marché.
 - Formuler la recommandation en termes de VALEUR estimée et de défendabilité (« vaut plutôt autour de… au vu de… »), pas en promesse (« négociable à… »).

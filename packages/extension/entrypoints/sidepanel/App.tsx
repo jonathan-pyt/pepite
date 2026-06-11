@@ -3,6 +3,12 @@ import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
 import { Info, Loader2, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
 import { useTabState } from "@/lib/hooks/use-tab-state";
 
@@ -85,10 +91,29 @@ export default function App() {
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-line-soft px-4 py-3.5">
-        {globalScore !== null ? (
-          <ScoreRing score={globalScore.score} size={54} stroke={5} sub="/100" />
-        ) : quick?.score !== null && quick?.score !== undefined ? (
-          <ScoreRing score={quick.score} size={54} stroke={5} sub="/100" />
+        {globalScore !== null || (quick?.score !== null && quick?.score !== undefined) ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex shrink-0 flex-col items-center gap-1">
+                  <ScoreRing
+                    score={globalScore !== null ? globalScore.score : quick!.score!}
+                    size={54}
+                    stroke={5}
+                    sub="/100"
+                  />
+                  <span className="text-center text-[10.5px] font-medium text-ink-3">
+                    {globalScore !== null ? "Score global" : "Score prix"}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[240px]">
+                {globalScore !== null
+                  ? "Note pondérée : prix, DPE, risques, transports, commerces, écoles, espaces verts, tension locative"
+                  : "Position du prix vs ventes DVF du secteur"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : (
           <div className="flex size-[54px] shrink-0 items-center justify-center rounded-full border border-line-soft bg-surface-sub text-lg font-semibold text-ink-3">
             —
@@ -135,7 +160,7 @@ export default function App() {
               }
               sub={
                 quick.market
-                  ? `${quick.market.sampleSize} ventes · ${quick.market.radiusM} m${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
+                  ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                   : undefined
               }
             />

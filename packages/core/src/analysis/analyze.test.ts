@@ -313,6 +313,13 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("opportunité");
   });
 
+  it("règles : ne jamais citer les distances à vol d'oiseau en mètres", () => {
+    const prompt = buildAnalysisPrompt(listing, quick);
+    expect(prompt).toContain(
+      "Ne cite jamais ces distances en mètres dans ta rédaction : elles sont à vol d'oiseau et ne reflètent pas les trajets réels.",
+    );
+  });
+
   // ── Fix 2 : caveat position approximative ─────────────────────────────────
 
   it("Localisation sans precision → ligne inchangée (sans caveat)", () => {
