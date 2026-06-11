@@ -14,6 +14,7 @@ export default defineConfig({
     host_permissions: [
       "https://data.geopf.fr/*",
       "https://files.data.gouv.fr/*",
+      // Les CSV DVF de files.data.gouv.fr répondent par un 302 vers ce S3 OVH
       "https://*.io.cloud.ovh.net/*",
       "https://generativelanguage.googleapis.com/*",
       "https://api.anthropic.com/*",
