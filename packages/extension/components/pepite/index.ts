@@ -24,3 +24,6 @@ export type { PageShellProps } from "./page-shell"
 
 export { Field } from "./field"
 export type { FieldProps } from "./field"
+
+export { BeforeAfter } from "./before-after"
+export type { BeforeAfterProps } from "./before-after"

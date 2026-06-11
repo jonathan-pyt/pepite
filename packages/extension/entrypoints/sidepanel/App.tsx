@@ -347,6 +347,24 @@ export default function App() {
               </Button>
             </div>
           )}
+
+          {listing.photos.length > 0 && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() =>
+                window.open(
+                  browser.runtime.getURL(
+                    `/restyle.html?url=${encodeURIComponent(listing.url)}`,
+                  ),
+                )
+              }
+            >
+              <Sparkles className="size-[16px]" />
+              Restyle IA
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -1,24 +1,56 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { CacheEntry, Listing, Report, Repository } from "@pepite/core";
+import type { CacheEntry, Listing, Report, Repository, RestyleCost } from "@pepite/core";
+
+/** Restyle IA persisté (avant/après + estimation travaux) pour une annonce. */
+export interface RestyleRecord {
+  id: string;
+  listingUrl: string;
+  photoUrl: string;
+  styleLabel: string;
+  image: Blob;
+  cost?: RestyleCost;
+  createdAt: string;
+}
 
 interface PepiteDB extends DBSchema {
   listings: { key: string; value: Listing };
   reports: { key: string; value: Report; indexes: { "by-url": string } };
   cache: { key: string; value: CacheEntry<unknown> };
+  restyles: { key: string; value: RestyleRecord; indexes: { "by-url": string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<PepiteDB>> | null = null;
 
 function getDb(): Promise<IDBPDatabase<PepiteDB>> {
-  dbPromise ??= openDB<PepiteDB>("pepite", 1, {
-    upgrade(db) {
-      db.createObjectStore("listings", { keyPath: "url" });
-      const reports = db.createObjectStore("reports", { keyPath: "id" });
-      reports.createIndex("by-url", "listingUrl");
-      db.createObjectStore("cache");
+  dbPromise ??= openDB<PepiteDB>("pepite", 2, {
+    upgrade(db, oldVersion) {
+      // v1 — stores d'origine (installation neuve : oldVersion === 0)
+      if (oldVersion < 1) {
+        db.createObjectStore("listings", { keyPath: "url" });
+        const reports = db.createObjectStore("reports", { keyPath: "id" });
+        reports.createIndex("by-url", "listingUrl");
+        db.createObjectStore("cache");
+      }
+      // v2 — restyles IA (migration depuis v1 : stores existants préservés)
+      if (oldVersion < 2) {
+        const restyles = db.createObjectStore("restyles", { keyPath: "id" });
+        restyles.createIndex("by-url", "listingUrl");
+      }
     },
   });
   return dbPromise;
+}
+
+export async function saveRestyle(restyle: RestyleRecord): Promise<void> {
+  await (await getDb()).put("restyles", restyle);
+}
+
+export async function listRestylesByUrl(listingUrl: string): Promise<RestyleRecord[]> {
+  return (await getDb()).getAllFromIndex("restyles", "by-url", listingUrl);
+}
+
+export async function deleteRestyle(id: string): Promise<void> {
+  await (await getDb()).delete("restyles", id);
 }
 
 export const idbRepository: Repository = {

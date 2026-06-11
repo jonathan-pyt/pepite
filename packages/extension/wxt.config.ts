@@ -23,6 +23,13 @@ export default defineConfig({
       "https://www.georisques.gouv.fr/*",
       "https://www.data.gouv.fr/*",
       "https://static.data.gouv.fr/*",
+      // CDN photos des annonces (Restyle IA — fetch depuis la page extension),
+      // domaines relevés dans packages/core/src/extraction (fixtures + parseurs)
+      "https://img.leboncoin.fr/*",
+      "https://mms.seloger.com/*",
+      "https://photo.bienici.com/*",
+      "https://img.citya.com/*",
+      "https://www.citya.com/*",
     ],
   },
 });

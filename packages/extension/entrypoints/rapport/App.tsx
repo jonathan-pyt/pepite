@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { browser } from "wxt/browser";
 import type { GlobalScore, Report } from "@pepite/core";
 import { estimateAcquisitionCost } from "@pepite/core";
 import {
@@ -7,13 +8,15 @@ import {
   ChevronUp,
   School,
   ShoppingBag,
+  Sparkles,
   Stethoscope,
   Bus,
   Trees,
   Square,
 } from "lucide-react";
-import { idbRepository } from "@/lib/repository-idb";
+import { idbRepository, listRestylesByUrl, type RestyleRecord } from "@/lib/repository-idb";
 import {
+  BeforeAfter,
   ScoreRing,
   scoreColorClass,
   PageShell,
@@ -99,12 +102,33 @@ function isApproximateLocation(precision: string | undefined): boolean {
 export default function App() {
   const [report, setReport] = useState<Report | null | "loading">("loading");
   const [othersOpen, setOthersOpen] = useState(false);
+  const [restyles, setRestyles] = useState<RestyleRecord[]>([]);
+  const [restyleUrls, setRestyleUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const id = new URLSearchParams(location.search).get("id");
     if (!id) return setReport(null);
     void idbRepository.getReport(id).then((r) => setReport(r ?? null));
   }, []);
+
+  // Restyles IA persistés pour cette annonce (object URLs des blobs, révoqués au démontage).
+  const listingUrl = report !== "loading" && report ? report.listingUrl : null;
+  useEffect(() => {
+    if (!listingUrl) return;
+    let urls: Record<string, string> = {};
+    let cancelled = false;
+    void listRestylesByUrl(listingUrl).then((records) => {
+      if (cancelled) return;
+      records.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      urls = Object.fromEntries(records.map((r) => [r.id, URL.createObjectURL(r.image)]));
+      setRestyles(records);
+      setRestyleUrls(urls);
+    });
+    return () => {
+      cancelled = true;
+      for (const url of Object.values(urls)) URL.revokeObjectURL(url);
+    };
+  }, [listingUrl]);
 
   if (report === "loading") return null;
   if (!report)
@@ -130,7 +154,30 @@ export default function App() {
     .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <PageShell maxWidth="rapport" topRight={`Rapport généré le ${generatedAt}`}>
+    <PageShell
+      maxWidth="rapport"
+      topRight={
+        <div className="flex items-center gap-3">
+          <span>Rapport généré le {generatedAt}</span>
+          {listing.photos.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                window.open(
+                  browser.runtime.getURL(
+                    `/restyle.html?url=${encodeURIComponent(report.listingUrl)}`,
+                  ),
+                )
+              }
+            >
+              <Sparkles />
+              Restyle IA
+            </Button>
+          )}
+        </div>
+      }
+    >
       {/* Grid: sticky sommaire (lg) + main content */}
       <div className="grid items-start gap-6 lg:grid-cols-[180px_1fr]">
         {/* ── Sommaire (sticky, left rail) ── */}
@@ -147,6 +194,7 @@ export default function App() {
             ...(enrichments?.risks ? [["risques", "Risques recensés"] as const] : []),
             ...(enrichments?.rent ? [["locatif", "Marché locatif"] as const] : []),
             ...(globalScore !== undefined ? [["recap", "Récapitulatif du score"] as const] : []),
+            ...(restyles.length > 0 ? [["restyles", "Restyles IA"] as const] : []),
           ].map(([id, label], i) => (
             <a
               key={id}
@@ -679,6 +727,51 @@ export default function App() {
                     <span className="font-bold text-ink">100 %</span>
                     <span className="font-bold text-ink">{globalScore.score.toFixed(1)}</span>
                   </div>
+                </div>
+              </RSection>
+            );
+          })()}
+
+          {/* ── Restyles IA ── */}
+          {restyles.length > 0 && (() => {
+            const prevCount =
+              (enrichments?.neighborhood ? 1 : 0) +
+              (enrichments?.risks ? 1 : 0) +
+              (enrichments?.rent ? 1 : 0) +
+              (globalScore !== undefined ? 1 : 0);
+            const sectionNum = 8 + prevCount;
+            return (
+              <RSection id="restyles" num={sectionNum} title="Restyles IA">
+                <div className="flex flex-col gap-6">
+                  {restyles.map((r) => (
+                    <div key={r.id} className="flex flex-col gap-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[13px] font-semibold text-ink">
+                          {r.styleLabel}
+                        </span>
+                        {r.cost && (
+                          <span className="text-[13px] font-semibold tabular-nums text-ink">
+                            Travaux ≈ {r.cost.totalMin.toLocaleString("fr-FR")} –{" "}
+                            {r.cost.totalMax.toLocaleString("fr-FR")} €
+                          </span>
+                        )}
+                      </div>
+                      <BeforeAfter
+                        beforeSrc={r.photoUrl}
+                        afterSrc={restyleUrls[r.id]}
+                        className="h-[320px]"
+                      />
+                      {r.cost?.commentaire && (
+                        <p className="text-[11.5px] leading-relaxed text-ink-3">
+                          {r.cost.commentaire}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-[11.5px] leading-relaxed text-ink-3">
+                    Projection générée par IA — l&apos;agencement réel (murs porteurs,
+                    réseaux) doit être validé par un professionnel.
+                  </p>
                 </div>
               </RSection>
             );
