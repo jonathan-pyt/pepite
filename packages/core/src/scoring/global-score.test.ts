@@ -275,20 +275,36 @@ describe("computeGlobalScore", () => {
   });
 
   describe("tension locative barèmes", () => {
-    it("A bis et A → 90, B2 → 55, C → 40", () => {
-      function scoreTension(zone: string) {
-        const enr: Enrichments = {
-          ...enrichmentsFull,
-          rent: { ...enrichmentsFull.rent!, zoneAbc: zone },
-        };
-        const r = computeGlobalScore(quick, listing, enr);
-        return r!.criteres.find((c) => c.id === "tensionLocative")?.score;
-      }
-      expect(scoreTension("A bis")).toBe(90);
+    function scoreTension(zone: string) {
+      const enr: Enrichments = {
+        ...enrichmentsFull,
+        rent: { ...enrichmentsFull.rent!, zoneAbc: zone },
+      };
+      const r = computeGlobalScore(quick, listing, enr);
+      return r!.criteres.find((c) => c.id === "tensionLocative")?.score;
+    }
+
+    it("Abis et A → 90, B2 → 55, C → 40", () => {
+      expect(scoreTension("Abis")).toBe(90);
       expect(scoreTension("A")).toBe(90);
       expect(scoreTension("B1")).toBe(75);
       expect(scoreTension("B2")).toBe(55);
       expect(scoreTension("C")).toBe(40);
+    });
+
+    it('zone "Abis" (forme réelle du CSV zonage, sans espace) → critère présent avec score 90', () => {
+      const enr: Enrichments = {
+        ...enrichmentsFull,
+        rent: { ...enrichmentsFull.rent!, zoneAbc: "Abis" },
+      };
+      const r = computeGlobalScore(quick, listing, enr);
+      const tl = r!.criteres.find((c) => c.id === "tensionLocative");
+      expect(tl).toBeDefined();
+      expect(tl!.score).toBe(90);
+    });
+
+    it('zone "A bis" (ancienne forme avec espace) reste acceptée → 90', () => {
+      expect(scoreTension("A bis")).toBe(90);
     });
   });
 });

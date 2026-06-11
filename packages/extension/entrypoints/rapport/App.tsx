@@ -796,7 +796,8 @@ export default function App() {
                         Zone ABC
                       </div>
                       <span className="inline-block rounded-md border border-line bg-white px-2 py-0.5 text-[13px] font-semibold text-ink tabular-nums">
-                        {rent.zoneAbc}
+                        {/* le CSV zonage écrit "Abis" sans espace — affichage lisible */}
+                        {rent.zoneAbc === "Abis" ? "A bis" : rent.zoneAbc}
                       </span>
                     </div>
                   )}

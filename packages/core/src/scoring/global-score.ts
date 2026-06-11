@@ -96,8 +96,10 @@ function scoreEspacesVerts(nb: Enrichments["neighborhood"]): number | null {
 
 function scoreTensionLocative(rent: Enrichments["rent"]): number | null {
   if (!rent?.zoneAbc) return null;
-  const zone = rent.zoneAbc.trim();
-  if (zone === "A bis" || zone === "A") return 90;
+  // Le CSV zonage réel (data.gouv) écrit la zone SANS espace ("Abis") ; on
+  // normalise en retirant tous les espaces pour accepter aussi "A bis".
+  const zone = rent.zoneAbc.replace(/\s+/g, "");
+  if (zone === "Abis" || zone === "A") return 90;
   if (zone === "B1") return 75;
   if (zone === "B2") return 55;
   if (zone === "C") return 40;

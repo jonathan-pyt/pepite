@@ -34,7 +34,7 @@ const ZONAGE_CSV_HEADER =
 
 const ZONAGE_CSV_BODY = [
   "44109;44;Nantes;B1;",
-  "75056;75;Paris;A bis;",
+  "75056;75;Paris;Abis;", // forme RÉELLE du CSV : "Abis" sans espace
   "33063;33;Bordeaux;B2;",
   "97411;974;Saint-Denis;;",
 ].join("\n");
@@ -115,9 +115,9 @@ describe("parseZonageCsv", () => {
     expect(map.get("44109")).toBe("B1");
   });
 
-  it("mappe INSEE → zone ABC pour Paris (A bis)", () => {
+  it("mappe INSEE → zone ABC pour Paris (Abis, forme brute du CSV conservée)", () => {
     const map = parseZonageCsv(ZONAGE_CSV);
-    expect(map.get("75056")).toBe("A bis");
+    expect(map.get("75056")).toBe("Abis");
   });
 
   it("commune sans zone (Saint-Denis 97411) → undefined dans la map", () => {
