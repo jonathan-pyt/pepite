@@ -13,7 +13,8 @@ export interface AcquisitionCost {
   taxeFonciereAnnuelle?: number;
 }
 
-/** Frais de notaire pour bien ancien en France métropolitaine (taux constant, documenté). */
+/** Frais de notaire pour bien ancien : estimation usuelle en France (hors départements
+ *  à droits de mutation réduits — 36, 38, 56 — et hors évolutions DMTO locales). */
 const FRAIS_NOTAIRE_PCT = 7.8;
 
 /**

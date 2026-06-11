@@ -8,7 +8,7 @@ Extension Chrome open source d'analyse de biens immobiliers en France. Ouvrez un
 
 - **Badge in-page** sur l'annonce : score prix instantané vs ventes réelles du secteur (DVF)
 - **Side panel** : prix/m², médiane des biens comparables, écart marché
-- **Analyse IA complète** (un seul appel LLM) : synthèse, points de vigilance, fourchette et arguments de négociation, checklist de visite, avis pour 4 profils (résidence principale, location nue, Airbnb, colocation)
+- **Analyse IA complète** (un seul appel LLM ; les mails de négociation font un appel séparé, à la demande) : synthèse, points de vigilance, fourchette et arguments de négociation, checklist de visite, avis pour 4 profils (résidence principale, location nue, Airbnb, colocation)
 - **Rapport complet** : comparables datés et adressés, coût total d'acquisition (frais de notaire), score global pondéré (prix, DPE, risques, quartier, tension locative), quartier (écoles, commerces, santé, transports, espaces verts via OpenStreetMap), risques (Géorisques), marché locatif (carte des loyers + zonage ABC), contexte communal (population, zonage PLU, taux de taxe foncière)
 - **Mails de négociation** : 3 tons (assertif, modéré, aimable) générés à partir des données du rapport, à copier-coller
 - **Restyle IA** 🛋️ : sélectionnez une photo de l'annonce et faites-la redécorer par Gemini selon un style (scandinave, industriel, japandi…) ou votre description — avec estimation du coût des travaux, slider avant/après, variantes sauvegardées
@@ -82,7 +82,7 @@ Le découpage core/extension permet de réutiliser toute la logique hors navigat
 
 ```bash
 pnpm install
-pnpm test                              # tests core (Vitest, ~270 tests)
+pnpm test                              # tests core (Vitest, ~278 tests)
 pnpm typecheck                         # dans chaque package
 cd packages/extension && pnpm dev      # Chrome avec HMR
 ```
