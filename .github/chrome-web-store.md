@@ -46,6 +46,7 @@ https://chrome.google.com/webstore/devconsole, téléverse le zip de la release
 ## Déclaration d'usage des données (formulaire « Privacy practices »)
 
 - L'extension **ne collecte aucune donnée** pour le développeur : répondre « non » à toutes les catégories de collecte (l'envoi des caractéristiques d'annonce au fournisseur d'IA se fait avec la clé de l'utilisateur, à sa demande, et n'est pas une collecte par le développeur — le préciser dans le champ libre si demandé).
+- La mini-carte affichée au survol d'un point d'intérêt ou d'une vente charge un embed Google Maps avec les seules coordonnées du point survolé, uniquement à l'ouverture du tooltip.
 - Pas de code distant (tout le code est dans le paquet).
 - Certifier les trois cases de conformité (usage limité, pas de vente de données, pas d'usage hors objectif unique).
 

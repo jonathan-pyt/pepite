@@ -1,6 +1,6 @@
 # Politique de confidentialité — Pépite
 
-*Dernière mise à jour : 11 juin 2026*
+*Dernière mise à jour : 12 juin 2026*
 
 Pépite est une extension Chrome open source d'analyse de biens immobiliers. Elle fonctionne **entièrement dans votre navigateur, sans serveur** : le développeur ne collecte, ne reçoit et ne stocke **aucune donnée**.
 
@@ -18,6 +18,7 @@ L'extension interroge des services externes uniquement pour produire l'analyse :
 |---|---|---|
 | Fournisseur d'IA que **vous** avez choisi (Google / Anthropic / OpenAI) | Caractéristiques de l'annonce, données de marché agrégées et, pour le Restyle, la photo sélectionnée | Analyse rédigée, mails de négociation, génération d'image — avec **votre** clé, selon les conditions et la politique de confidentialité du fournisseur |
 | data.gouv.fr, data.geopf.fr (IGN), geo.api.gouv.fr, apicarto.ign.fr, georisques.gouv.fr, data.economie.gouv.fr, overpass-api.de / overpass.osm.ch | Coordonnées géographiques approximatives ou code commune du bien analysé | Données publiques : ventes DVF, géocodage, population, zonage PLU, risques, taux de taxe foncière, commodités OpenStreetMap |
+| Google Maps (mini-carte) | Coordonnées du point d'intérêt ou de la vente survolé | Carte de situation au survol — chargée uniquement à l'ouverture du tooltip |
 
 Aucune de ces requêtes ne contient d'identifiant personnel. Aucune donnée n'est envoyée au développeur de l'extension. Il n'y a ni télémétrie, ni analytics, ni compte utilisateur.
 
