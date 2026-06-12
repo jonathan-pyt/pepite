@@ -37,9 +37,9 @@ describe("parseOverpass", () => {
 
     // écoles nearest : college(92m), school(111m), kindergarten(184m)
     expect(stats.ecoles.nearest).toHaveLength(3);
-    expect(stats.ecoles.nearest[0]).toEqual({ name: "Collège Victor Hugo", distanceM: 92 });
-    expect(stats.ecoles.nearest[1]).toEqual({ name: "École Jules Ferry", distanceM: 111 });
-    expect(stats.ecoles.nearest[2]).toEqual({ name: "Maternelle Les Lilas", distanceM: 184 });
+    expect(stats.ecoles.nearest[0]).toEqual({ name: "Collège Victor Hugo", distanceM: 92, lat: 48.8605, lon: 2.337 });
+    expect(stats.ecoles.nearest[1]).toEqual({ name: "École Jules Ferry", distanceM: 111, lat: 48.861, lon: 2.336 });
+    expect(stats.ecoles.nearest[2]).toEqual({ name: "Maternelle Les Lilas", distanceM: 184, lat: 48.859, lon: 2.334 });
   });
 
   it("nearest ne contient que des éléments nommés (bus_stop sans name exclu)", () => {
@@ -47,8 +47,8 @@ describe("parseOverpass", () => {
 
     // transports : Gare du Nord (76m), Arrêt République (90m) — le bus_stop 5002 sans name exclu de nearest
     expect(stats.transports.nearest).toHaveLength(2);
-    expect(stats.transports.nearest[0]).toEqual({ name: "Gare du Nord", distanceM: 76 });
-    expect(stats.transports.nearest[1]).toEqual({ name: "Arrêt République", distanceM: 90 });
+    expect(stats.transports.nearest[0]).toEqual({ name: "Gare du Nord", distanceM: 76, lat: 48.8598, lon: 2.335 });
+    expect(stats.transports.nearest[1]).toEqual({ name: "Arrêt République", distanceM: 90, lat: 48.8608, lon: 2.3358 });
   });
 
   it("déduplique les arrêts PTv2 (même id, deux entrées dans le JSON)", () => {
@@ -70,14 +70,14 @@ describe("parseOverpass", () => {
     const stats = parseOverpass(json, CENTER_LAT, CENTER_LON, RADIUS_M);
     expect(stats.transports.count).toBe(2);
     // un seul élément : le plus proche des deux
-    expect(stats.transports.nearest).toEqual([{ name: "Pierre Aubert", distanceM: 56 }]);
+    expect(stats.transports.nearest).toEqual([{ name: "Pierre Aubert", distanceM: 56, lat: 48.8605, lon: 2.336 }]);
   });
 
   it("utilise le center des ways pour calculer la distance", () => {
     const stats = parseOverpass(fixtureJson, CENTER_LAT, CENTER_LON, RADIUS_M);
 
     // park way 6001 center=(48.8603, 2.3368) → 67m
-    expect(stats.espacesVerts.nearest[0]).toEqual({ name: "Square de la Liberté", distanceM: 67 });
+    expect(stats.espacesVerts.nearest[0]).toEqual({ name: "Square de la Liberté", distanceM: 67, lat: 48.8603, lon: 2.3368 });
   });
 
   it("driving_school n'est pas classé dans écoles", () => {
@@ -99,9 +99,9 @@ describe("parseOverpass", () => {
   it("distances commerces cohérentes", () => {
     const stats = parseOverpass(fixtureJson, CENTER_LAT, CENTER_LON, RADIUS_M);
     // Monoprix (3001) → 171m, Boucherie Centrale (3003) → 219m, Boulangerie (3002) → 314m
-    expect(stats.commerces.nearest[0]).toEqual({ name: "Monoprix", distanceM: 171 });
-    expect(stats.commerces.nearest[1]).toEqual({ name: "Boucherie Centrale", distanceM: 219 });
-    expect(stats.commerces.nearest[2]).toEqual({ name: "Boulangerie du Marché", distanceM: 314 });
+    expect(stats.commerces.nearest[0]).toEqual({ name: "Monoprix", distanceM: 171, lat: 48.8615, lon: 2.3355 });
+    expect(stats.commerces.nearest[1]).toEqual({ name: "Boucherie Centrale", distanceM: 219, lat: 48.8618, lon: 2.3348 });
+    expect(stats.commerces.nearest[2]).toEqual({ name: "Boulangerie du Marché", distanceM: 314, lat: 48.8625, lon: 2.338 });
   });
 });
 

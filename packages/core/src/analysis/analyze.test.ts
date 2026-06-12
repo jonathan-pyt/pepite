@@ -171,11 +171,11 @@ describe("buildAnalysisPrompt", () => {
   const fullEnrichments: Enrichments = {
     neighborhood: {
       radiusM: 800,
-      ecoles: { count: 5, nearest: [{ name: "École Jules Ferry", distanceM: 210 }] },
-      commerces: { count: 7, nearest: [{ name: "Monoprix", distanceM: 150 }] },
-      sante: { count: 3, nearest: [{ name: "Pharmacie de la Gare", distanceM: 320 }] },
-      transports: { count: 19, nearest: [{ name: "Gare de Nantes", distanceM: 480 }] },
-      espacesVerts: { count: 4, nearest: [{ name: "Jardin des Plantes", distanceM: 600 }] },
+      ecoles: { count: 5, nearest: [{ name: "École Jules Ferry", distanceM: 210, lat: 47.2185, lon: -1.5535 }] },
+      commerces: { count: 7, nearest: [{ name: "Monoprix", distanceM: 150, lat: 47.2178, lon: -1.5542 }] },
+      sante: { count: 3, nearest: [{ name: "Pharmacie de la Gare", distanceM: 320, lat: 47.2169, lon: -1.5518 }] },
+      transports: { count: 19, nearest: [{ name: "Gare de Nantes", distanceM: 480, lat: 47.2173, lon: -1.5421 }] },
+      espacesVerts: { count: 4, nearest: [{ name: "Jardin des Plantes", distanceM: 600, lat: 47.2196, lon: -1.5429 }] },
     },
     risks: {
       naturels: [
@@ -447,6 +447,85 @@ describe("buildAnalysisPrompt", () => {
     };
     const prompt = buildAnalysisPrompt(listingDistrict, quick, enrichments, new Date("2026-06-10"));
     expect(prompt).toContain("autour du point approximatif");
+  });
+
+  it("section Quartier : toutes catégories à zéro → consigne couverture OSM non concluante", () => {
+    const enrichments: Enrichments = {
+      neighborhood: {
+        radiusM: 800,
+        ecoles: { count: 0, nearest: [] },
+        commerces: { count: 0, nearest: [] },
+        sante: { count: 0, nearest: [] },
+        transports: { count: 0, nearest: [] },
+        espacesVerts: { count: 0, nearest: [] },
+      },
+    };
+    const prompt = buildAnalysisPrompt(listing, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).toContain("Aucune commodité référencée par OpenStreetMap dans le rayon");
+    expect(prompt).toContain("ne JAMAIS conclure à une absence réelle de commodités");
+    expect(prompt).toContain("non concluante");
+    expect(prompt).not.toContain("Écoles : 0");
+  });
+
+  it("section Quartier : position approximative → consigne comptages approximatifs renforcée", () => {
+    const listingDistrict: Listing = {
+      ...listing,
+      location: {
+        rawAddress: "Saint-Denis 97400 Centre-Ville",
+        city: "Saint-Denis",
+        postalCode: "97400",
+        district: "Centre-Ville",
+        precision: "district",
+      },
+    };
+    const enrichments: Enrichments = {
+      neighborhood: {
+        radiusM: 800,
+        ecoles: { count: 2, nearest: [] },
+        commerces: { count: 3, nearest: [] },
+        sante: { count: 1, nearest: [] },
+        transports: { count: 5, nearest: [] },
+        espacesVerts: { count: 1, nearest: [] },
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingDistrict, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).toContain(
+      "Le point de référence est approximatif : les comptages le sont aussi, rester prudent.",
+    );
+  });
+
+  it("section Quartier : tous-à-zéro ET position approximative → les deux consignes", () => {
+    const listingDistrict: Listing = {
+      ...listing,
+      location: { ...listing.location, precision: "district" },
+    };
+    const enrichments: Enrichments = {
+      neighborhood: {
+        radiusM: 800,
+        ecoles: { count: 0, nearest: [] },
+        commerces: { count: 0, nearest: [] },
+        sante: { count: 0, nearest: [] },
+        transports: { count: 0, nearest: [] },
+        espacesVerts: { count: 0, nearest: [] },
+      },
+    };
+    const prompt = buildAnalysisPrompt(listingDistrict, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).toContain("Aucune commodité référencée par OpenStreetMap dans le rayon");
+    expect(prompt).toContain(
+      "Le point de référence est approximatif : les comptages le sont aussi, rester prudent.",
+    );
+  });
+
+  it("section Quartier : precision exacte → pas de consigne comptages approximatifs", () => {
+    const listingAddr: Listing = {
+      ...listing,
+      location: { ...listing.location, precision: "housenumber" },
+    };
+    const enrichments: Enrichments = {
+      neighborhood: fullEnrichments.neighborhood,
+    };
+    const prompt = buildAnalysisPrompt(listingAddr, quick, enrichments, new Date("2026-06-10"));
+    expect(prompt).not.toContain("Le point de référence est approximatif");
   });
 
   it("section Quartier titre SANS mention approximative quand precision=address", () => {

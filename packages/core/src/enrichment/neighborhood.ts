@@ -70,7 +70,7 @@ export function parseOverpass(
 
   const seenIds = new Set<number>();
 
-  const buckets: Record<CategoryKey, { name?: string; distanceM: number }[]> = {
+  const buckets: Record<CategoryKey, { name?: string; distanceM: number; lat: number; lon: number }[]> = {
     ecoles: [],
     commerces: [],
     sante: [],
@@ -111,12 +111,17 @@ export function parseOverpass(
 
     const distanceM = Math.round(haversineM(lat, lon, elLat, elLon));
     const name = tags.name;
-    buckets[matched].push({ name, distanceM });
+    buckets[matched].push({ name, distanceM, lat: elLat, lon: elLon });
   }
 
-  function toCategory(items: { name?: string; distanceM: number }[]): PoiCategory {
+  function toCategory(items: { name?: string; distanceM: number; lat: number; lon: number }[]): PoiCategory {
     const sorted = [...items].sort((a, b) => a.distanceM - b.distanceM);
-    const named = sorted.filter((item) => item.name !== undefined) as { name: string; distanceM: number }[];
+    const named = sorted.filter((item) => item.name !== undefined) as {
+      name: string;
+      distanceM: number;
+      lat: number;
+      lon: number;
+    }[];
     // Dédoublonnage par nom (ex. arrêts de bus jumeaux, un par sens) — on garde le plus proche
     const seenNames = new Set<string>();
     const unique = named.filter((item) => {
@@ -126,7 +131,7 @@ export function parseOverpass(
     });
     return {
       count: items.length,
-      nearest: unique.slice(0, 3).map(({ name, distanceM }) => ({ name, distanceM })),
+      nearest: unique.slice(0, 3).map(({ name, distanceM, lat: poiLat, lon: poiLon }) => ({ name, distanceM, lat: poiLat, lon: poiLon })),
     };
   }
 

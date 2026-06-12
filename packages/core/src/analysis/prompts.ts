@@ -34,15 +34,24 @@ function buildNeighborhoodSection(n: NeighborhoodStats, listing: Listing): strin
       : "";
     return `- ${label} : ${cat.count}${nearestStr}`;
   }
-  const approxSuffix = isApproximatePrecision(listing.location.precision)
-    ? " — autour du point approximatif"
+  const approx = isApproximatePrecision(listing.location.precision);
+  const approxSuffix = approx ? " — autour du point approximatif" : "";
+  const header = `## Quartier (rayon ${n.radiusM} m, OpenStreetMap, distances à vol d'oiseau${approxSuffix})`;
+  const approxLine = approx
+    ? "\n- Le point de référence est approximatif : les comptages le sont aussi, rester prudent."
     : "";
-  return `## Quartier (rayon ${n.radiusM} m, OpenStreetMap, distances à vol d'oiseau${approxSuffix})
+  const allZero =
+    [n.ecoles, n.commerces, n.sante, n.transports, n.espacesVerts].every((cat) => cat.count === 0);
+  if (allZero) {
+    return `${header}
+- Aucune commodité référencée par OpenStreetMap dans le rayon. ATTENTION : la couverture OSM est variable selon les zones — ne JAMAIS conclure à une absence réelle de commodités ; dire que la donnée est non concluante.${approxLine}`;
+  }
+  return `${header}
 ${catLine("Écoles", n.ecoles)}
 ${catLine("Commerces", n.commerces)}
 ${catLine("Santé", n.sante)}
 ${catLine("Transports", n.transports)}
-${catLine("Espaces verts", n.espacesVerts)}`;
+${catLine("Espaces verts", n.espacesVerts)}${approxLine}`;
 }
 
 /**

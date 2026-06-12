@@ -133,7 +133,7 @@ export type AnalysisResult = z.infer<typeof analysisSchema>;
 
 export interface PoiCategory {
   count: number;
-  nearest: { name: string; distanceM: number }[]; // ≤3, nommés uniquement
+  nearest: { name: string; distanceM: number; lat: number; lon: number }[]; // ≤3, nommés uniquement
 }
 
 export interface NeighborhoodStats {
