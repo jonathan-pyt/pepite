@@ -40,7 +40,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter "@pepite/extension" zip
+      - run: pnpm --filter "@pepite/extension" zip:firefox
       - uses: softprops/action-gh-release@v3
         with:
-          files: packages/extension/.output/*-chrome.zip
+          # *-firefox.zip exclut volontairement le *-sources.zip généré par wxt zip -b firefox
+          files: |
+            packages/extension/.output/*-chrome.zip
+            packages/extension/.output/*-firefox.zip
           generate_release_notes: true
