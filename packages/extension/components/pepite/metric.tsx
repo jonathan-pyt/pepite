@@ -32,7 +32,9 @@ export function Metric({ label, value, sub, tone, big = false }: MetricProps) {
         big ? "px-3.5 py-3" : "px-3 py-2.5"
       )}
     >
-      <div className="mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3">
+      {/* Hauteur réservée (2 lignes) : les valeurs restent alignées entre cartes
+          d'une même rangée, que le label tienne sur une ou deux lignes. */}
+      <div className="mb-1 min-h-[2lh] text-[11px] font-medium tracking-[0.01em] text-ink-3">
         {label}
       </div>
       <div

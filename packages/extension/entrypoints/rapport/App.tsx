@@ -61,6 +61,13 @@ const NIVEAU_TONE: Record<string, "bad" | "warn" | "info"> = {
   info: "info",
 };
 
+/** Libellés FR de la confiance du marché (MarketStats.confidence). */
+const CONFIDENCE_LABEL: Record<string, string> = {
+  high: "fiabilité élevée",
+  medium: "fiabilité moyenne",
+  low: "fiabilité faible",
+};
+
 /** Format a raw ISO date string "YYYY-MM-DD" → "DD/MM/YYYY" for display */
 function fmtDate(raw: string): string {
   const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -370,14 +377,18 @@ export default function App() {
                 }
                 sub={
                   quick.market
-                    ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m · ${quick.market.confidence}${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
+                    ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m · ${CONFIDENCE_LABEL[quick.market.confidence]}${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                     : undefined
                 }
               />
               {hasDispersion && (
                 <Metric
                   label="Fourchette du secteur"
-                  value={`${Math.round(quick.market!.p25PricePerM2!).toLocaleString("fr-FR")} – ${Math.round(quick.market!.p75PricePerM2!).toLocaleString("fr-FR")} €/m²`}
+                  value={
+                    <span className="whitespace-nowrap">
+                      {`${Math.round(quick.market!.p25PricePerM2!).toLocaleString("fr-FR")}–${Math.round(quick.market!.p75PricePerM2!).toLocaleString("fr-FR")} €/m²`}
+                    </span>
+                  }
                   sub="50 % des ventes comparables dans cette fourchette"
                 />
               )}
@@ -524,7 +535,7 @@ export default function App() {
                     value={`${acq.prix.toLocaleString("fr-FR")} €`}
                   />
                   <Metric
-                    label={`Frais de notaire (~${acq.fraisNotairePct} %)`}
+                    label={`Frais de notaire (≈ ${String(acq.fraisNotairePct).replace(".", ",")} %)`}
                     value={`${acq.fraisNotaire.toLocaleString("fr-FR")} €`}
                   />
                   <Metric
