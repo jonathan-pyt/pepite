@@ -10,6 +10,12 @@ export type { PepiteMarkProps } from "./pepite-mark"
 export { Metric } from "./metric"
 export type { MetricProps } from "./metric"
 
+export { StatStrip } from "./stat-strip"
+export type { StatStripProps, StatStripItem } from "./stat-strip"
+
+export { RangeGauge } from "./range-gauge"
+export type { RangeGaugeProps } from "./range-gauge"
+
 export { WarnItem } from "./warn-item"
 export type { WarnItemProps } from "./warn-item"
 

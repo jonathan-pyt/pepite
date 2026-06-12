@@ -2,7 +2,7 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-type Tone = "good" | "warn" | "bad" | "accent"
+export type Tone = "good" | "warn" | "bad" | "accent"
 
 export interface MetricProps {
   label: string
@@ -17,7 +17,7 @@ export interface MetricProps {
   alignLabel?: boolean
 }
 
-const toneClass: Record<Tone, string> = {
+export const toneClass: Record<Tone, string> = {
   good: "text-good",
   warn: "text-warn",
   bad: "text-bad",
