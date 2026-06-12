@@ -6,6 +6,8 @@ import { sendRequest, type TabState } from "@/lib/messages"
 import { idbRepository } from "@/lib/repository-idb"
 
 export interface UseTabState {
+  /** Onglet courant (null tant que GET_TAB_STATE n'a pas répondu). */
+  tabId: number | null
   state: TabState
   analysis: AnalysisResult | null
   enrichments: Enrichments | null
@@ -140,5 +142,5 @@ export function useTabState(): UseTabState {
     }
   }
 
-  return { state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis }
+  return { tabId, state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis }
 }

@@ -14,6 +14,7 @@ import {
   LandPlot,
   Loader2,
   Mail,
+  Pencil,
   RefreshCw,
   School,
   ShoppingBag,
@@ -280,6 +281,14 @@ export default function App() {
                   {listing.price.toLocaleString("fr-FR")} €
                 </span>
               </div>
+
+              {/* Localisation corrigée manuellement (annonce volontairement trompeuse) */}
+              {listing.location.locationCorrected && (
+                <div className="mt-1 flex items-center gap-1 text-[11.5px] leading-snug text-ink-3">
+                  <Pencil className="size-[10px] shrink-0" />
+                  Localisation corrigée par l&apos;utilisateur
+                </div>
+              )}
 
               {/* Approximate position notice */}
               {isApproximateLocation(listing.location.precision) && (

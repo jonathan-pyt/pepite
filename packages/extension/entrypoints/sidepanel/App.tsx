@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Check, ClipboardCopy, History, Info, Loader2, RotateCw, Sparkles } from "lucide-react";
+import { Check, ClipboardCopy, History, Info, Loader2, Pencil, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -12,6 +14,7 @@ import {
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
 import { formatPctFr } from "@/lib/format";
 import { useCopyPrompt } from "@/lib/hooks/use-copy-prompt";
+import { useCorrectLocation } from "@/lib/hooks/use-correct-location";
 import { useTabState } from "@/lib/hooks/use-tab-state";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
@@ -39,9 +42,10 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis } = useTabState();
+  const { tabId, state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
   const { copied, copyPrompt } = useCopyPrompt(state.listing ?? null, state.quick ?? null, enrichments);
+  const correctLocation = useCorrectLocation(tabId, state.listing?.location.rawAddress ?? "");
 
   // ── State: extraction échouée (aucune annonce exploitable) ───────────────
 
@@ -158,8 +162,66 @@ export default function App() {
           <div className="truncate text-[14px] font-semibold tracking-[-0.01em] leading-tight text-ink">
             {listing.title}
           </div>
-          <div className="mt-0.5 text-[11.5px] text-ink-3">
-            {listing.location.rawAddress}
+          <div className="mt-0.5 flex items-center gap-1 text-[11.5px] text-ink-3">
+            <span className="truncate">{listing.location.rawAddress}</span>
+            {listing.location.locationCorrected && (
+              <span className="inline-flex shrink-0 items-center gap-[3px] text-[10.5px] text-ink-3">
+                <Pencil className="size-[10px]" />
+                corrigée
+              </span>
+            )}
+            <Popover open={correctLocation.open} onOpenChange={correctLocation.setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  aria-label="Corriger la localisation"
+                >
+                  <Pencil className="size-[12px]" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="flex flex-col gap-2.5">
+                <div className="text-[13px] font-semibold text-ink">
+                  Corriger la localisation
+                </div>
+                <Input
+                  autoFocus
+                  value={correctLocation.address}
+                  disabled={correctLocation.submitting}
+                  onChange={(e) => correctLocation.setAddress(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void correctLocation.submit();
+                  }}
+                />
+                <p className="text-[11px] leading-relaxed text-ink-3">
+                  Adresse ou ville réelle du bien (ex. : 12 rue des Lilas, 97400 Saint-Denis)
+                </p>
+                {correctLocation.error && (
+                  <p className="text-[11.5px] leading-relaxed text-bad">
+                    {correctLocation.error}
+                  </p>
+                )}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={correctLocation.submitting}
+                    onClick={() => correctLocation.setOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={correctLocation.submitting || !correctLocation.address.trim()}
+                    onClick={() => void correctLocation.submit()}
+                  >
+                    {correctLocation.submitting && <Loader2 className="animate-spin" />}
+                    Corriger &amp; relancer
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
