@@ -3,6 +3,7 @@ import {
   buildQuickAnalysis,
   computeGlobalScore,
   computeMarketStats,
+  correctedLocation,
   extractListingGeneric,
   fetchCommuneInfo,
   fetchCommuneSales,
@@ -263,6 +264,15 @@ async function buildEnrichments(
  */
 async function runListingPipeline(tabId: number, listing: Listing): Promise<QuickAnalysis | null> {
   const url = listing.url;
+  // Une localisation corrigée par l'utilisateur survit aux re-détections
+  // (reload, navigation SPA) : sinon l'annonce ré-extraite restaurerait la
+  // localisation fausse de l'annonce.
+  try {
+    const saved = await idbRepository.getListingByUrl(url);
+    if (saved?.location.locationCorrected) listing = { ...listing, location: saved.location };
+  } catch {
+    // IDB indisponible → on continue avec la localisation extraite.
+  }
   setTabState(tabId, { status: "quick-running", listing });
   try {
     await idbRepository.saveListing(listing);
@@ -412,6 +422,34 @@ export default defineBackground(() => {
               setTabState(req.tabId, { ...prev, status: "error", error: msg });
               sendResponse({ error: msg });
             }
+            return;
+          }
+          case "CORRECT_LOCATION": {
+            const prev = tabStates.get(req.tabId);
+            if (!prev?.listing)
+              return sendResponse({ error: "Aucune annonce analysée sur cet onglet" });
+            // Échec HTTP du géocodeur : l'erreur remonte via le catch global.
+            const geo = await geocode(req.address);
+            if (!geo)
+              return sendResponse({
+                error:
+                  "Adresse introuvable — précise la ville (ex. « 12 rue X, 97400 Saint-Denis »)",
+              });
+            const listing: Listing = {
+              ...prev.listing,
+              location: correctedLocation(req.address, geo),
+            };
+            // Persisté AVANT le pipeline : runListingPipeline réapplique la
+            // localisation corrigée sauvegardée — elle doit déjà être la nouvelle.
+            await idbRepository.saveListing(listing);
+            const quick = await runListingPipeline(req.tabId, listing);
+            // Le badge du content script ne reçoit pas TAB_STATE_CHANGED
+            // (broadcast limité aux pages d'extension) : on le notifie directement.
+            if (quick)
+              void browser.tabs
+                .sendMessage(req.tabId, { type: "QUICK_UPDATED", quick })
+                .catch(() => {});
+            sendResponse({ state: tabStates.get(req.tabId) ?? { status: "idle" } });
             return;
           }
           case "GENERATE_NEGOTIATION_EMAILS": {

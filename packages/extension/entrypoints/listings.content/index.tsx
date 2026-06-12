@@ -220,6 +220,11 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
         setNonce((n) => n + 1);
         setQuick("loading");
       }
+      // Localisation corrigée depuis le side panel : le background pousse le
+      // quick recalculé (le badge ne reçoit pas les broadcasts TAB_STATE_CHANGED).
+      if (m?.type === "QUICK_UPDATED") {
+        setQuick(m.quick);
+      }
     };
     browser.runtime.onMessage.addListener(listener);
     return () => {
