@@ -34,6 +34,8 @@ import {
   PageShell,
   MapTooltipContent,
   Metric,
+  RangeGauge,
+  StatStrip,
   Seg,
   WarnItem,
   DPEChip,
@@ -357,58 +359,54 @@ export default function App() {
 
           {/* ── 2. Prix & marché ── */}
           <RSection id="prix" num={2} title="Prix & marché">
-            {/* Metrics row */}
-            <div className={`mb-5 grid gap-2.5 ${hasDispersion ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"}`}>
-              <Metric
-                alignLabel
-                label="Prix/m² annonce"
-                value={
-                  quick.listingPricePerM2 !== null
-                    ? `${Math.round(quick.listingPricePerM2).toLocaleString("fr-FR")} €/m²`
-                    : "—"
-                }
-                tone="accent"
-              />
-              <Metric
-                alignLabel
-                label="Médiane biens comparables"
-                value={
-                  quick.market
-                    ? `${Math.round(quick.market.medianPricePerM2).toLocaleString("fr-FR")} €/m²`
-                    : "—"
-                }
-                sub={
+            {/* Barre de stats + jauge de position dans le secteur */}
+            <div className="mb-5">
+              <StatStrip
+                items={[
+                  {
+                    label: "Prix/m² annonce",
+                    value:
+                      quick.listingPricePerM2 !== null
+                        ? `${Math.round(quick.listingPricePerM2).toLocaleString("fr-FR")} €/m²`
+                        : "—",
+                    tone: "accent",
+                  },
+                  {
+                    label: "Médiane comparable",
+                    value: quick.market
+                      ? `${Math.round(quick.market.medianPricePerM2).toLocaleString("fr-FR")} €/m²`
+                      : "—",
+                  },
+                  {
+                    label: "Écart",
+                    value:
+                      quick.marketGapPct !== null
+                        ? `${formatPctFr(quick.marketGapPct)} %`
+                        : "—",
+                    tone:
+                      quick.marketGapPct !== null
+                        ? quick.marketGapPct < 0
+                          ? "good"
+                          : "warn"
+                        : undefined,
+                  },
+                ]}
+                context={
                   quick.market
                     ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m · ${CONFIDENCE_LABEL[quick.market.confidence]}${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
                     : undefined
                 }
-              />
-              {hasDispersion && (
-                <Metric
-                  alignLabel
-                  label="Fourchette du secteur"
-                  value={
-                    <span className="whitespace-nowrap">
-                      {`${Math.round(quick.market!.p25PricePerM2!).toLocaleString("fr-FR")}–${Math.round(quick.market!.p75PricePerM2!).toLocaleString("fr-FR")} €/m²`}
-                    </span>
-                  }
-                  sub="50 % des ventes comparables dans cette fourchette"
-                />
-              )}
-              <Metric
-                alignLabel
-                label="Écart"
-                value={
-                  quick.marketGapPct !== null ? `${formatPctFr(quick.marketGapPct)} %` : "—"
-                }
-                tone={
-                  quick.marketGapPct !== null
-                    ? quick.marketGapPct < 0
-                      ? "good"
-                      : "warn"
-                    : undefined
-                }
-              />
+              >
+                {hasDispersion && quick.listingPricePerM2 !== null && (
+                  <RangeGauge
+                    min={quick.market!.p25PricePerM2!}
+                    max={quick.market!.p75PricePerM2!}
+                    median={quick.market!.medianPricePerM2}
+                    value={quick.listingPricePerM2}
+                    formatValue={(v) => `${Math.round(v).toLocaleString("fr-FR")} €/m²`}
+                  />
+                )}
+              </StatStrip>
             </div>
 
             {/* Comparables table */}
@@ -533,44 +531,55 @@ export default function App() {
             const acq = estimateAcquisitionCost(listing);
             return (
               <RSection id="cout" num={3} title="Coût total d'acquisition">
-                <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                  <Metric
-                    alignLabel
-                    label="Prix affiché"
-                    value={`${acq.prix.toLocaleString("fr-FR")} €`}
-                  />
-                  <Metric
-                    alignLabel
-                    label={`Frais de notaire (≈ ${String(acq.fraisNotairePct).replace(".", ",")} %)`}
-                    value={`${acq.fraisNotaire.toLocaleString("fr-FR")} €`}
-                  />
-                  <Metric
-                    alignLabel
-                    label="Total estimé"
-                    value={`${acq.total.toLocaleString("fr-FR")} €`}
-                    tone="accent"
-                  />
-                  {acq.taxeFonciereAnnuelle !== undefined && (
-                    <Metric
-                      label="Taxe foncière / an"
-                      value={`${acq.taxeFonciereAnnuelle.toLocaleString("fr-FR")} €`}
-                    />
-                  )}
-                  {enrichments?.taxeFonciere && (
-                    <Metric
-                      label={`Taux TF communal ${enrichments.taxeFonciere.exercice}`}
-                      value={`${enrichments.taxeFonciere.tauxGlobalTfb.toLocaleString("fr-FR")} %`}
-                      sub={`taux global TFB${
-                        enrichments.taxeFonciere.tauxTeom !== null
-                          ? ` + TEOM ${enrichments.taxeFonciere.tauxTeom.toLocaleString("fr-FR")} %`
-                          : ""
-                      } — montant exact selon la valeur cadastrale`}
-                    />
-                  )}
-                </div>
-                <p className="text-[11.5px] leading-relaxed text-ink-3">
-                  Estimation hors frais de dossier/garantie bancaire. Annonces de particulier ou prix hors honoraires : vérifier si les frais d&apos;agence sont inclus.
-                </p>
+                <StatStrip
+                  items={[
+                    {
+                      label: "Prix affiché",
+                      value: `${acq.prix.toLocaleString("fr-FR")} €`,
+                    },
+                    {
+                      label: `Frais de notaire (≈ ${String(acq.fraisNotairePct).replace(".", ",")} %)`,
+                      value: `${acq.fraisNotaire.toLocaleString("fr-FR")} €`,
+                    },
+                    {
+                      label: "Total estimé",
+                      value: `${acq.total.toLocaleString("fr-FR")} €`,
+                      tone: "accent",
+                    },
+                    ...(acq.taxeFonciereAnnuelle !== undefined
+                      ? [
+                          {
+                            label: "Taxe foncière / an",
+                            value: `${acq.taxeFonciereAnnuelle.toLocaleString("fr-FR")} €`,
+                          },
+                        ]
+                      : []),
+                    ...(enrichments?.taxeFonciere
+                      ? [
+                          {
+                            label: `Taux TF communal ${enrichments.taxeFonciere.exercice}`,
+                            value: `${enrichments.taxeFonciere.tauxGlobalTfb.toLocaleString("fr-FR")} %`,
+                          },
+                        ]
+                      : []),
+                  ]}
+                  context={
+                    <>
+                      {enrichments?.taxeFonciere && (
+                        <div>
+                          Taux TF communal : taux global TFB
+                          {enrichments.taxeFonciere.tauxTeom !== null
+                            ? ` + TEOM ${enrichments.taxeFonciere.tauxTeom.toLocaleString("fr-FR")} %`
+                            : ""}{" "}
+                          — montant exact selon la valeur cadastrale.
+                        </div>
+                      )}
+                      <div>
+                        Estimation hors frais de dossier/garantie bancaire. Annonces de particulier ou prix hors honoraires : vérifier si les frais d&apos;agence sont inclus.
+                      </div>
+                    </>
+                  }
+                />
               </RSection>
             );
           })()}

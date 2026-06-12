@@ -469,6 +469,7 @@ export default function App() {
               }
             />
             <Metric
+              alignLabel
               label="Médiane biens comparables"
               value={
                 quick.market
@@ -482,6 +483,7 @@ export default function App() {
               }
             />
             <Metric
+              alignLabel
               label="Écart marché"
               value={gapValue}
               tone={gapTone}
