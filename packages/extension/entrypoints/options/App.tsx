@@ -1,5 +1,5 @@
 import { DEFAULT_MODELS, type LlmProviderId } from "@pepite/core";
-import { DatabaseZap } from "lucide-react";
+import { ClipboardCopy, DatabaseZap, KeyRound, Sparkles, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,8 +37,11 @@ export default function App() {
       <div className="flex flex-col gap-6">
         {/* ── Bloc 1 : votre projet (profil de recherche persistant) ── */}
         <Card>
-          <CardHeader className="border-b">
-            <CardTitle>Votre projet</CardTitle>
+          <CardHeader className="border-b border-line-soft">
+            <CardTitle className="flex items-center gap-2">
+              <UserRound className="size-[16px] text-ink-3" />
+              Votre projet
+            </CardTitle>
             <CardDescription>
               Décrivez votre foyer, vos impératifs et votre intention : chaque analyse IA
               s&apos;y adaptera. Facultatif, modifiable à tout moment (aussi depuis le panneau
@@ -57,17 +60,34 @@ export default function App() {
 
         {/* ── Bloc 2 : analyse IA — deux modes (clé optionnelle) ── */}
         <Card>
-          <CardHeader className="border-b">
-            <CardTitle>Analyse IA — deux modes</CardTitle>
+          <CardHeader className="border-b border-line-soft">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="size-[16px] text-ink-3" />
+              Analyse IA
+            </CardTitle>
             <CardDescription>
               Le score prix vs marché fonctionne sans aucune configuration. Pour
-              l&apos;analyse IA détaillée, deux modes : votre clé API personnelle (analyses
-              intégrées en un clic), ou — sans clé — le bouton « Copier le prompt » à coller
-              dans votre IA habituelle (ChatGPT, Claude…).
+              l&apos;analyse IA détaillée, deux modes au choix :
             </CardDescription>
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4 pt-4">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="flex items-start gap-2.5 rounded-lg border border-line-soft bg-surface-sub px-3.5 py-3">
+                <KeyRound className="mt-0.5 size-[14px] shrink-0 text-ink-3" />
+                <div className="text-[12.5px] leading-relaxed text-ink-2">
+                  <span className="font-medium text-ink">Avec votre clé API</span> — analyses
+                  intégrées en un clic, directement dans Pépite.
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 rounded-lg border border-line-soft bg-surface-sub px-3.5 py-3">
+                <ClipboardCopy className="mt-0.5 size-[14px] shrink-0 text-ink-3" />
+                <div className="text-[12.5px] leading-relaxed text-ink-2">
+                  <span className="font-medium text-ink">Sans clé</span> — bouton « Copier le
+                  prompt » à coller dans votre IA habituelle (ChatGPT, Claude…).
+                </div>
+              </div>
+            </div>
             <Field label="Fournisseur" htmlFor="provider">
               <Select
                 value={settings.provider}
