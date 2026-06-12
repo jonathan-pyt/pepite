@@ -177,4 +177,32 @@ describe("buildNegotiationPrompt", () => {
     expect(prompt).toContain("Risques recensés sur la commune : non renseignés");
     expect(prompt).toContain("Loyer médian du secteur : non renseigné");
   });
+
+  // ── R5 : notes utilisateur (visite, agent) ────────────────────────────────
+
+  it("inclut les notes utilisateur avec les règles d'attribution à l'acheteur", () => {
+    const prompt = buildNegotiationPrompt({
+      listing: {
+        ...listing,
+        userNotes: "Visite du 12/06 : traces d'humidité dans la chambre, l'agent confirme 180 €/mois de charges.",
+      },
+      quick,
+      analysis,
+    });
+    expect(prompt).toContain("Informations complémentaires fournies par l'utilisateur");
+    expect(prompt).toContain("traces d'humidité");
+    expect(prompt).toContain("arguments de négociation légitimes");
+    expect(prompt).toContain("lors de ma visite");
+    expect(prompt).toContain("PRIORENT sur l'annonce");
+    expect(prompt).toContain("déclaratifs (non vérifiés)");
+  });
+
+  it("pas de section notes quand userNotes absent ou vide", () => {
+    expect(buildNegotiationPrompt({ listing, quick, analysis })).not.toContain(
+      "Informations complémentaires",
+    );
+    expect(
+      buildNegotiationPrompt({ listing: { ...listing, userNotes: "   " }, quick, analysis }),
+    ).not.toContain("Informations complémentaires");
+  });
 });

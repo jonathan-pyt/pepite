@@ -575,4 +575,68 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt(listing, quick);
     expect(prompt).toContain("5 à 10");
   });
+
+  // ── R5 : notes utilisateur (visite, agent) ────────────────────────────────
+
+  it("section notes utilisateur : contenu et règles quand userNotes renseigné", () => {
+    const prompt = buildAnalysisPrompt(
+      {
+        ...listing,
+        userNotes: "Visité le 12/06 — toiture refaite en 2022, l'agent annonce 180 €/mois de charges.",
+      },
+      quick,
+    );
+    expect(prompt).toContain("Informations complémentaires fournies par l'utilisateur");
+    expect(prompt).toContain("toiture refaite en 2022");
+    expect(prompt).toContain("PRIORENT sur l'annonce");
+    expect(prompt).toContain("déclaratives (non vérifiées)");
+    expect(prompt).toContain("selon votre visite");
+  });
+
+  it("pas de section notes quand userNotes absent ou vide", () => {
+    expect(buildAnalysisPrompt(listing, quick)).not.toContain("Informations complémentaires");
+    expect(buildAnalysisPrompt({ ...listing, userNotes: "   " }, quick)).not.toContain(
+      "Informations complémentaires",
+    );
+  });
+
+  // ── R6 : profil de recherche de l'acheteur ────────────────────────────────
+
+  it("section profil de recherche : contenu et règles quand searchProfile fourni", () => {
+    const prompt = buildAnalysisPrompt(
+      listing,
+      quick,
+      undefined,
+      undefined,
+      "Couple avec une grand-mère à mobilité réduite — ascenseur indispensable, nous cherchons notre résidence principale.",
+    );
+    expect(prompt).toContain("Profil de recherche de l'acheteur");
+    expect(prompt).toContain("grand-mère à mobilité réduite");
+    expect(prompt).toContain("SIGNALE EXPLICITEMENT toute incompatibilité");
+    expect(prompt).toContain("point de vigilance critique");
+    expect(prompt).toContain("Ne JAMAIS inventer une caractéristique du bien");
+    expect(prompt).toContain("ajoute le point correspondant à la checklist visite");
+    expect(prompt).toContain("SANS supprimer les avis des 4 projets");
+  });
+
+  it("pas de section profil quand searchProfile absent ou vide", () => {
+    expect(buildAnalysisPrompt(listing, quick)).not.toContain("Profil de recherche");
+    expect(buildAnalysisPrompt(listing, quick, undefined, undefined, "   ")).not.toContain(
+      "Profil de recherche",
+    );
+  });
+
+  it("notes et profil cumulés : les deux sections coexistent", () => {
+    const prompt = buildAnalysisPrompt(
+      { ...listing, userNotes: "Vis-à-vis important côté rue." },
+      quick,
+      undefined,
+      undefined,
+      "École primaire à pied indispensable.",
+    );
+    expect(prompt).toContain("Informations complémentaires fournies par l'utilisateur");
+    expect(prompt).toContain("Vis-à-vis important côté rue.");
+    expect(prompt).toContain("Profil de recherche de l'acheteur");
+    expect(prompt).toContain("École primaire à pied indispensable.");
+  });
 });

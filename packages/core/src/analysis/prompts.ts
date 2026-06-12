@@ -108,6 +108,7 @@ export function buildAnalysisPrompt(
   quick: QuickAnalysis,
   enrichments?: Enrichments,
   now: Date = new Date(),
+  searchProfile?: string,
 ): string {
   const market = quick.market;
   const comparablesBlock =
@@ -126,6 +127,36 @@ export function buildAnalysisPrompt(
     listing.attributes && listing.attributes.length > 0
       ? `\n- Caractéristiques complètes :\n${listing.attributes.map((a) => `  - ${a.label} : ${a.value}`).join("\n")}`
       : "";
+
+  // Notes saisies par l'utilisateur (visite, agent) : déclaratives mais
+  // prioritaires sur l'annonce — section omise quand vides.
+  const userNotes = listing.userNotes?.trim();
+  const userNotesBlock = userNotes
+    ? `
+## Informations complémentaires fournies par l'utilisateur (visite, échanges avec l'agent…)
+${userNotes}
+
+Règles sur ces informations :
+- En cas de contradiction avec l'annonce, elles PRIORENT sur l'annonce.
+- Elles sont déclaratives (non vérifiées) : intègre-les dans la synthèse, les points de vigilance et les arguments de négociation en les attribuant à l'utilisateur (« selon votre visite… », « d'après l'agent… »).
+`
+    : "";
+
+  // Profil de recherche persistant du foyer (réglages) : personnalise
+  // l'analyse sans jamais inventer ni supprimer les 4 avis par projet.
+  const profile = searchProfile?.trim();
+  const searchProfileBlock = profile
+    ? `
+## Profil de recherche de l'acheteur
+${profile}
+
+Règles sur ce profil :
+- Personnalise la synthèse, les points de vigilance, la checklist visite et les avis par projet selon ces critères.
+- SIGNALE EXPLICITEMENT toute incompatibilité entre le bien et le profil (ex. personne à mobilité réduite + étage élevé sans ascenseur → point de vigilance critique).
+- Ne JAMAIS inventer une caractéristique du bien pour coller au profil ; si l'annonce ne permet pas de vérifier un critère du profil, ajoute le point correspondant à la checklist visite.
+- Si le profil exprime une intention principale (ex. résidence principale), approfondis cet angle dans la synthèse, les points de vigilance et la checklist visite — SANS supprimer les avis des 4 projets (résidence, locatif nu, Airbnb, colocation).
+`
+    : "";
 
   const neighborhoodBlock = enrichments?.neighborhood
     ? buildNeighborhoodSection(enrichments.neighborhood, listing)
@@ -164,7 +195,7 @@ Analyse ce bien pour un acheteur particulier.
 - ${dpeLine(listing)} · GES : ${listing.ges ?? "non renseigné"}
 - Publiée le : ${listing.publishedAt ?? "date inconnue"}
 - Description : ${listing.description.slice(0, 2500)}${attributesBlock}
-
+${userNotesBlock}${searchProfileBlock}
 ## Marché local (transactions notariées DVF)
 ${
   market

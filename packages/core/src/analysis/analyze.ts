@@ -8,6 +8,8 @@ export interface AnalyzeInput {
   listing: Listing;
   quick: QuickAnalysis;
   enrichments?: Enrichments;
+  /** Profil de recherche persistant de l'acheteur (texte libre, réglages). */
+  searchProfile?: string;
 }
 
 export async function analyzeListing(
@@ -19,7 +21,7 @@ export async function analyzeListing(
   const { output } = await generateText({
     model,
     system: SYSTEM_PROMPT,
-    prompt: buildAnalysisPrompt(input.listing, input.quick, input.enrichments),
+    prompt: buildAnalysisPrompt(input.listing, input.quick, input.enrichments, undefined, input.searchProfile),
     output: Output.object({ schema: analysisSchema }),
   });
   return output;

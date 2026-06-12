@@ -39,6 +39,12 @@ export interface Listing {
   publishedAt?: string;
   extractedAt: string;
   attributes?: { label: string; value: string }[];
+  /**
+   * Notes libres saisies par l'utilisateur (constats de visite, infos de
+   * l'agent…) — déclaratives, non vérifiées ; prioritaires sur l'annonce
+   * en cas de contradiction.
+   */
+  userNotes?: string;
 }
 
 export interface GeoPoint {

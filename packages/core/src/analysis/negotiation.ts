@@ -76,6 +76,21 @@ export function buildNegotiationPrompt(input: NegotiationPromptInput, now: Date 
     ? `${enrichments.rent.loyerM2} €/m² CC (médiane prédite${enrichments.rent.fiable ? "" : ", extrapolée — prudence"})`
     : "non renseigné";
 
+  // Notes saisies par l'utilisateur (visite, agent) : constats déclaratifs
+  // mais arguments de négociation légitimes — section omise quand vides.
+  const userNotes = listing.userNotes?.trim();
+  const userNotesBlock = userNotes
+    ? `
+## Informations complémentaires fournies par l'utilisateur (visite, échanges avec l'agent…)
+${userNotes}
+
+Règles sur ces informations :
+- Ces constats sont des arguments de négociation légitimes : utilise-les en les attribuant à l'acheteur (« lors de ma visite… »).
+- En cas de contradiction avec l'annonce, ils PRIORENT sur l'annonce.
+- Ils sont déclaratifs (non vérifiés) : ne les embellis pas et n'en invente aucun autre.
+`
+    : "";
+
   return `Nous sommes le ${dateStr}.
 
 Rédige TROIS mails de négociation (tons : assertif, modéré, aimable) qu'un acheteur particulier enverra au vendeur ou à son agent immobilier après avoir étudié ce bien.
@@ -86,7 +101,7 @@ Rédige TROIS mails de négociation (tons : assertif, modéré, aimable) qu'un a
 - Surface : ${listing.surface ?? "inconnue"} m² · Type : ${listing.propertyType ?? "?"}
 - DPE : ${listing.dpe ?? "non renseigné"}
 - Publiée le : ${listing.publishedAt ?? "date inconnue"}
-
+${userNotesBlock}
 ## Marché local (transactions notariées DVF)
 ${marketBlock}
 
