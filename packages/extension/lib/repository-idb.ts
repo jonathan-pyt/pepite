@@ -61,9 +61,32 @@ export async function clearCache(): Promise<void> {
   await (await getDb()).clear("cache");
 }
 
-/** Vrai s'il existe au moins une entrée de cache (pour n'afficher la purge que si utile). */
-export async function hasCachedData(): Promise<boolean> {
-  return (await (await getDb()).count("cache")) > 0;
+/** Compteurs des données locales (page Réglages → Données locales). */
+export async function countLocalData(): Promise<{
+  reports: number;
+  restyles: number;
+  cache: number;
+}> {
+  const db = await getDb();
+  const [reports, restyles, cache] = await Promise.all([
+    db.count("reports"),
+    db.count("restyles"),
+    db.count("cache"),
+  ]);
+  return { reports, restyles, cache };
+}
+
+/** Efface TOUTES les données locales (annonces, rapports, restyles, caches). Irréversible. */
+export async function clearAllData(): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction(["listings", "reports", "restyles", "cache"], "readwrite");
+  await Promise.all([
+    tx.objectStore("listings").clear(),
+    tx.objectStore("reports").clear(),
+    tx.objectStore("restyles").clear(),
+    tx.objectStore("cache").clear(),
+    tx.done,
+  ]);
 }
 
 export const idbRepository: Repository = {
