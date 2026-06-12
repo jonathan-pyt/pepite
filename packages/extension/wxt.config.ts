@@ -10,6 +10,19 @@ export default defineConfig({
   // data_collection_permissions n'est exigé que pour la publication AMO
   // (pas encore au programme) — à renseigner avant toute soumission.
   suppressWarnings: { firefoxDataCollection: true },
+  hooks: {
+    // Firefox ne connaît pas use_dynamic_url (généré par WXT pour Chrome) et
+    // affiche « An unexpected property was found » à l'install : on retire la
+    // clé du manifest Firefox.
+    "build:manifestGenerated": (wxt, manifest) => {
+      if (wxt.config.browser !== "firefox") return;
+      for (const entry of manifest.web_accessible_resources ?? []) {
+        if (typeof entry === "object" && "use_dynamic_url" in entry) {
+          delete entry.use_dynamic_url;
+        }
+      }
+    },
+  },
   vite: () => ({
     plugins: [tailwindcss()],
   }),
