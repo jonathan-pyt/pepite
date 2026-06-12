@@ -15,6 +15,7 @@ import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepit
 import { formatPctFr } from "@/lib/format";
 import { useCopyPrompt } from "@/lib/hooks/use-copy-prompt";
 import { useCorrectLocation } from "@/lib/hooks/use-correct-location";
+import { useHostPermissions } from "@/lib/hooks/use-host-permissions";
 import { useTabState } from "@/lib/hooks/use-tab-state";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
@@ -39,6 +40,24 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
   );
 }
 
+// ─── Host permissions banner (Firefox MV3 : host_permissions optionnelles) ──
+
+function HostPermissionsBanner() {
+  const { granted, requestPermissions } = useHostPermissions();
+  if (granted) return null;
+  return (
+    <div className="flex shrink-0 items-center gap-2.5 border-b border-warn-border bg-warn-soft px-3.5 py-2.5">
+      <p className="flex-1 text-[12px] leading-snug text-warn">
+        Pépite a besoin d&apos;accéder aux données publiques (DVF, géocodage, risques…) pour
+        analyser les annonces.
+      </p>
+      <Button size="sm" onClick={() => void requestPermissions()}>
+        Autoriser
+      </Button>
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -51,15 +70,18 @@ export default function App() {
 
   if (state.status === "error" && !state.listing) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <PepiteLogo size="lg" />
-        <p className="text-[13px] font-semibold text-ink">
-          Extraction impossible sur cette page
-        </p>
-        <p className="text-[12.5px] leading-relaxed text-ink-3">
-          {state.error ??
-            "Pépite n'a pas réussi à identifier une annonce exploitable sur cette page."}
-        </p>
+      <div className="flex min-h-screen flex-col bg-white">
+        <HostPermissionsBanner />
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+          <PepiteLogo size="lg" />
+          <p className="text-[13px] font-semibold text-ink">
+            Extraction impossible sur cette page
+          </p>
+          <p className="text-[12.5px] leading-relaxed text-ink-3">
+            {state.error ??
+              "Pépite n'a pas réussi à identifier une annonce exploitable sur cette page."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -68,11 +90,14 @@ export default function App() {
 
   if (state.status === "idle" || !state.listing) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <PepiteLogo size="lg" />
-        <p className="text-[12.5px] leading-relaxed text-ink-3">
-          Ouvre une annonce immobilière (Leboncoin, SeLoger, Bien&apos;ici, Citya…) pour lancer l&apos;analyse.
-        </p>
+      <div className="flex min-h-screen flex-col bg-white">
+        <HostPermissionsBanner />
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+          <PepiteLogo size="lg" />
+          <p className="text-[12.5px] leading-relaxed text-ink-3">
+            Ouvre une annonce immobilière (Leboncoin, SeLoger, Bien&apos;ici, Citya…) pour lancer l&apos;analyse.
+          </p>
+        </div>
       </div>
     );
   }
@@ -108,6 +133,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-[13px]">
+      <HostPermissionsBanner />
       {/* ── Top bar: logo + accès historique ──────────────────────────────── */}
       <div className="flex shrink-0 items-center justify-between border-b border-line-soft px-3.5 py-2.5">
         <PepiteLogo size="sm" />
