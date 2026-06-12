@@ -25,6 +25,9 @@ export type PepiteRequest =
   | { type: "GET_TAB_STATE"; tabId?: number }
   | { type: "RUN_FULL_ANALYSIS"; tabId: number }
   | { type: "CORRECT_LOCATION"; tabId: number; address: string }
+  // Notes libres de l'utilisateur sur l'annonce (visite, agent) : persistées
+  // avec le bien, consommées par l'analyse IA — pas de relance du pipeline.
+  | { type: "SAVE_USER_NOTES"; tabId: number; notes: string }
   | { type: "GENERATE_NEGOTIATION_EMAILS"; reportId: string }
   | { type: "OPEN_SIDE_PANEL" };
 

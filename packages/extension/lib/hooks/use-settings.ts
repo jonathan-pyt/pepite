@@ -38,6 +38,9 @@ export function useSettings(): UseSettings {
     setSaved(true)
     setTimeout(async () => {
       setSaved(false)
+      // Fermeture auto réservée au flux « clé configurée » : pendant
+      // l'onboarding (profil seul, sans clé), la page reste ouverte.
+      if (!settings.apiKey) return
       const tab = await browser.tabs.getCurrent()
       if (tab?.id !== undefined) {
         await browser.tabs.remove(tab.id)

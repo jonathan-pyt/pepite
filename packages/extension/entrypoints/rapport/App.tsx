@@ -14,6 +14,7 @@ import {
   LandPlot,
   Loader2,
   Mail,
+  NotebookPen,
   Pencil,
   RefreshCw,
   School,
@@ -312,6 +313,17 @@ export default function App() {
               <div className="mt-3 rounded-lg border border-accent-border bg-accent-soft px-[13px] py-2.5 text-[13.5px] font-medium leading-relaxed text-accent-dark">
                 {analysis.recommandation}
               </div>
+
+              {/* Infos ajoutées par l'utilisateur (transparence : elles ont nourri l'analyse) */}
+              {listing.userNotes && (
+                <div className="mt-2.5 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
+                  <NotebookPen className="mt-[2px] size-[11px] shrink-0" />
+                  <span className="whitespace-pre-line">
+                    <span className="font-medium text-ink-2">Infos ajoutées par vous : </span>
+                    {listing.userNotes}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Right: ScoreRing + label — score global si disponible, sinon score prix */}

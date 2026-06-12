@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Check, ClipboardCopy, History, Info, Loader2, MoreHorizontal, Pencil, RotateCw, Sparkles } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  ClipboardCopy,
+  History,
+  Info,
+  Loader2,
+  MoreHorizontal,
+  NotebookPen,
+  Pencil,
+  RotateCw,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +37,13 @@ import { formatPctFr } from "@/lib/format";
 import { useCopyPrompt } from "@/lib/hooks/use-copy-prompt";
 import { useCorrectLocation } from "@/lib/hooks/use-correct-location";
 import { useHostPermissions } from "@/lib/hooks/use-host-permissions";
+import {
+  SEARCH_PROFILE_PLACEHOLDER,
+  useSearchProfile,
+  type UseSearchProfile,
+} from "@/lib/hooks/use-search-profile";
 import { useTabState } from "@/lib/hooks/use-tab-state";
+import { useUserNotes } from "@/lib/hooks/use-user-notes";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
 
@@ -64,6 +85,166 @@ function HostPermissionsBanner() {
   );
 }
 
+// ─── Profil de recherche : popover topbar + carte d'onboarding ──────────────
+
+function ProfilePopover({ sp }: { sp: UseSearchProfile }) {
+  return (
+    <Popover open={sp.editorOpen} onOpenChange={sp.setEditorOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Votre projet" title="Votre projet">
+          <UserRound className="size-[15px]" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex flex-col gap-2.5">
+        <div className="text-[13px] font-semibold text-ink">Votre projet</div>
+        <Textarea
+          autoFocus
+          value={sp.draft}
+          disabled={sp.saving}
+          onChange={(e) => sp.setDraft(e.target.value)}
+          placeholder={SEARCH_PROFILE_PLACEHOLDER}
+          className="min-h-[96px]"
+        />
+        <p className="text-[11px] leading-relaxed text-ink-3">
+          Foyer, impératifs, intention — pris en compte dans chaque analyse IA et dans le
+          prompt copié.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={sp.saving}
+            onClick={() => sp.setEditorOpen(false)}
+          >
+            Annuler
+          </Button>
+          <Button size="sm" disabled={sp.saving} onClick={() => void sp.save()}>
+            {sp.saving && <Loader2 className="animate-spin" />}
+            Enregistrer
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ProfileOnboardingCard({ sp }: { sp: UseSearchProfile }) {
+  // Visible uniquement tant que le profil est vide et la carte non dismissée
+  // (dismissed reste true pendant le chargement : la carte ne flashe jamais).
+  if (sp.profile === null || sp.profile !== "" || sp.dismissed) return null;
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-line-soft bg-surface-sub px-[13px] py-[11px]">
+      <div className="flex items-center gap-1.5">
+        <UserRound className="size-[13px] text-ink-3" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          Personnalisez vos analyses
+        </span>
+      </div>
+      <p className="text-[11.5px] leading-relaxed text-ink-3">
+        Décrivez votre projet (foyer, impératifs, intention) : chaque analyse IA s&apos;y
+        adaptera.
+      </p>
+      <Textarea
+        value={sp.draft}
+        disabled={sp.saving}
+        onChange={(e) => sp.setDraft(e.target.value)}
+        placeholder={SEARCH_PROFILE_PLACEHOLDER}
+        className="min-h-[72px] bg-white"
+      />
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={() => void sp.dismiss()}>
+          Plus tard
+        </Button>
+        <Button
+          size="sm"
+          disabled={sp.saving || !sp.draft.trim()}
+          onClick={() => void sp.save()}
+        >
+          {sp.saving && <Loader2 className="animate-spin" />}
+          Enregistrer
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Infos complémentaires (notes utilisateur par annonce) ──────────────────
+
+function UserNotesSection({
+  tabId,
+  listingUrl,
+  savedNotes,
+  hasAnalysis,
+}: {
+  tabId: number | null;
+  listingUrl: string;
+  savedNotes?: string;
+  hasAnalysis: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const userNotes = useUserNotes(tabId, listingUrl, savedNotes);
+  return (
+    <div className="rounded-lg border border-line-soft">
+      <button
+        type="button"
+        aria-expanded={open}
+        className="flex w-full cursor-pointer items-center gap-1.5 px-[13px] py-[9px]"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <NotebookPen className="size-[13px] text-ink-3" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          Infos complémentaires
+        </span>
+        {!!savedNotes && (
+          <span className="rounded-full border border-line-soft bg-surface-sub px-1.5 text-[10px] leading-[16px] text-ink-3">
+            renseignées
+          </span>
+        )}
+        {open ? (
+          <ChevronUp className="ml-auto size-[14px] text-ink-3" />
+        ) : (
+          <ChevronDown className="ml-auto size-[14px] text-ink-3" />
+        )}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-2 border-t border-line-soft px-[13px] pb-[11px] pt-2.5">
+          <Textarea
+            value={userNotes.notes}
+            disabled={userNotes.saving}
+            onChange={(e) => userNotes.setNotes(e.target.value)}
+            placeholder="Ex. : visité le 12/06 — toiture refaite en 2022, pas d'ascenseur, vis-à-vis côté rue, l'agent annonce des charges à 180 €/mois…"
+            className="min-h-[72px]"
+          />
+          <p className="text-[11px] leading-relaxed text-ink-3">
+            Constats de visite, infos de l&apos;agent… prises en compte par l&apos;analyse IA
+            et le prompt copié, en priorité sur l&apos;annonce.
+          </p>
+          {userNotes.error && (
+            <p className="text-[11.5px] leading-relaxed text-bad">{userNotes.error}</p>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            {hasAnalysis && userNotes.saved ? (
+              <span className="text-[11px] leading-snug text-ink-3">
+                Relance l&apos;analyse (⟳) pour les prendre en compte.
+              </span>
+            ) : (
+              <span />
+            )}
+            <Button
+              size="sm"
+              disabled={userNotes.saving || !userNotes.dirty}
+              onClick={() => void userNotes.save()}
+            >
+              {userNotes.saving && <Loader2 className="animate-spin" />}
+              {userNotes.saved ? "Enregistré ✓" : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -71,6 +252,7 @@ export default function App() {
   const [profile, setProfile] = useState<UsageProfile>("residence");
   const { copied, copyPrompt } = useCopyPrompt(state.listing ?? null, state.quick ?? null, enrichments);
   const correctLocation = useCorrectLocation(tabId, state.listing?.location.rawAddress ?? "");
+  const searchProfile = useSearchProfile();
 
   // ── State: extraction échouée (aucune annonce exploitable) ───────────────
 
@@ -143,21 +325,24 @@ export default function App() {
       {/* ── Top bar: logo + accès historique ──────────────────────────────── */}
       <div className="flex shrink-0 items-center justify-between border-b border-line-soft px-3.5 py-2.5">
         <PepiteLogo size="sm" />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Historique"
-                onClick={() => window.open(browser.runtime.getURL("/historique.html"))}
-              >
-                <History className="size-[15px]" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Historique</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-0.5">
+          <ProfilePopover sp={searchProfile} />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Historique"
+                  onClick={() => window.open(browser.runtime.getURL("/historique.html"))}
+                >
+                  <History className="size-[15px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Historique</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* ── Header: listing title + score ring ───────────────────────────── */}
@@ -260,6 +445,9 @@ export default function App() {
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
+        {/* ── Onboarding : profil de recherche (tant que vide, non dismissée) ── */}
+        <ProfileOnboardingCard sp={searchProfile} />
+
         {/* ── Quick-running state ─────────────────────────────────────────── */}
         {state.status === "quick-running" && (
           <div className="flex items-center gap-2 text-[12.5px] text-ink-2">
@@ -305,6 +493,14 @@ export default function App() {
             />
           </div>
         )}
+
+        {/* ── Infos complémentaires (notes par annonce) ────────────────────── */}
+        <UserNotesSection
+          tabId={tabId}
+          listingUrl={listing.url}
+          savedNotes={listing.userNotes}
+          hasAnalysis={analysis !== null}
+        />
 
         {/* ── Quartier résumé ──────────────────────────────────────────────── */}
         {analysis && enrichments?.neighborhood && (() => {

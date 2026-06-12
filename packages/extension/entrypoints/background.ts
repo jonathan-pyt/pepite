@@ -293,6 +293,9 @@ async function runListingPipeline(tabId: number, listing: Listing): Promise<Quic
   try {
     const saved = await idbRepository.getListingByUrl(url);
     if (saved?.location.locationCorrected) listing = { ...listing, location: saved.location };
+    // Les notes utilisateur (visite, agent) survivent aussi aux re-parses —
+    // même garde par URL que la localisation corrigée.
+    if (saved?.userNotes) listing = { ...listing, userNotes: saved.userNotes };
   } catch {
     // IDB indisponible → on continue avec la localisation extraite.
   }
@@ -340,6 +343,12 @@ export default defineBackground(() => {
       void sidebarAction.open().catch(() => {});
     });
   }
+
+  // Première installation : ouvre la page d'accueil/réglages (votre projet,
+  // deux modes d'analyse). Uniquement à l'install — jamais sur les mises à jour.
+  browser.runtime.onInstalled.addListener(({ reason }) => {
+    if (reason === "install") void browser.runtime.openOptionsPage();
+  });
 
   browser.tabs.onRemoved.addListener((tabId) => {
     // Hydrater d'abord : sinon le snapshot persisté serait écrasé par une Map vide.
@@ -459,7 +468,12 @@ export default defineBackground(() => {
                   : undefined;
 
                 const analysis = await analyzeListing(
-                  { listing: listing, quick: quick, enrichments },
+                  {
+                    listing: listing,
+                    quick: quick,
+                    enrichments,
+                    searchProfile: settings.searchProfile.trim() || undefined,
+                  },
                   cfg,
                 );
                 const globalScore = computeGlobalScore(quick, listing, enrichments) ?? undefined;
@@ -511,6 +525,21 @@ export default defineBackground(() => {
               void browser.tabs
                 .sendMessage(req.tabId, { type: "QUICK_UPDATED", quick })
                 .catch(() => {});
+            sendResponse({ state: tabStates.get(req.tabId) ?? { status: "idle" } });
+            return;
+          }
+          case "SAVE_USER_NOTES": {
+            const prev = tabStates.get(req.tabId);
+            if (!prev?.listing)
+              return sendResponse({ error: "Aucune annonce analysée sur cet onglet" });
+            // Notes vides → champ retiré (pas de section vide dans les prompts).
+            const notes = req.notes.trim();
+            const listing: Listing = { ...prev.listing, userNotes: notes || undefined };
+            // Persisté dans l'IDB : runListingPipeline les réapplique au re-parse.
+            await idbRepository.saveListing(listing);
+            // Pas de relance du pipeline : les notes n'affectent pas le quick/marché —
+            // c'est l'analyse IA (ou ⟳) qui les consomme.
+            setTabState(req.tabId, { ...prev, listing });
             sendResponse({ state: tabStates.get(req.tabId) ?? { status: "idle" } });
             return;
           }

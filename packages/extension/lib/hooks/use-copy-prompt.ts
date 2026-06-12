@@ -2,6 +2,8 @@ import { useState } from "react"
 import type { Enrichments, Listing, QuickAnalysis } from "@pepite/core"
 import { buildAnalysisPrompt } from "@pepite/core"
 
+import { getSettings } from "@/lib/settings"
+
 export interface UseCopyPrompt {
   /** Vrai pendant ~2 s après une copie réussie. */
   copied: boolean
@@ -13,8 +15,8 @@ export interface UseCopyPrompt {
  * useCopyPrompt — logique du bouton « Copier le prompt » (side panel et rapport).
  *
  * Construit le prompt d'analyse complet (annonce, marché DVF, enrichissements
- * disponibles) via buildAnalysisPrompt et le copie, pour que l'utilisateur le
- * colle dans l'IA de son choix — aucune clé API requise.
+ * disponibles, profil de recherche) via buildAnalysisPrompt et le copie, pour
+ * que l'utilisateur le colle dans l'IA de son choix — aucune clé API requise.
  */
 export function useCopyPrompt(
   listing: Listing | null,
@@ -25,7 +27,12 @@ export function useCopyPrompt(
 
   async function copyPrompt() {
     if (!listing || !quick) return
-    await navigator.clipboard.writeText(buildAnalysisPrompt(listing, quick, enrichments ?? undefined))
+    // Profil de recherche lu au moment de la copie : cohérence totale avec ce
+    // que l'analyse intégrée enverrait.
+    const { searchProfile } = await getSettings()
+    await navigator.clipboard.writeText(
+      buildAnalysisPrompt(listing, quick, enrichments ?? undefined, undefined, searchProfile.trim() || undefined),
+    )
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }

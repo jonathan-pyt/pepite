@@ -6,14 +6,34 @@ export interface Settings {
   provider: LlmProviderId;
   apiKey: string;
   model: string;
+  /** Profil de recherche du foyer (texte libre) — injecté dans chaque analyse IA. */
+  searchProfile: string;
 }
 
 const settingsItem = storage.defineItem<Settings>("local:settings", {
-  fallback: { provider: "google", apiKey: "", model: DEFAULT_MODELS.google },
+  fallback: { provider: "google", apiKey: "", model: DEFAULT_MODELS.google, searchProfile: "" },
+});
+
+/**
+ * Carte « Personnalisez vos analyses » du side panel masquée définitivement
+ * (« plus tard ») — distinct du profil lui-même pour survivre à un profil vidé.
+ */
+const profileCardDismissedItem = storage.defineItem<boolean>("local:profileCardDismissed", {
+  fallback: false,
 });
 
 export async function getSettings(): Promise<Settings> {
-  return settingsItem.getValue();
+  // Réglages enregistrés avant l'ajout du champ : searchProfile absent du store.
+  const s = await settingsItem.getValue();
+  return { ...s, searchProfile: s.searchProfile ?? "" };
+}
+
+export function getProfileCardDismissed(): Promise<boolean> {
+  return profileCardDismissedItem.getValue();
+}
+
+export async function dismissProfileCard(): Promise<void> {
+  await profileCardDismissedItem.setValue(true);
 }
 
 export async function saveSettings(s: Settings): Promise<void> {
