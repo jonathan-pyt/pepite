@@ -360,6 +360,7 @@ export default function App() {
             {/* Metrics row */}
             <div className={`mb-5 grid gap-2.5 ${hasDispersion ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"}`}>
               <Metric
+                alignLabel
                 label="Prix/m² annonce"
                 value={
                   quick.listingPricePerM2 !== null
@@ -369,6 +370,7 @@ export default function App() {
                 tone="accent"
               />
               <Metric
+                alignLabel
                 label="Médiane biens comparables"
                 value={
                   quick.market
@@ -383,6 +385,7 @@ export default function App() {
               />
               {hasDispersion && (
                 <Metric
+                  alignLabel
                   label="Fourchette du secteur"
                   value={
                     <span className="whitespace-nowrap">
@@ -393,6 +396,7 @@ export default function App() {
                 />
               )}
               <Metric
+                alignLabel
                 label="Écart"
                 value={
                   quick.marketGapPct !== null ? `${formatPctFr(quick.marketGapPct)} %` : "—"
@@ -531,14 +535,17 @@ export default function App() {
               <RSection id="cout" num={3} title="Coût total d'acquisition">
                 <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                   <Metric
+                    alignLabel
                     label="Prix affiché"
                     value={`${acq.prix.toLocaleString("fr-FR")} €`}
                   />
                   <Metric
+                    alignLabel
                     label={`Frais de notaire (≈ ${String(acq.fraisNotairePct).replace(".", ",")} %)`}
                     value={`${acq.fraisNotaire.toLocaleString("fr-FR")} €`}
                   />
                   <Metric
+                    alignLabel
                     label="Total estimé"
                     value={`${acq.total.toLocaleString("fr-FR")} €`}
                     tone="accent"

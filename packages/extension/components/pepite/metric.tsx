@@ -10,6 +10,11 @@ export interface MetricProps {
   sub?: React.ReactNode
   tone?: Tone
   big?: boolean
+  /**
+   * Réserve 2 lignes pour le label — à activer sur les rangées dont les labels
+   * font 1 ou 2 lignes selon la carte, pour garder les valeurs alignées.
+   */
+  alignLabel?: boolean
 }
 
 const toneClass: Record<Tone, string> = {
@@ -24,7 +29,7 @@ const toneClass: Record<Tone, string> = {
  * Fond surface-sub, bordure line-soft, radius 8, label 11px ink-3,
  * valeur 16/19px bold tabular-nums (couleur selon `tone`).
  */
-export function Metric({ label, value, sub, tone, big = false }: MetricProps) {
+export function Metric({ label, value, sub, tone, big = false, alignLabel = false }: MetricProps) {
   return (
     <div
       className={cn(
@@ -32,9 +37,12 @@ export function Metric({ label, value, sub, tone, big = false }: MetricProps) {
         big ? "px-3.5 py-3" : "px-3 py-2.5"
       )}
     >
-      {/* Hauteur réservée (2 lignes) : les valeurs restent alignées entre cartes
-          d'une même rangée, que le label tienne sur une ou deux lignes. */}
-      <div className="mb-1 min-h-[2lh] text-[11px] font-medium tracking-[0.01em] text-ink-3">
+      <div
+        className={cn(
+          "mb-1 text-[11px] font-medium tracking-[0.01em] text-ink-3",
+          alignLabel && "min-h-[2lh]"
+        )}
+      >
         {label}
       </div>
       <div
