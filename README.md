@@ -53,7 +53,7 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 1. Téléchargez `pepiteextension-X.Y.Z-firefox.zip` depuis la [dernière release](https://github.com/jonathan-pyt/pepite/releases/latest)
 2. Ouvrez `about:debugging#/runtime/this-firefox` → « Charger un module complémentaire temporaire… » → sélectionnez le zip
 
-Le panneau s'ouvre via le badge Pépite sur une annonce, ou via la sidebar de Firefox (Ctrl+Alt+S / menu Affichage → Panneau latéral). Si votre version de Firefox n'accorde pas les accès à l'installation, le panneau affiche un bandeau « Autoriser » — un clic suffit, puis rechargez l'onglet de l'annonce.
+Le panneau s'ouvre via l'icône Pépite de la barre d'outils (épinglez-la depuis le menu extensions si besoin), ou via la sidebar de Firefox (Ctrl+Alt+S / menu Affichage → Panneau latéral). Contrairement à Chrome, le badge Pépite affiché sur l'annonce ne peut pas ouvrir la sidebar : Firefox réserve cette ouverture à un geste utilisateur direct sur l'extension. Si votre version de Firefox n'accorde pas les accès à l'installation, le panneau affiche un bandeau « Autoriser » — un clic suffit, puis rechargez l'onglet de l'annonce.
 
 > ⚠️ Installation **temporaire** : l'extension disparaît au redémarrage de Firefox. Firefox stable refuse les extensions non signées en installation permanente (seuls Developer Edition / Nightly le permettent via `xpinstall.signatures.required=false`). Une publication signée sur addons.mozilla.org viendra lever cette limite.
 
