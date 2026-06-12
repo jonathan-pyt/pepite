@@ -17,6 +17,16 @@ export default defineConfig({
     name: "Pépite — analyse immobilière",
     description:
       "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin, SeLoger, Bien'ici et Citya.",
+    // Icône d'outils active (épinglable) ; sur Chrome, le clic ouvre le side
+    // panel via setPanelBehavior(openPanelOnActionClick) déjà posé au démarrage.
+    action: {
+      default_title: "Pépite — analyse immobilière",
+      default_icon: {
+        16: "icon/16.png",
+        32: "icon/32.png",
+        48: "icon/48.png",
+      },
+    },
     // Firefox n'a pas l'API sidePanel (la sidebar passe par sidebar_action,
     // que WXT génère depuis l'entrypoint sidepanel) : la permission n'y existe pas.
     permissions:
