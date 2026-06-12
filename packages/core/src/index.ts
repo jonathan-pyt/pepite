@@ -6,7 +6,7 @@ export { extractListingGeneric } from "./extraction/generic";
 export { isSelogerListingPage, parseSeloger, parseSelogerHtml } from "./extraction/seloger";
 export { parseBienici } from "./extraction/bienici";
 export { isCityaListingPage, parseCitya } from "./extraction/citya";
-export { geocode } from "./enrichment/geocode";
+export { geocode, correctedLocation } from "./enrichment/geocode";
 export { parseDvfCsv, computeMarketStats, fetchCommuneSales, DVF_YEARS, haversineM } from "./enrichment/dvf";
 export { parseOverpass, fetchNeighborhood } from "./enrichment/neighborhood";
 export type { FetchNeighborhoodOptions } from "./enrichment/neighborhood";

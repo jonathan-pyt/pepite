@@ -13,6 +13,12 @@ export interface ListingLocation {
   precision?: string;
   lat?: number;
   lon?: number;
+  /**
+   * Localisation corrigée manuellement par l'utilisateur (certaines annonces
+   * affichent volontairement une fausse ville) : coordonnées et commune issues
+   * du géocodage de sa saisie, pas de l'annonce.
+   */
+  locationCorrected?: true;
 }
 
 export interface Listing {

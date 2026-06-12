@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { geocode } from "./geocode";
+import type { GeoPoint } from "../types";
+import { correctedLocation, geocode } from "./geocode";
 
 const banResponse = {
   type: "FeatureCollection",
@@ -47,5 +48,53 @@ describe("geocode", () => {
   it("jette une erreur explicite si HTTP != 200", async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response("oops", { status: 503 }));
     await expect(geocode("Nantes", { fetchFn })).rejects.toThrow(/geocodage BAN: HTTP 503/);
+  });
+});
+
+describe("correctedLocation", () => {
+  const point: GeoPoint = {
+    lat: -20.8823,
+    lon: 55.4504,
+    citycode: "97411",
+    label: "12 Rue des Lilas 97400 Saint-Denis",
+    score: 0.95,
+    precision: "housenumber",
+  };
+
+  it("reconstruit la localisation depuis la saisie et le géocodage", () => {
+    expect(correctedLocation("12 rue des Lilas, Saint-Denis", point)).toEqual({
+      rawAddress: "12 rue des Lilas, Saint-Denis",
+      lat: -20.8823,
+      lon: 55.4504,
+      precision: "housenumber",
+      postalCode: "97400",
+      city: "Saint-Denis",
+      locationCorrected: true,
+    });
+  });
+
+  it("extrait la ville même composée (label BAN multi-mots)", () => {
+    const p: GeoPoint = { ...point, label: "Rue Jean Jaurès 97438 Sainte-Marie", precision: "street" };
+    const loc = correctedLocation("rue jean jaurès sainte-marie", p);
+    expect(loc.postalCode).toBe("97438");
+    expect(loc.city).toBe("Sainte-Marie");
+  });
+
+  it("utilise le label comme ville pour une municipalité (label sans code postal)", () => {
+    const p: GeoPoint = { ...point, label: "Saint-Denis", precision: "municipality" };
+    const loc = correctedLocation("Saint-Denis", p);
+    expect(loc.city).toBe("Saint-Denis");
+    expect(loc.postalCode).toBeUndefined();
+  });
+
+  it("omet ville et code postal si le label ne les expose pas", () => {
+    const p: GeoPoint = { ...point, label: "Rue des Lilas", precision: "street" };
+    const loc = correctedLocation("rue des Lilas", p);
+    expect(loc.city).toBeUndefined();
+    expect(loc.postalCode).toBeUndefined();
+  });
+
+  it("abandonne le district (n'a plus de sens après correction)", () => {
+    expect(correctedLocation("Saint-Denis", point).district).toBeUndefined();
   });
 });
