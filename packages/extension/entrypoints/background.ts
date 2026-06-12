@@ -292,8 +292,19 @@ async function runListingPipeline(tabId: number, listing: Listing): Promise<Quic
   }
 }
 
+/**
+ * Firefox uniquement : équivalent du sidePanel Chrome (clé manifest
+ * sidebar_action). Non typé par @wxt-dev/browser (types Chrome) → cast localisé.
+ */
+const sidebarAction = (
+  browser as unknown as { sidebarAction?: { open(): Promise<void> } }
+).sidebarAction;
+
 export default defineBackground(() => {
-  // browser.sidePanel is typed by @wxt-dev/browser (Chrome 114+, MV3)
+  // browser.sidePanel is typed by @wxt-dev/browser (Chrome 114+, MV3).
+  // Absent sur Firefox (l'optional chaining court-circuite toute la chaîne) :
+  // pas d'équivalent sidebarAction — l'ouverture passe par le badge (OPEN_SIDE_PANEL)
+  // ou l'UI sidebar native de Firefox.
   void browser.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
   browser.tabs.onRemoved.addListener((tabId) => {
@@ -314,7 +325,11 @@ export default defineBackground(() => {
         const tabId = sender.tab?.id;
         const tabUrl = sender.tab?.url;
         if (tabId !== undefined) {
-          void browser.sidePanel.open({ tabId }).catch(() => {});
+          // L'appel doit rester dans le chemin synchrone du geste utilisateur
+          // (clic sur le badge) : sidePanel.open comme sidebarAction.open
+          // rejettent hors contexte user-gesture.
+          if (browser.sidePanel) void browser.sidePanel.open({ tabId }).catch(() => {});
+          else void sidebarAction?.open().catch(() => {});
           // ensureTabState n'exige pas le contexte user-gesture : on attend la
           // réhydratation pour ne pas relancer une détection déjà mémorisée.
           void hydrateTabStates().then(() => ensureTabState(tabId, tabUrl));

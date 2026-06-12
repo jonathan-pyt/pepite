@@ -18,14 +18,7 @@ import { Loader2, KeyRound } from "lucide-react";
 import { PepiteMark, ScoreRing } from "@/components/pepite";
 import { formatPctFr } from "@/lib/format";
 import { sendRequest, type PepiteContentRequest } from "@/lib/messages";
-
-/** Domaines couverts par le content script (doivent rester alignés avec `matches`). */
-export const LISTING_MATCHES = [
-  "*://*.leboncoin.fr/*",
-  "*://*.seloger.com/*",
-  "*://*.bienici.com/*",
-  "*://*.citya.com/*",
-];
+import { LISTING_MATCHES } from "@/lib/host-permissions";
 
 /* ---------- helpers ---------- */
 

@@ -1,39 +1,35 @@
 import { defineConfig } from "wxt";
 import tailwindcss from "@tailwindcss/vite";
+import { HOST_PERMISSIONS } from "./lib/host-permissions";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
+  // WXT cible MV2 par défaut pour Firefox : on force MV3 partout
+  // (sans effet sur Chrome, déjà MV3 par défaut).
+  manifestVersion: 3,
+  // data_collection_permissions n'est exigé que pour la publication AMO
+  // (pas encore au programme) — à renseigner avant toute soumission.
+  suppressWarnings: { firefoxDataCollection: true },
   vite: () => ({
     plugins: [tailwindcss()],
   }),
-  manifest: {
+  manifest: ({ browser }) => ({
     name: "Pépite — analyse immobilière",
     description:
       "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin, SeLoger, Bien'ici et Citya.",
-    permissions: ["storage", "sidePanel", "tabs"],
-    host_permissions: [
-      "https://data.geopf.fr/*",
-      "https://files.data.gouv.fr/*",
-      // Les CSV DVF de files.data.gouv.fr répondent par un 302 vers ce S3 OVH
-      "https://*.io.cloud.ovh.net/*",
-      "https://generativelanguage.googleapis.com/*",
-      "https://api.anthropic.com/*",
-      "https://api.openai.com/*",
-      "https://overpass-api.de/*",
-      "https://overpass.osm.ch/*",
-      "https://www.georisques.gouv.fr/*",
-      "https://www.data.gouv.fr/*",
-      "https://static.data.gouv.fr/*",
-      "https://geo.api.gouv.fr/*",
-      "https://apicarto.ign.fr/*",
-      "https://data.economie.gouv.fr/*",
-      // CDN photos des annonces (Restyle IA — fetch depuis la page extension),
-      // domaines relevés dans packages/core/src/extraction (fixtures + parseurs)
-      "https://img.leboncoin.fr/*",
-      "https://mms.seloger.com/*",
-      "https://photo.bienici.com/*",
-      "https://img.citya.com/*",
-      "https://www.citya.com/*",
-    ],
-  },
+    // Firefox n'a pas l'API sidePanel (la sidebar passe par sidebar_action,
+    // que WXT génère depuis l'entrypoint sidepanel) : la permission n'y existe pas.
+    permissions:
+      browser === "firefox" ? ["storage", "tabs"] : ["storage", "sidePanel", "tabs"],
+    host_permissions: HOST_PERMISSIONS,
+    ...(browser === "firefox" && {
+      browser_specific_settings: {
+        gecko: {
+          id: "pepite@jonathan-pyt.github.io",
+          // storage.session ≥ 115, MV3/sidebar stables — marge prise à 121.
+          strict_min_version: "121.0",
+        },
+      },
+    }),
+  }),
 });
