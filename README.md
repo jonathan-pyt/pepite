@@ -48,6 +48,16 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 
 > Pas encore sur le Chrome Web Store : pas de mise à jour automatique, re-téléchargez le zip à chaque release.
 
+### Firefox (expérimental)
+
+1. Téléchargez `pepiteextension-X.Y.Z-firefox.zip` depuis la [dernière release](https://github.com/jonathan-pyt/pepite/releases/latest)
+2. Ouvrez `about:debugging#/runtime/this-firefox` → « Charger un module complémentaire temporaire… » → sélectionnez le zip
+3. Au premier lancement, le panneau Pépite affiche un bandeau « Autoriser » : cliquez-le pour accorder l'accès aux sites d'annonces et aux données publiques (DVF, géocodage…) — sur Firefox, ces permissions ne sont pas accordées à l'installation. Rechargez ensuite l'onglet de l'annonce
+
+Le panneau s'ouvre via le badge Pépite sur une annonce, ou via la sidebar de Firefox (Ctrl+Alt+S / menu Affichage → Panneau latéral).
+
+> ⚠️ Installation **temporaire** : l'extension disparaît au redémarrage de Firefox. Firefox stable refuse les extensions non signées en installation permanente (seuls Developer Edition / Nightly le permettent via `xpinstall.signatures.required=false`). Une publication signée sur addons.mozilla.org viendra lever cette limite.
+
 ### Depuis les sources
 
 ```bash
