@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { Check, ClipboardCopy, History, Info, Loader2, Pencil, RotateCw, Sparkles } from "lucide-react";
+import { Check, ClipboardCopy, History, Info, Loader2, MoreHorizontal, Pencil, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -445,11 +451,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ── Action buttons ───────────────────────────────────────────────── */}
-        <div className="mt-1 flex flex-col gap-2">
+        {/* ── Action buttons : primaire + menu « plus d'actions » ─────────── */}
+        <div className="mt-1 flex gap-2">
           {!analysis && state.status !== "full-running" && (
             <Button
-              className="w-full"
+              className="flex-1"
               size="lg"
               onClick={() => void runFullAnalysis()}
               disabled={!quick}
@@ -459,14 +465,14 @@ export default function App() {
           )}
 
           {state.status === "full-running" && (
-            <Button className="w-full" size="lg" disabled>
+            <Button className="flex-1" size="lg" disabled>
               <Loader2 className="animate-spin" />
               Analyse IA en cours…
             </Button>
           )}
 
           {analysis && reportId && state.status !== "full-running" && (
-            <div className="flex gap-2">
+            <>
               <Button
                 className="flex-1"
                 size="lg"
@@ -487,37 +493,54 @@ export default function App() {
               >
                 <RotateCw className="size-[16px]" />
               </Button>
-            </div>
+            </>
           )}
 
-          {listing.photos.length > 0 && (
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full"
-              onClick={() =>
-                window.open(
-                  browser.runtime.getURL(
-                    `/restyle.html?url=${encodeURIComponent(listing.url)}`,
-                  ),
-                )
-              }
-            >
-              <Sparkles className="size-[16px]" />
-              Restyle IA
-            </Button>
-          )}
-
-          {quick && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-ink-3"
-              onClick={() => void copyPrompt()}
-            >
-              {copied ? <Check /> : <ClipboardCopy />}
-              {copied ? "Copié ✓" : "Copier le prompt"}
-            </Button>
+          {(listing.photos.length > 0 || quick) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="aspect-square shrink-0 px-0"
+                  aria-label="Plus d'actions"
+                >
+                  <MoreHorizontal className="size-[16px]" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {listing.photos.length > 0 && (
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      window.open(
+                        browser.runtime.getURL(
+                          `/restyle.html?url=${encodeURIComponent(listing.url)}`,
+                        ),
+                      )
+                    }
+                  >
+                    <Sparkles />
+                    <div>
+                      <div className="font-medium">Restyle IA</div>
+                      <div className="mt-0.5 text-[11px] leading-snug text-ink-3">
+                        Redécorer les photos de l&apos;annonce avec Gemini
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                )}
+                {quick && (
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); void copyPrompt(); }}>
+                    {copied ? <Check /> : <ClipboardCopy />}
+                    <div>
+                      <div className="font-medium">{copied ? "Copié ✓" : "Copier le prompt"}</div>
+                      <div className="mt-0.5 text-[11px] leading-snug text-ink-3">
+                        À coller dans votre propre IA (ChatGPT, Claude…) — aucune clé requise
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
