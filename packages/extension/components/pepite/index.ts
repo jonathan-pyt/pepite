@@ -27,3 +27,6 @@ export type { FieldProps } from "./field"
 
 export { BeforeAfter } from "./before-after"
 export type { BeforeAfterProps } from "./before-after"
+
+export { MapTooltipContent } from "./map-tooltip"
+export type { MapTooltipContentProps } from "./map-tooltip"

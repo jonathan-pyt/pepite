@@ -7,8 +7,10 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ClipboardCopy,
   Copy,
   History,
+  Info,
   LandPlot,
   Loader2,
   Mail,
@@ -28,11 +30,13 @@ import {
   ScoreRing,
   scoreColorClass,
   PageShell,
+  MapTooltipContent,
   Metric,
   Seg,
   WarnItem,
   DPEChip,
 } from "@/components/pepite";
+import { useCopyPrompt } from "@/lib/hooks/use-copy-prompt";
 import { NEGOTIATION_TONES, useNegotiation } from "@/lib/hooks/use-negotiation";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,6 +120,13 @@ function isApproximateLocation(precision: string | undefined): boolean {
   return precision !== undefined && precision !== "address" && precision !== "housenumber";
 }
 
+/**
+ * POI le plus proche d'une catégorie quartier. lat/lon optionnels côté
+ * extension : les vieux caches IDB datent d'avant leur ajout au core —
+ * sans coordonnées, tooltip sans carte.
+ */
+type NearestPoi = { name: string; distanceM: number; lat?: number; lon?: number };
+
 /** Libellé court du type de zone PLU (U = urbaine, AU = à urbaniser, A = agricole, N = naturelle) */
 function pluTypeLabel(typezone: string): string | undefined {
   if (typezone.startsWith("AU")) return "zone à urbaniser";
@@ -128,6 +139,12 @@ export default function App() {
   const [restyles, setRestyles] = useState<RestyleRecord[]>([]);
   const [restyleUrls, setRestyleUrls] = useState<Record<string, string>>({});
   const nego = useNegotiation(report === "loading" ? null : report);
+  const loadedReport = report === "loading" ? null : report;
+  const { copied: promptCopied, copyPrompt } = useCopyPrompt(
+    loadedReport?.listing ?? null,
+    loadedReport?.quick ?? null,
+    loadedReport?.enrichments,
+  );
 
   useEffect(() => {
     const id = new URLSearchParams(location.search).get("id");
@@ -170,6 +187,10 @@ export default function App() {
     year: "numeric",
   });
 
+  // Dispersion P25-P75 du secteur (affichée seulement si les deux bornes existent)
+  const hasDispersion =
+    quick.market?.p25PricePerM2 !== undefined && quick.market?.p75PricePerM2 !== undefined;
+
   // Split comparables: similar first (date-desc), then others (date-desc)
   const allComparables = quick.market ? [...quick.market.comparables] : [];
   const similarComps = allComparables
@@ -204,6 +225,10 @@ export default function App() {
               </a>
             </Button>
           )}
+          <Button variant="secondary" size="sm" onClick={() => void copyPrompt()}>
+            {promptCopied ? <Check /> : <ClipboardCopy />}
+            {promptCopied ? "Copié ✓" : "Copier le prompt"}
+          </Button>
         </div>
       }
     >
@@ -305,7 +330,7 @@ export default function App() {
           {/* ── 2. Prix & marché ── */}
           <RSection id="prix" num={2} title="Prix & marché">
             {/* Metrics row */}
-            <div className="mb-5 grid grid-cols-3 gap-2.5">
+            <div className={`mb-5 grid gap-2.5 ${hasDispersion ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"}`}>
               <Metric
                 label="Prix/m² annonce"
                 value={
@@ -328,6 +353,13 @@ export default function App() {
                     : undefined
                 }
               />
+              {hasDispersion && (
+                <Metric
+                  label="Fourchette du secteur"
+                  value={`${Math.round(quick.market!.p25PricePerM2!).toLocaleString("fr-FR")} – ${Math.round(quick.market!.p75PricePerM2!).toLocaleString("fr-FR")} €/m²`}
+                  sub="50 % des ventes comparables dans cette fourchette"
+                />
+              )}
               <Metric
                 label="Écart"
                 value={
@@ -382,7 +414,11 @@ export default function App() {
                             {capitalizeAddress(c.address)}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
+                        <MapTooltipContent
+                          lat={c.lat}
+                          lon={c.lon}
+                          title={capitalizeAddress(c.address)}
+                        />
                       </Tooltip>
                     </div>
                   ))}
@@ -440,7 +476,11 @@ export default function App() {
                                   {capitalizeAddress(c.address)}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>{capitalizeAddress(c.address)}</TooltipContent>
+                              <MapTooltipContent
+                                lat={c.lat}
+                                lon={c.lon}
+                                title={capitalizeAddress(c.address)}
+                              />
                             </Tooltip>
                           </div>
                         ))}
@@ -703,10 +743,22 @@ export default function App() {
                     Position approximative (quartier {listing.location.district ?? "non précisé"}) — adresse exacte non communiquée par l&apos;annonce.
                   </div>
                 )}
-                {nb && (
+                {nb && categories.every(({ key }) => nb[key].count === 0) && (
+                  <div className="flex items-start gap-2 rounded-lg border border-line-soft bg-surface-sub px-3.5 py-3">
+                    <Info className="mt-px size-[14px] shrink-0 text-ink-3" />
+                    <p className="text-[12.5px] leading-relaxed text-ink-3">
+                      Aucune donnée OpenStreetMap dans le rayon de {nb.radiusM} m — la
+                      couverture OSM varie selon les zones, cela ne signifie pas une
+                      absence réelle de commodités.
+                    </p>
+                  </div>
+                )}
+                {nb && categories.some(({ key }) => nb[key].count > 0) && (
+                <TooltipProvider>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {categories.map(({ key, label, Icon }) => {
                     const cat = nb[key];
+                    const nearest: NearestPoi[] = cat.nearest;
                     return (
                       <div
                         key={key}
@@ -725,17 +777,34 @@ export default function App() {
                           </span>
                         </div>
                         {/* Nearest POI list */}
-                        {cat.nearest.length > 0 && (
+                        {nearest.length > 0 && (
                           <div className="mt-2.5 flex flex-col gap-1.5 border-t border-line-soft pt-2.5">
                             {/* nearest est dédoublonné par nom dans le core → clé stable */}
-                            {cat.nearest.map((poi) => (
-                              <span key={poi.name} className="line-clamp-2 text-[12px] leading-[1.35] text-ink-2">
-                                {poi.name}
-                              </span>
+                            {nearest.map((poi) => (
+                              <Tooltip key={poi.name}>
+                                <TooltipTrigger asChild>
+                                  <span className="line-clamp-2 cursor-help text-[12px] leading-[1.35] text-ink-2">
+                                    {poi.name}
+                                  </span>
+                                </TooltipTrigger>
+                                {poi.lat !== undefined && poi.lon !== undefined ? (
+                                  <MapTooltipContent
+                                    lat={poi.lat}
+                                    lon={poi.lon}
+                                    title={poi.name}
+                                    subtitle={`≈ ${poi.distanceM} m à vol d'oiseau`}
+                                  />
+                                ) : (
+                                  // Vieux caches IDB sans coordonnées : pas de carte
+                                  <TooltipContent>
+                                    {poi.name} · ≈ {poi.distanceM} m à vol d&apos;oiseau
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
                             ))}
-                            {cat.count > cat.nearest.length && (
+                            {cat.count > nearest.length && (
                               <span className="text-[11px] text-ink-3">
-                                +{cat.count - cat.nearest.length} autre{cat.count - cat.nearest.length > 1 ? "s" : ""} dans le rayon
+                                +{cat.count - nearest.length} autre{cat.count - nearest.length > 1 ? "s" : ""} dans le rayon
                               </span>
                             )}
                           </div>
@@ -744,6 +813,7 @@ export default function App() {
                     );
                   })}
                 </div>
+                </TooltipProvider>
                 )}
               </RSection>
             );

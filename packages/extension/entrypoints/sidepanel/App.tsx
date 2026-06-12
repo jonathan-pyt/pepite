@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { browser } from "wxt/browser";
 import type { UsageProfile } from "@pepite/core";
-import { History, Info, Loader2, RotateCw, Sparkles } from "lucide-react";
+import { Check, ClipboardCopy, History, Info, Loader2, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { PepiteLogo, ScoreRing, Seg, Metric, WarnItem } from "@/components/pepite";
 import { formatPctFr } from "@/lib/format";
+import { useCopyPrompt } from "@/lib/hooks/use-copy-prompt";
 import { useTabState } from "@/lib/hooks/use-tab-state";
 
 // ─── Profile definitions ────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ function SecTitle({ children, right }: { children: React.ReactNode; right?: Reac
 export default function App() {
   const { state, analysis, enrichments, globalScore, reportId, analysisDate, error, runFullAnalysis } = useTabState();
   const [profile, setProfile] = useState<UsageProfile>("residence");
+  const { copied, copyPrompt } = useCopyPrompt(state.listing ?? null, state.quick ?? null, enrichments);
 
   // ── State: extraction échouée (aucune annonce exploitable) ───────────────
 
@@ -193,7 +195,7 @@ export default function App() {
               }
               sub={
                 quick.market
-                  ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}`
+                  ? `${quick.market.sampleSize} ventes · rayon ${quick.market.radiusM} m${quick.market.windowMonths === 18 ? " · 18 derniers mois" : ""}${quick.market.medianOnSimilar ? " · surface comparable" : ""}${quick.market.p25PricePerM2 !== undefined && quick.market.p75PricePerM2 !== undefined ? ` · P25-P75 : ${quick.market.p25PricePerM2.toLocaleString("fr-FR")}-${quick.market.p75PricePerM2.toLocaleString("fr-FR")} €` : ""}`
                   : undefined
               }
             />
@@ -260,6 +262,25 @@ export default function App() {
                 Ouvrir les réglages
               </button>
             )}
+          </div>
+        )}
+
+        {/* ── Copier le prompt sans clé API ────────────────────────────────── */}
+        {error && isApiKeyError && quick && (
+          <div className="flex flex-col gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              onClick={() => void copyPrompt()}
+            >
+              {copied ? <Check /> : <ClipboardCopy />}
+              {copied ? "Copié ✓" : "Copier le prompt pour votre IA"}
+            </Button>
+            <p className="text-[11px] leading-relaxed text-ink-3">
+              Toutes les données (annonce, ventes DVF, quartier…) dans un prompt prêt à
+              coller — aucune clé requise.
+            </p>
           </div>
         )}
 
@@ -396,6 +417,18 @@ export default function App() {
             >
               <Sparkles className="size-[16px]" />
               Restyle IA
+            </Button>
+          )}
+
+          {quick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-ink-3"
+              onClick={() => void copyPrompt()}
+            >
+              {copied ? <Check /> : <ClipboardCopy />}
+              {copied ? "Copié ✓" : "Copier le prompt"}
             </Button>
           )}
         </div>
