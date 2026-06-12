@@ -129,7 +129,12 @@ export function useTabState(): UseTabState {
       type: "RUN_FULL_ANALYSIS",
       tabId,
     })
-    if (res.error === "NO_API_KEY") {
+    if (!res) {
+      // Background mort pendant l'analyse (event page Firefox tuée…) : la
+      // promesse sendMessage se résout avec undefined — sans ce garde,
+      // res.error lèverait et le spinner resterait affiché pour toujours.
+      setError("Le service d'arrière-plan n'a pas répondu — relance l'analyse.")
+    } else if (res.error === "NO_API_KEY") {
       setError("Clé API manquante — configure un provider dans les réglages.")
     } else if (res.error) {
       setError(res.error)

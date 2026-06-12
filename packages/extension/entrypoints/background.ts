@@ -91,6 +91,29 @@ function ensureTabState(tabId: number, url: string | undefined) {
   void browser.tabs.sendMessage(tabId, { type: "REDETECT" }).catch(() => {});
 }
 
+/**
+ * Maintient l'event page Firefox en vie pendant une opération longue.
+ *
+ * Sur Firefox MV3, le background est une event page tuée après ~30 s
+ * d'inactivité ; un fetch en cours (appel LLM de 20-60 s) ne reset PAS le
+ * timer — seuls les événements et appels d'API WebExtension le font
+ * (bugzilla 1851373). Sans ça, la page meurt en pleine analyse et la
+ * promesse sendMessage de l'appelant se résout avec undefined → spinner
+ * infini côté side panel. Un appel d'API trivial toutes les 20 s reset le
+ * timer ; inoffensif sur Chrome (service worker maintenu par ses propres
+ * mécanismes).
+ */
+async function withKeepAlive<T>(fn: () => Promise<T>): Promise<T> {
+  const interval = setInterval(() => {
+    void browser.runtime.getPlatformInfo().catch(() => {});
+  }, 20_000);
+  try {
+    return await fn();
+  } finally {
+    clearInterval(interval);
+  }
+}
+
 /** Message d'explication affiché par le side panel quand l'extraction générique échoue. */
 const EXTRACTION_FAILED_MESSAGE =
   "Pépite n'a pas réussi à identifier une annonce exploitable sur cette page (prix, surface…). " +
@@ -358,7 +381,8 @@ export default defineBackground(() => {
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
             let listing: Listing;
             try {
-              listing = await extractListingGeneric(req.pageText, req.url, cfg);
+              // Appel LLM potentiellement long : keepalive pour l'event page Firefox.
+              listing = await withKeepAlive(() => extractListingGeneric(req.pageText, req.url, cfg));
             } catch (e) {
               // Pas d'annonce identifiable ou extraction invalide → badge neutre,
               // et état d'erreur mémorisé pour que le side panel explique.
@@ -395,43 +419,49 @@ export default defineBackground(() => {
             const prev = tabStates.get(req.tabId);
             if (!prev?.listing || !prev.quick)
               return sendResponse({ error: "Aucune annonce analysée sur cet onglet" });
+            // Captures locales : le narrowing du garde ci-dessus ne survit pas
+            // dans la closure passée à withKeepAlive.
+            const { listing, quick } = prev;
             const settings = await getSettings();
             const cfg = toLlmConfig(settings);
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
 
             setTabState(req.tabId, { ...prev, status: "full-running" });
             try {
-              // Recompute point if it was not resolved during quick analysis
-              // (e.g. after a service-worker restart or when geocoding failed transiently).
-              let point = prev.point ?? null;
-              if (!point) {
-                point = await resolvePoint(prev.listing);
-                if (point) setTabState(req.tabId, { ...prev, status: "full-running", point });
-              }
-              const enrichments: Enrichments | undefined = point
-                ? await buildEnrichments(point, prev.listing)
-                : undefined;
+              // Enrichissements + appel LLM (20-60 s) : keepalive pour l'event page Firefox.
+              await withKeepAlive(async () => {
+                // Recompute point if it was not resolved during quick analysis
+                // (e.g. after a service-worker restart or when geocoding failed transiently).
+                let point = prev.point ?? null;
+                if (!point) {
+                  point = await resolvePoint(listing);
+                  if (point) setTabState(req.tabId, { ...prev, status: "full-running", point });
+                }
+                const enrichments: Enrichments | undefined = point
+                  ? await buildEnrichments(point, listing)
+                  : undefined;
 
-              const analysis = await analyzeListing(
-                { listing: prev.listing, quick: prev.quick, enrichments },
-                cfg,
-              );
-              const globalScore = computeGlobalScore(prev.quick, prev.listing, enrichments) ?? undefined;
-              const report: Report = {
-                id: crypto.randomUUID(),
-                listingUrl: prev.listing.url,
-                createdAt: new Date().toISOString(),
-                listing: prev.listing,
-                quick: prev.quick,
-                analysis,
-                provider: cfg.provider,
-                model: cfg.model,
-                enrichments,
-                globalScore,
-              };
-              await idbRepository.saveReport(report);
-              setTabState(req.tabId, { ...prev, status: "full-done", reportId: report.id });
-              sendResponse({ reportId: report.id, analysis, enrichments, globalScore });
+                const analysis = await analyzeListing(
+                  { listing: listing, quick: quick, enrichments },
+                  cfg,
+                );
+                const globalScore = computeGlobalScore(quick, listing, enrichments) ?? undefined;
+                const report: Report = {
+                  id: crypto.randomUUID(),
+                  listingUrl: listing.url,
+                  createdAt: new Date().toISOString(),
+                  listing: listing,
+                  quick: quick,
+                  analysis,
+                  provider: cfg.provider,
+                  model: cfg.model,
+                  enrichments,
+                  globalScore,
+                };
+                await idbRepository.saveReport(report);
+                setTabState(req.tabId, { ...prev, status: "full-done", reportId: report.id });
+                sendResponse({ reportId: report.id, analysis, enrichments, globalScore });
+              });
             } catch (e) {
               const msg = e instanceof Error ? e.message : String(e);
               setTabState(req.tabId, { ...prev, status: "error", error: msg });
@@ -474,13 +504,16 @@ export default defineBackground(() => {
             const cfg = toLlmConfig(settings);
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
             try {
-              const emails = await generateNegotiationEmails({
-                listing: report.listing,
-                quick: report.quick,
-                analysis: report.analysis,
-                enrichments: report.enrichments,
-                settings: cfg,
-              });
+              // Appel LLM potentiellement long : keepalive pour l'event page Firefox.
+              const emails = await withKeepAlive(() =>
+                generateNegotiationEmails({
+                  listing: report.listing,
+                  quick: report.quick,
+                  analysis: report.analysis,
+                  enrichments: report.enrichments,
+                  settings: cfg,
+                }),
+              );
               // Persistance sur le rapport existant (même id, pas de nouveau rapport).
               await idbRepository.saveReport({ ...report, negotiationEmails: emails });
               sendResponse({ emails });
