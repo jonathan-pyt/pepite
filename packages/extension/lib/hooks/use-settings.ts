@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
 
-import { clearCache } from "@/lib/repository-idb"
+import { clearCache, hasCachedData } from "@/lib/repository-idb"
 import { getSettings, saveSettings, type Settings } from "@/lib/settings"
 
 export interface UseSettings {
@@ -17,6 +17,8 @@ export interface UseSettings {
   clearCaches: () => Promise<void>
   /** Vrai pendant ~2 s après un vidage des caches réussi. */
   cachesCleared: boolean
+  /** Vrai s'il existe des caches à vider (masque la zone sur une installation neuve). */
+  hasCaches: boolean
 }
 
 /**
@@ -27,9 +29,11 @@ export function useSettings(): UseSettings {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [saved, setSaved] = useState(false)
   const [cachesCleared, setCachesCleared] = useState(false)
+  const [hasCaches, setHasCaches] = useState(false)
 
   useEffect(() => {
     void getSettings().then(setSettings)
+    void hasCachedData().then(setHasCaches).catch(() => {})
   }, [])
 
   async function save() {
@@ -54,8 +58,11 @@ export function useSettings(): UseSettings {
   async function clearCaches() {
     await clearCache()
     setCachesCleared(true)
-    setTimeout(() => setCachesCleared(false), 2000)
+    setTimeout(() => {
+      setCachesCleared(false)
+      setHasCaches(false)
+    }, 2000)
   }
 
-  return { settings, setSettings, save, saved, clearCaches, cachesCleared }
+  return { settings, setSettings, save, saved, clearCaches, cachesCleared, hasCaches }
 }

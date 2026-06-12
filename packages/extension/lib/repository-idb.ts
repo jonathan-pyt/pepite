@@ -61,6 +61,11 @@ export async function clearCache(): Promise<void> {
   await (await getDb()).clear("cache");
 }
 
+/** Vrai s'il existe au moins une entrée de cache (pour n'afficher la purge que si utile). */
+export async function hasCachedData(): Promise<boolean> {
+  return (await (await getDb()).count("cache")) > 0;
+}
+
 export const idbRepository: Repository = {
   async saveListing(listing) {
     await (await getDb()).put("listings", listing);

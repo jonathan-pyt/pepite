@@ -28,7 +28,8 @@ const PROVIDERS: { id: LlmProviderId; label: string }[] = [
 ];
 
 export default function App() {
-  const { settings, setSettings, save, saved, clearCaches, cachesCleared } = useSettings();
+  const { settings, setSettings, save, saved, clearCaches, cachesCleared, hasCaches } =
+    useSettings();
 
   if (!settings) return null;
 
@@ -151,7 +152,9 @@ export default function App() {
           <Button onClick={save}>{saved ? "Enregistré ✓" : "Enregistrer"}</Button>
         </div>
 
-        {/* Zone discrète : gestion des données techniques locales. */}
+        {/* Zone discrète : gestion des données techniques locales.
+            Masquée tant qu'il n'y a rien à vider (installation neuve = onboarding épuré). */}
+        {hasCaches && (
         <div className="flex flex-col gap-1.5">
           <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
             Données locales
@@ -166,6 +169,7 @@ export default function App() {
             Données marché, quartier et risques re-téléchargées à la prochaine analyse.
           </p>
         </div>
+        )}
       </div>
     </PageShell>
   );
