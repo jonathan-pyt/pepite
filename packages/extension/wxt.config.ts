@@ -7,9 +7,6 @@ export default defineConfig({
   // WXT cible MV2 par défaut pour Firefox : on force MV3 partout
   // (sans effet sur Chrome, déjà MV3 par défaut).
   manifestVersion: 3,
-  // data_collection_permissions n'est exigé que pour la publication AMO
-  // (pas encore au programme) — à renseigner avant toute soumission.
-  suppressWarnings: { firefoxDataCollection: true },
   hooks: {
     // Firefox ne connaît pas use_dynamic_url (généré par WXT pour Chrome) et
     // affiche « An unexpected property was found » à l'install : on retire la
@@ -51,6 +48,8 @@ export default defineConfig({
           id: "pepite@jonathan-pyt.github.io",
           // storage.session ≥ 115, MV3/sidebar stables — marge prise à 121.
           strict_min_version: "121.0",
+          // Déclaration AMO : le développeur ne collecte aucune donnée (cf. PRIVACY.md).
+          data_collection_permissions: { required: ["none"] },
         },
       },
     }),
