@@ -1,8 +1,15 @@
 # Dossier Chrome Web Store — Pépite
 
-Tout ce qu'il faut pour publier : crée le compte développeur (5 $ une fois) sur
-https://chrome.google.com/webstore/devconsole, téléverse le zip de la release
-(`pepiteextension-X.Y.Z-chrome.zip`), puis copie-colle les blocs ci-dessous.
+✅ **PUBLIÉ** (v0.4.1, 12 juin 2026)
+- **Fiche** : https://chromewebstore.google.com/detail/p%C3%A9pite-%E2%80%94-analyse-immobili/egkdkadgnhejggojnbgipohjaciiigkf
+- **Extension ID** : `egkdkadgnhejggojnbgipohjaciiigkf`
+- **Console** : https://chrome.google.com/webstore/devconsole
+
+Les blocs ci-dessous restent la source de vérité de la fiche (à réutiliser pour
+chaque mise à jour). **Mises à jour** : téléverser le nouveau
+`pepiteextension-X.Y.Z-chrome.zip` (version bumpée) ; toute nouvelle permission
+relance une review complète. L'ID ci-dessus permettra d'automatiser les
+soumissions via `wxt submit` (cf. credentials API à générer).
 
 ## Fiche
 
