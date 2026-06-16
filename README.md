@@ -1,6 +1,6 @@
 # Pépite 💎
 
-Extension Chrome open source d'analyse de biens immobiliers en France. Ouvrez une annonce, Pépite vous dit si le prix est juste — données publiques (DVF, Géorisques, OSM…) + analyse IA avec **vos propres clés API**.
+Extension navigateur open source (Chrome, Firefox, Edge…) d'analyse de biens immobiliers en France. Ouvrez une annonce, Pépite vous dit si le prix est juste — données publiques (DVF, Géorisques, OSM…) + analyse IA avec **vos propres clés API**.
 
 > Projet personnel, sans backend : tout tourne dans votre navigateur, vos clés et vos données restent en local.
 
@@ -40,26 +40,15 @@ Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites imm
 
 ## Installation
 
-### Chrome (recommandé)
+### Chrome / Edge / Brave
 
-**[➕ Installer depuis le Chrome Web Store](https://chromewebstore.google.com/detail/p%C3%A9pite-%E2%80%94-analyse-immobili/egkdkadgnhejggojnbgipohjaciiigkf)** — installation en un clic, mises à jour automatiques. Fonctionne aussi sur Edge, Brave et tout navigateur Chromium.
+**[➕ Installer depuis le Chrome Web Store](https://chromewebstore.google.com/detail/p%C3%A9pite-%E2%80%94-analyse-immobili/egkdkadgnhejggojnbgipohjaciiigkf)** — un clic, mises à jour automatiques.
 
 ### Firefox
 
-Publication sur [addons.mozilla.org](https://addons.mozilla.org) en cours de validation. En attendant, installation manuelle :
+**[➕ Installer depuis Firefox Add-ons](https://addons.mozilla.org/fr/firefox/addon/p%C3%A9pite-analyse-immobili%C3%A8re/)** — un clic, mises à jour automatiques.
 
-1. Téléchargez `pepiteextension-X.Y.Z-firefox.zip` depuis la [dernière release](https://github.com/jonathan-pyt/pepite/releases/latest)
-2. Ouvrez `about:debugging#/runtime/this-firefox` → « Charger un module complémentaire temporaire… » → sélectionnez le zip
-
-Le panneau s'ouvre via l'icône Pépite de la barre d'outils (épinglez-la depuis le menu extensions si besoin), ou via la sidebar de Firefox (Ctrl+Alt+S / menu Affichage → Panneau latéral). Contrairement à Chrome, le badge Pépite affiché sur l'annonce ne peut pas ouvrir la sidebar : Firefox réserve cette ouverture à un geste utilisateur direct sur l'extension. Si votre version de Firefox n'accorde pas les accès à l'installation, le panneau affiche un bandeau « Autoriser » — un clic suffit, puis rechargez l'onglet de l'annonce.
-
-> ⚠️ Installation **temporaire** : l'extension disparaît au redémarrage de Firefox. Firefox stable refuse les extensions non signées en installation permanente (seuls Developer Edition / Nightly le permettent via `xpinstall.signatures.required=false`). La publication signée sur addons.mozilla.org lèvera cette limite.
-
-### Chrome — zip pré-buildé (sans le Web Store)
-
-1. Téléchargez `pepiteextension-X.Y.Z-chrome.zip` depuis la [dernière release](https://github.com/jonathan-pyt/pepite/releases/latest) et décompressez-le
-2. Ouvrez `chrome://extensions`, activez le **Mode développeur** (en haut à droite)
-3. « Charger l'extension non empaquetée » → sélectionnez le dossier décompressé
+> Sur Firefox, le panneau s'ouvre via l'icône Pépite de la barre d'outils (épinglez-la si besoin) ou la sidebar (Ctrl+Alt+S) — le badge affiché sur l'annonce ne peut pas l'ouvrir (Firefox réserve cette action à un clic direct sur l'extension). Au premier lancement, si un bandeau « Autoriser » apparaît, cliquez-le puis rechargez l'onglet.
 
 ### Depuis les sources
 

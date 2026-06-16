@@ -1,7 +1,12 @@
 # Dossier Firefox Add-ons (AMO) — Pépite
 
-Compte gratuit sur https://addons.mozilla.org/developers/ (Developer Hub). La signature AMO
-lève la limite « installation temporaire » : extension permanente + mises à jour automatiques.
+✅ **PUBLIÉ** (v0.4.1, 12 juin 2026)
+- **Fiche** : https://addons.mozilla.org/fr/firefox/addon/p%C3%A9pite-analyse-immobili%C3%A8re/
+- **Gecko id** : `pepite@jonathan-pyt.github.io`
+- **Developer Hub** : https://addons.mozilla.org/developers/
+
+Les notes ci-dessous restent valables pour les **mises à jour** (bump de version,
+upload du `-firefox.zip` + du `-sources.zip`).
 
 ## Avant la première soumission (obligatoire)
 

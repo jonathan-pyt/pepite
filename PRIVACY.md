@@ -2,7 +2,7 @@
 
 *Dernière mise à jour : 12 juin 2026*
 
-Pépite est une extension Chrome open source d'analyse de biens immobiliers. Elle fonctionne **entièrement dans votre navigateur, sans serveur** : le développeur ne collecte, ne reçoit et ne stocke **aucune donnée**.
+Pépite est une extension navigateur open source (Chrome, Firefox, Edge…) d'analyse de biens immobiliers. Elle fonctionne **entièrement dans votre navigateur, sans serveur** : le développeur ne collecte, ne reçoit et ne stocke **aucune donnée**.
 
 ## Ce que l'extension traite, et où
 
