@@ -15,6 +15,7 @@ export const HOST_PERMISSIONS: string[] = [
   "https://generativelanguage.googleapis.com/*",
   "https://api.anthropic.com/*",
   "https://api.openai.com/*",
+  "https://ollama.com/*",
   "https://overpass-api.de/*",
   "https://overpass.osm.ch/*",
   "https://www.georisques.gouv.fr/*",

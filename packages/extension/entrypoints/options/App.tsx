@@ -159,6 +159,21 @@ function GeneralTab() {
               onChange={(e) => setSettings({ ...settings, model: e.target.value })}
             />
           </Field>
+
+          {settings.provider === "openai" && (
+            <Field
+              label="Endpoint OpenAI-compatible"
+              htmlFor="openai-base-url"
+              hint="Optionnel. Laisser vide pour utiliser l'API OpenAI officielle."
+            >
+              <Input
+                id="openai-base-url"
+                value={settings.baseURL ?? ""}
+                onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
+                placeholder="https://api.openai.com/v1"
+              />
+            </Field>
+          )}
         </CardContent>
       </Card>
 
