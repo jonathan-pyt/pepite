@@ -9,6 +9,7 @@ export interface LlmConfig {
   provider: LlmProviderId;
   apiKey: string;
   model: string;
+  baseURL?: string;
 }
 
 export const DEFAULT_MODELS: Record<LlmProviderId, string> = {
@@ -28,6 +29,9 @@ export function createModel(cfg: LlmConfig): LanguageModel {
         headers: { "anthropic-dangerous-direct-browser-access": "true" },
       })(cfg.model);
     case "openai":
-      return createOpenAI({ apiKey: cfg.apiKey })(cfg.model);
+      return createOpenAI({
+        apiKey: cfg.apiKey,
+        ...(cfg.baseURL?.trim() ? { baseURL: cfg.baseURL.trim() } : {}),
+      })(cfg.model);
   }
 }

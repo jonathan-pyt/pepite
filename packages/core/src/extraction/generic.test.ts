@@ -102,6 +102,36 @@ describe("extractListingGeneric", () => {
     expect(listing.attributes).toBeUndefined();
   });
 
+  it("endpoint OpenAI-compatible : accepte un JSON texte avec champs nullables absents", async () => {
+    const compatibleCfg: LlmConfig = {
+      provider: "openai",
+      apiKey: "test",
+      model: "qwen3.5",
+      baseURL: "https://ollama.com/v1",
+    };
+    const listing = await extractListingGeneric(
+      "texte",
+      url,
+      compatibleCfg,
+      mockReturning({
+        title: "Achat maison 5 pièces 100 m², La Plaine-sur-Mer",
+        price: 499000,
+        surface: 100,
+        propertyType: "Maison",
+        dpe: "D",
+        ges: "B",
+        description: "Face mer.",
+        attributes: [{ label: "Surface du terrain", value: "388 m²" }],
+      }),
+    );
+
+    expect(listing.price).toBe(499000);
+    expect(listing.rooms).toBeUndefined();
+    expect(listing.location.city).toBeUndefined();
+    expect(listing.propertyType).toBe("Maison");
+    expect(listing.attributes).toContainEqual({ label: "Surface du terrain", value: "388 m²" });
+  });
+
   it("construit rawAddress depuis city + postalCode + district", async () => {
     const listing = await extractListingGeneric("texte", url, cfg, mockReturning(fullExtraction));
     expect(listing.location.rawAddress).toBe("Nantes 44000 Centre-ville");

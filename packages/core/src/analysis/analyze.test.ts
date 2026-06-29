@@ -78,6 +78,33 @@ describe("analyzeListing", () => {
     expect(result.checklistVisite!.length).toBeGreaterThan(0);
     expect(result.checklistVisite![0]).toContain("PV d'AG");
   });
+
+  it("endpoint OpenAI-compatible : accepte une réponse JSON texte pour l'analyse", async () => {
+    const model = new MockLanguageModelV3({
+      doGenerate: async () => ({
+        content: [{ type: "text", text: JSON.stringify(fakeAnalysis) }],
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: { total: 100, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 200, text: undefined, reasoning: undefined },
+        },
+        warnings: [],
+      }),
+    });
+    const result = await analyzeListing(
+      { listing, quick },
+      {
+        provider: "openai",
+        apiKey: "test",
+        model: "gpt-oss:120b-cloud",
+        baseURL: "https://ollama.com/v1",
+      },
+      model,
+    );
+
+    expect(result.recommandation).toContain("277 000");
+    expect(result.profils.airbnb).toContain("réglementation locale");
+  });
 });
 
 describe("buildAnalysisPrompt", () => {

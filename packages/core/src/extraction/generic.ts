@@ -34,6 +34,7 @@ const extractionSchema = z.object({
 });
 
 type Extraction = z.infer<typeof extractionSchema>;
+const partialExtractionSchema = extractionSchema.partial();
 
 const SYSTEM_PROMPT = `Tu es un extracteur de données d'annonces immobilières françaises.
 À partir du texte brut d'une page d'annonce, tu renvoies UNIQUEMENT les informations réellement présentes.
@@ -49,6 +50,43 @@ Règles strictes :
 
 function buildPrompt(pageText: string): string {
   return `Voici le contenu textuel d'une page d'annonce immobilière. Extrais les données structurées.\n\n---\n${pageText}\n---`;
+}
+
+function buildJsonPrompt(pageText: string): string {
+  return `${buildPrompt(pageText)}
+
+Réponds uniquement avec un objet JSON valide, sans bloc Markdown, avec ces clés :
+title, price, surface, rooms, propertyType, city, postalCode, district, dpe, ges, description, publishedAt, attributes.
+Utilise null pour les valeurs absentes et [] pour attributes si aucune caractéristique n'est exploitable.`;
+}
+
+function parseJsonObject(text: string): unknown {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("generic: sortie JSON introuvable");
+  }
+  return JSON.parse(trimmed.slice(start, end + 1));
+}
+
+function normalizeExtraction(raw: unknown): Extraction {
+  const ex = partialExtractionSchema.parse(raw);
+  return {
+    title: ex.title ?? "",
+    price: ex.price ?? null,
+    surface: ex.surface ?? null,
+    rooms: ex.rooms ?? null,
+    propertyType: ex.propertyType ?? null,
+    city: ex.city ?? null,
+    postalCode: ex.postalCode ?? null,
+    district: ex.district ?? null,
+    dpe: ex.dpe ?? null,
+    ges: ex.ges ?? null,
+    description: ex.description ?? "",
+    publishedAt: ex.publishedAt ?? null,
+    attributes: ex.attributes ?? [],
+  };
 }
 
 function letter(value: string | null | undefined): string | undefined {
@@ -122,6 +160,15 @@ export async function extractListingGeneric(
   modelOverride?: LanguageModel,
 ): Promise<Listing> {
   const model = modelOverride ?? createModel(cfg);
+  if (cfg.provider === "openai" && cfg.baseURL?.trim()) {
+    const { text } = await generateText({
+      model,
+      system: SYSTEM_PROMPT,
+      prompt: buildJsonPrompt(pageText),
+    });
+    return toListing(normalizeExtraction(parseJsonObject(text)), url);
+  }
+
   const { output } = await generateText({
     model,
     system: SYSTEM_PROMPT,
