@@ -159,6 +159,21 @@ function GeneralTab() {
               onChange={(e) => setSettings({ ...settings, model: e.target.value })}
             />
           </Field>
+
+          {settings.provider === "openai" && (
+            <Field
+              label="Endpoint OpenAI-compatible"
+              htmlFor="openai-base-url"
+              hint="Optionnel. Laisser vide pour utiliser l'API OpenAI officielle. Ollama local : http://localhost:11434/v1 (clé API non requise)."
+            >
+              <Input
+                id="openai-base-url"
+                value={settings.baseURL ?? ""}
+                onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
+                placeholder="https://ollama.com/v1"
+              />
+            </Field>
+          )}
         </CardContent>
       </Card>
 

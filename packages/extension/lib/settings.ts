@@ -6,12 +6,13 @@ export interface Settings {
   provider: LlmProviderId;
   apiKey: string;
   model: string;
+  baseURL?: string;
   /** Profil de recherche du foyer (texte libre) — injecté dans chaque analyse IA. */
   searchProfile: string;
 }
 
 const settingsItem = storage.defineItem<Settings>("local:settings", {
-  fallback: { provider: "google", apiKey: "", model: DEFAULT_MODELS.google, searchProfile: "" },
+  fallback: { provider: "google", apiKey: "", model: DEFAULT_MODELS.google, baseURL: "", searchProfile: "" },
 });
 
 /**
@@ -23,9 +24,9 @@ const profileCardDismissedItem = storage.defineItem<boolean>("local:profileCardD
 });
 
 export async function getSettings(): Promise<Settings> {
-  // Réglages enregistrés avant l'ajout du champ : searchProfile absent du store.
+  // Réglages enregistrés avant l'ajout de champs : valeurs absentes du store.
   const s = await settingsItem.getValue();
-  return { ...s, searchProfile: s.searchProfile ?? "" };
+  return { ...s, baseURL: s.baseURL ?? "", searchProfile: s.searchProfile ?? "" };
 }
 
 export function getProfileCardDismissed(): Promise<boolean> {
@@ -41,6 +42,13 @@ export async function saveSettings(s: Settings): Promise<void> {
 }
 
 export function toLlmConfig(s: Settings): LlmConfig | null {
-  if (!s.apiKey) return null;
-  return { provider: s.provider, apiKey: s.apiKey, model: s.model };
+  const baseURL = s.provider === "openai" ? s.baseURL?.trim() : undefined;
+  if (!s.apiKey && !baseURL) return null;
+  return {
+    provider: s.provider,
+    // Un endpoint local (Ollama…) ignore la clé ; createOpenAI en exige une non vide.
+    apiKey: s.apiKey || "ollama",
+    model: s.model,
+    ...(baseURL ? { baseURL } : {}),
+  };
 }
