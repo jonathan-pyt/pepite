@@ -48,7 +48,7 @@ soumissions via `wxt submit` (cf. credentials API à générer).
 | Hôtes immobiliers (leboncoin.fr, seloger.com, bienici.com, citya.com) | Lire le contenu de l'annonce que l'utilisateur consulte afin d'en extraire les caractéristiques du bien. Aucune autre page n'est lue. |
 | CDN photos (img.leboncoin.fr, mms.seloger.com, photo.bienici.com, img.citya.com, www.citya.com) | Télécharger les photos de l'annonce sélectionnées par l'utilisateur pour la fonction Restyle IA. |
 | APIs publiques (files.data.gouv.fr, data.geopf.fr, geo.api.gouv.fr, apicarto.ign.fr, georisques.gouv.fr, data.economie.gouv.fr, overpass-api.de, overpass.osm.ch) | Récupérer les données publiques nécessaires à l'analyse : ventes immobilières DVF, géocodage, population, zonage PLU, risques, taux de taxe foncière, commodités du quartier. |
-| APIs d'IA (generativelanguage.googleapis.com, api.anthropic.com, api.openai.com) | Appeler le fournisseur d'IA choisi par l'utilisateur, avec sa propre clé API, pour générer l'analyse rédigée, les mails de négociation et les images de restyle. |
+| Hôtes IA optionnels (generativelanguage.googleapis.com, api.anthropic.com, api.openai.com, ollama.com, localhost, 127.0.0.1 — `optional_host_permissions`) | Jamais demandés à l'installation : seule l'origine du fournisseur d'IA que l'utilisateur configure dans les réglages (ou de son endpoint OpenAI-compatible, ex. Ollama) est demandée, via le dialogue d'autorisation du navigateur au moment de l'enregistrement. |
 
 ## Déclaration d'usage des données (formulaire « Privacy practices »)
 

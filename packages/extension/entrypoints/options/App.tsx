@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, PageShell, Seg } from "@/components/pepite";
+import { useLlmPermission } from "@/lib/hooks/use-llm-permission";
 import { useLocalData } from "@/lib/hooks/use-local-data";
 import { SEARCH_PROFILE_PLACEHOLDER } from "@/lib/hooks/use-search-profile";
 import { useSettings } from "@/lib/hooks/use-settings";
@@ -46,7 +47,14 @@ const TABS = ["Général", "Données locales"] as const;
 
 function GeneralTab() {
   const { settings, setSettings, save, saved } = useSettings();
+  const llmPermission = useLlmPermission(settings);
   if (!settings) return null;
+
+  async function handleSave() {
+    // permissions.request d'abord : il doit rester dans le geste utilisateur du clic.
+    await llmPermission.request();
+    await save();
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,24 +112,32 @@ function GeneralTab() {
             </div>
           </div>
           <Field label="Fournisseur" htmlFor="provider">
-            <Select
-              value={settings.provider}
-              onValueChange={(v) => {
-                const provider = v as LlmProviderId;
-                setSettings({ ...settings, provider, model: DEFAULT_MODELS[provider] });
-              }}
-            >
-              <SelectTrigger id="provider">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDERS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              <Select
+                value={settings.provider}
+                onValueChange={(v) => {
+                  const provider = v as LlmProviderId;
+                  setSettings({ ...settings, provider, model: DEFAULT_MODELS[provider] });
+                }}
+              >
+                <SelectTrigger id="provider">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {llmPermission.status === "missing" && (
+                <p className="text-[11px] leading-relaxed text-warn">
+                  Accès réseau au fournisseur d&apos;IA non accordé — « Enregistrer » ouvrira
+                  la demande d&apos;autorisation.
+                </p>
+              )}
+            </>
           </Field>
 
           <Field
@@ -166,19 +182,26 @@ function GeneralTab() {
               htmlFor="openai-base-url"
               hint="Optionnel. Laisser vide pour utiliser l'API OpenAI officielle. Ollama local : http://localhost:11434/v1 (clé API non requise)."
             >
-              <Input
-                id="openai-base-url"
-                value={settings.baseURL ?? ""}
-                onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
-                placeholder="https://ollama.com/v1"
-              />
+              <>
+                <Input
+                  id="openai-base-url"
+                  value={settings.baseURL ?? ""}
+                  onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
+                  placeholder="https://ollama.com/v1"
+                />
+                {llmPermission.status === "invalid" && (
+                  <p className="text-[11px] leading-relaxed text-bad">
+                    URL invalide — attendu : http(s)://hôte:port/v1
+                  </p>
+                )}
+              </>
             </Field>
           )}
         </CardContent>
       </Card>
 
       <div>
-        <Button onClick={save}>{saved ? "Enregistré ✓" : "Enregistrer"}</Button>
+        <Button onClick={() => void handleSave()}>{saved ? "Enregistré ✓" : "Enregistrer"}</Button>
       </div>
     </div>
   );

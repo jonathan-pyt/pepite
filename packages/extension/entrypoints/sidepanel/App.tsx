@@ -315,7 +315,9 @@ export default function App() {
       ? `${formatPctFr(quick.marketGapPct)} %`
       : "—";
 
-  const isApiKeyError = error?.includes("Clé API") ?? false;
+  // Erreur de configuration (clé manquante ou accès réseau IA non accordé) :
+  // style avertissement + lien réglages + fallback « Copier le prompt ».
+  const isConfigError = (error?.includes("Clé API") || error?.includes("Accès réseau")) ?? false;
 
   const activeProfileLabel = PROFILES.find((p) => p.id === profile)?.label ?? "";
 
@@ -539,13 +541,13 @@ export default function App() {
         {error && (
           <div
             className={
-              isApiKeyError
+              isConfigError
                 ? "rounded-lg border border-warn-border bg-warn-soft px-3 py-2.5 text-xs leading-relaxed text-warn"
                 : "rounded-lg border border-bad-border bg-bad-soft px-3 py-2.5 text-xs leading-relaxed text-bad"
             }
           >
             {error}{" "}
-            {isApiKeyError && (
+            {isConfigError && (
               <button
                 type="button"
                 className="cursor-pointer p-0 text-inherit underline"
@@ -558,7 +560,7 @@ export default function App() {
         )}
 
         {/* ── Copier le prompt sans clé API ────────────────────────────────── */}
-        {error && isApiKeyError && quick && (
+        {error && isConfigError && quick && (
           <div className="flex flex-col gap-1.5">
             <Button
               variant="secondary"

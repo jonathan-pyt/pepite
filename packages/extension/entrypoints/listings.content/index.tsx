@@ -180,7 +180,11 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
           });
           if (cancelled) return;
           if (resp && typeof resp === "object" && "error" in resp) {
-            setQuick(resp.error === "NO_API_KEY" ? "needs-key" : "extract-failed");
+            setQuick(
+              resp.error === "NO_API_KEY" || resp.error === "NO_HOST_PERMISSION"
+                ? "needs-key"
+                : "extract-failed",
+            );
             return;
           }
           // null = pipeline en échec ou résultat périmé côté background →
