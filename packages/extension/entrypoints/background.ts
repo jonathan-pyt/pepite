@@ -23,6 +23,7 @@ import {
   type Report,
 } from "@pepite/core";
 import { idbRepository } from "@/lib/repository-idb";
+import { hasLlmPermission } from "@/lib/llm-permission";
 import { getSettings, toLlmConfig } from "@/lib/settings";
 import type { PepiteRequest, TabState } from "@/lib/messages";
 
@@ -405,6 +406,8 @@ export default defineBackground(() => {
             const cfg = toLlmConfig(settings);
             // L'extraction générique coûte un appel LLM : sans clé, on ne tente rien.
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
+            // Origine IA optionnelle non accordée : erreur actionnable plutôt qu'un échec CORS obscur.
+            if (!(await hasLlmPermission(cfg))) return sendResponse({ error: "NO_HOST_PERMISSION" });
             let listing: Listing;
             try {
               // Appel LLM potentiellement long : keepalive pour l'event page Firefox.
@@ -451,6 +454,7 @@ export default defineBackground(() => {
             const settings = await getSettings();
             const cfg = toLlmConfig(settings);
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
+            if (!(await hasLlmPermission(cfg))) return sendResponse({ error: "NO_HOST_PERMISSION" });
 
             setTabState(req.tabId, { ...prev, status: "full-running" });
             try {
@@ -549,6 +553,7 @@ export default defineBackground(() => {
             const settings = await getSettings();
             const cfg = toLlmConfig(settings);
             if (!cfg) return sendResponse({ error: "NO_API_KEY" });
+            if (!(await hasLlmPermission(cfg))) return sendResponse({ error: "NO_HOST_PERMISSION" });
             try {
               // Appel LLM potentiellement long : keepalive pour l'event page Firefox.
               const emails = await withKeepAlive(() =>

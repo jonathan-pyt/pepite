@@ -28,8 +28,8 @@ Aucune de ces requêtes ne contient d'identifiant personnel. Aucune donnée n'es
 - `sidePanel` : afficher le panneau d'analyse.
 - `tabs` : détecter l'annonce ouverte dans l'onglet actif.
 - Accès aux sites immobiliers : lire l'annonce que vous consultez.
-- Accès aux APIs publiques et aux APIs d'IA : récupérer les données ci-dessus.
-- Accès **optionnel** à ollama.com et localhost : demandé uniquement si vous configurez un endpoint OpenAI-compatible dans les réglages.
+- Accès aux APIs publiques : récupérer les données ci-dessus.
+- Accès **optionnel** aux APIs d'IA (Google, Anthropic, OpenAI, ollama.com, localhost) : seule l'origine du fournisseur que **vous** configurez dans les réglages est demandée, au moment de l'enregistrement.
 
 ## Contact
 

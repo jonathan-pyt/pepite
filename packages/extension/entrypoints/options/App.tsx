@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, PageShell, Seg } from "@/components/pepite";
-import { useEndpointPermission } from "@/lib/hooks/use-endpoint-permission";
+import { useLlmPermission } from "@/lib/hooks/use-llm-permission";
 import { useLocalData } from "@/lib/hooks/use-local-data";
 import { SEARCH_PROFILE_PLACEHOLDER } from "@/lib/hooks/use-search-profile";
 import { useSettings } from "@/lib/hooks/use-settings";
@@ -47,15 +47,12 @@ const TABS = ["Général", "Données locales"] as const;
 
 function GeneralTab() {
   const { settings, setSettings, save, saved } = useSettings();
-  const endpointBaseURL = settings?.provider === "openai" ? (settings.baseURL ?? "") : "";
-  const endpointPermission = useEndpointPermission(endpointBaseURL);
+  const llmPermission = useLlmPermission(settings);
   if (!settings) return null;
 
   async function handleSave() {
     // permissions.request d'abord : il doit rester dans le geste utilisateur du clic.
-    if (endpointBaseURL.trim()) {
-      await endpointPermission.request(endpointBaseURL);
-    }
+    await llmPermission.request();
     await save();
   }
 
@@ -115,24 +112,32 @@ function GeneralTab() {
             </div>
           </div>
           <Field label="Fournisseur" htmlFor="provider">
-            <Select
-              value={settings.provider}
-              onValueChange={(v) => {
-                const provider = v as LlmProviderId;
-                setSettings({ ...settings, provider, model: DEFAULT_MODELS[provider] });
-              }}
-            >
-              <SelectTrigger id="provider">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDERS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              <Select
+                value={settings.provider}
+                onValueChange={(v) => {
+                  const provider = v as LlmProviderId;
+                  setSettings({ ...settings, provider, model: DEFAULT_MODELS[provider] });
+                }}
+              >
+                <SelectTrigger id="provider">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {llmPermission.status === "missing" && (
+                <p className="text-[11px] leading-relaxed text-warn">
+                  Accès réseau au fournisseur d&apos;IA non accordé — « Enregistrer » ouvrira
+                  la demande d&apos;autorisation.
+                </p>
+              )}
+            </>
           </Field>
 
           <Field
@@ -184,13 +189,7 @@ function GeneralTab() {
                   onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
                   placeholder="https://ollama.com/v1"
                 />
-                {endpointPermission.status === "missing" && (
-                  <p className="text-[11px] leading-relaxed text-warn">
-                    Accès réseau à cet endpoint non accordé — « Enregistrer » ouvrira la
-                    demande d&apos;autorisation (origines possibles : ollama.com, localhost).
-                  </p>
-                )}
-                {endpointPermission.status === "invalid" && (
+                {llmPermission.status === "invalid" && (
                   <p className="text-[11px] leading-relaxed text-bad">
                     URL invalide — attendu : http(s)://hôte:port/v1
                   </p>

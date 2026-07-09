@@ -9,6 +9,7 @@ import {
   saveRestyle,
   type RestyleRecord,
 } from "@/lib/repository-idb"
+import { ensureLlmPermission } from "@/lib/llm-permission"
 import { getSettings, toLlmConfig, type Settings } from "@/lib/settings"
 
 export type RestyleStatus =
@@ -217,6 +218,13 @@ export function useRestyle(): UseRestyle {
     }
     if (!style.preset && !style.custom) return
     const label = restyleStyleLabel(style)
+
+    // L'appel Gemini part de cette page et son origine est optionnelle :
+    // vérification/demande dans le geste du clic, avant tout await réseau.
+    if (!(await ensureLlmPermission({ provider: "google" }))) {
+      setError("Accès réseau à l'API Google non accordé — réessaie et accepte la demande d'autorisation.")
+      return
+    }
 
     setGenerating(true)
     setError(null)

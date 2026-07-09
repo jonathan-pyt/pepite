@@ -9,3 +9,5 @@ web-ext.config.ts
 docs/
 design/
 .claude/
+test-results/
+playwright-report/

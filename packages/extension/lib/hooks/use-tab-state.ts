@@ -136,6 +136,8 @@ export function useTabState(): UseTabState {
       setError("Le service d'arrière-plan n'a pas répondu — relance l'analyse.")
     } else if (res.error === "NO_API_KEY") {
       setError("Clé API manquante — configure un provider dans les réglages.")
+    } else if (res.error === "NO_HOST_PERMISSION") {
+      setError("Accès réseau au fournisseur d'IA non accordé — ouvre les réglages et enregistre pour l'autoriser.")
     } else if (res.error) {
       setError(res.error)
     } else {
