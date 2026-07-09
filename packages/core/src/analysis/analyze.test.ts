@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MockLanguageModelV3 } from "ai/test";
+import { NoObjectGeneratedError } from "ai";
 import { analyzeListing } from "./analyze";
 import { buildAnalysisPrompt } from "./prompts";
 import type { Enrichments, Listing, QuickAnalysis } from "../types";
@@ -33,50 +34,26 @@ const quick: QuickAnalysis = {
   scoreLabel: "Bon",
 };
 
-const fakeAnalysis = {
-  synthese: "Le bien est positionné 5,8 % sous la médiane du secteur…",
-  recommandation: "Bien intéressant, négociable autour de 277 000 €.",
-  pointsVigilance: [
-    { titre: "DPE C", detail: "Facture estimée 85-113 €/mois", niveau: "info" },
-  ],
-  negociation: { cibleBasse: 272_000, cibleHaute: 280_000, arguments: ["Prix 5,8 % sous la médiane"] },
-  profils: {
-    residence: "Idéal pour une résidence principale, bon DPE.",
-    "locatif-nu": "Rendement estimable à 4 % brut si loué 900 €/mois.",
-    airbnb: "Potentiel saisonnier correct, vérifier la réglementation locale.",
-    coloc: "3 pièces adapté à une coloc à 2, demande locale à vérifier.",
-  },
-  checklistVisite: [
-    "Demander les 3 derniers PV d'AG de la copropriété",
-    "Vérifier le montant des charges mensuelles et le fonds travaux",
-  ],
-};
-
 describe("analyzeListing", () => {
-  it("parse la sortie structurée du modèle", async () => {
+  it("sortie non-JSON du modèle → NoObjectGeneratedError propagée", async () => {
     const model = new MockLanguageModelV3({
       doGenerate: async () => ({
-        content: [{ type: "text", text: JSON.stringify(fakeAnalysis) }],
+        content: [{ type: "text", text: "désolé, je ne peux pas" }],
         finishReason: { unified: "stop", raw: undefined },
         usage: {
-          inputTokens: { total: 100, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
-          outputTokens: { total: 200, text: undefined, reasoning: undefined },
+          inputTokens: { total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 5, text: undefined, reasoning: undefined },
         },
         warnings: [],
       }),
     });
-    const result = await analyzeListing(
-      { listing, quick },
-      { provider: "google", apiKey: "test", model: "gemini-2.5-flash" },
-      model,
-    );
-    expect(result.recommandation).toContain("277 000");
-    expect(result.pointsVigilance[0]!.niveau).toBe("info");
-    expect(result.negociation.cibleBasse).toBe(272_000);
-    expect(result.profils["locatif-nu"]).toBeTruthy();
-    expect(Array.isArray(result.checklistVisite)).toBe(true);
-    expect(result.checklistVisite!.length).toBeGreaterThan(0);
-    expect(result.checklistVisite![0]).toContain("PV d'AG");
+    await expect(
+      analyzeListing(
+        { listing, quick },
+        { provider: "google", apiKey: "test", model: "gemini-2.5-flash" },
+        model,
+      ),
+    ).rejects.toBeInstanceOf(NoObjectGeneratedError);
   });
 });
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { browser } from "wxt/browser"
 import type { AnalysisResult, Enrichments, GlobalScore } from "@pepite/core"
 
+import { llmConfigErrorMessage } from "@/lib/llm-errors"
 import { sendRequest, type TabState } from "@/lib/messages"
 import { idbRepository } from "@/lib/repository-idb"
 
@@ -134,12 +135,8 @@ export function useTabState(): UseTabState {
       // promesse sendMessage se résout avec undefined — sans ce garde,
       // res.error lèverait et le spinner resterait affiché pour toujours.
       setError("Le service d'arrière-plan n'a pas répondu — relance l'analyse.")
-    } else if (res.error === "NO_API_KEY") {
-      setError("Clé API manquante — configure un provider dans les réglages.")
-    } else if (res.error === "NO_HOST_PERMISSION") {
-      setError("Accès réseau au fournisseur d'IA non accordé — ouvre les réglages et enregistre pour l'autoriser.")
     } else if (res.error) {
-      setError(res.error)
+      setError(llmConfigErrorMessage(res.error) ?? res.error)
     } else {
       setAnalysis(res.analysis ?? null)
       setEnrichments(res.enrichments ?? null)

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { NegotiationEmails, Report } from "@pepite/core"
 
+import { llmConfigErrorMessage } from "@/lib/llm-errors"
 import { sendRequest } from "@/lib/messages"
 
 export type NegotiationTone = "assertif" | "modere" | "aimable"
@@ -57,12 +58,8 @@ export function useNegotiation(report: Report | null): UseNegotiation {
         type: "GENERATE_NEGOTIATION_EMAILS",
         reportId: report.id,
       })
-      if (res.error === "NO_API_KEY") {
-        setError("Clé API manquante — configure un provider dans les réglages.")
-      } else if (res.error === "NO_HOST_PERMISSION") {
-        setError("Accès réseau au fournisseur d'IA non accordé — ouvre les réglages et enregistre pour l'autoriser.")
-      } else if (res.error) {
-        setError(res.error)
+      if (res.error) {
+        setError(llmConfigErrorMessage(res.error) ?? res.error)
       } else {
         setGenerated(res.emails ?? null)
       }
