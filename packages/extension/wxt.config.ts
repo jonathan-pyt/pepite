@@ -1,6 +1,6 @@
 import { defineConfig } from "wxt";
 import tailwindcss from "@tailwindcss/vite";
-import { HOST_PERMISSIONS } from "./lib/host-permissions";
+import { HOST_PERMISSIONS, OPTIONAL_HOST_PERMISSIONS } from "./lib/host-permissions";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
@@ -42,12 +42,16 @@ export default defineConfig({
     permissions:
       browser === "firefox" ? ["storage", "tabs"] : ["storage", "sidePanel", "tabs"],
     host_permissions: HOST_PERMISSIONS,
+    // Endpoints OpenAI-compatible (Ollama cloud/local) : accordées à la volée
+    // depuis les réglages, jamais requises (cf. lib/host-permissions.ts).
+    optional_host_permissions: OPTIONAL_HOST_PERMISSIONS,
     ...(browser === "firefox" && {
       browser_specific_settings: {
         gecko: {
           id: "pepite@jonathan-pyt.github.io",
-          // storage.session ≥ 115, MV3/sidebar stables — marge prise à 121.
-          strict_min_version: "121.0",
+          // optional_host_permissions exige Firefox ≥ 128 (MDN) ; couvre aussi
+          // storage.session ≥ 115 et MV3/sidebar stables.
+          strict_min_version: "128.0",
           // Déclaration AMO : le développeur ne collecte aucune donnée (cf. PRIVACY.md).
           data_collection_permissions: { required: ["none"] },
         },

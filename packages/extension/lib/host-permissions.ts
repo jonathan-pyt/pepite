@@ -33,6 +33,34 @@ export const HOST_PERMISSIONS: string[] = [
 ];
 
 /**
+ * Origines des endpoints OpenAI-compatible (Ollama cloud + local) : déclarées
+ * en optional_host_permissions et demandées depuis les réglages au moment où
+ * l'utilisateur configure un endpoint. Requises au manifest, elles
+ * désactiveraient l'extension chez les utilisateurs Chrome existants à la
+ * mise à jour, et élargiraient le bandeau Firefox pour tout le monde.
+ */
+export const OPTIONAL_HOST_PERMISSIONS: string[] = [
+  "https://ollama.com/*",
+  "http://localhost/*",
+  "http://127.0.0.1/*",
+];
+
+/**
+ * Match pattern de l'origine d'un endpoint configuré, tel qu'attendu par
+ * permissions.request/contains. Les match patterns ignorent le port :
+ * http://localhost:11434/v1 → http://localhost/*.
+ */
+export function endpointOriginPattern(baseURL: string): string | null {
+  try {
+    const u = new URL(baseURL.trim());
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    return `${u.protocol}//${u.hostname}/*`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Domaines couverts par le content script (badge sur les sites d'annonces).
  * Utilisés comme `matches` du content script et inclus dans la demande
  * d'accès Firefox : sur Firefox MV3, les matches des content scripts ne sont

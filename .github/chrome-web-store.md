@@ -49,6 +49,7 @@ soumissions via `wxt submit` (cf. credentials API à générer).
 | CDN photos (img.leboncoin.fr, mms.seloger.com, photo.bienici.com, img.citya.com, www.citya.com) | Télécharger les photos de l'annonce sélectionnées par l'utilisateur pour la fonction Restyle IA. |
 | APIs publiques (files.data.gouv.fr, data.geopf.fr, geo.api.gouv.fr, apicarto.ign.fr, georisques.gouv.fr, data.economie.gouv.fr, overpass-api.de, overpass.osm.ch) | Récupérer les données publiques nécessaires à l'analyse : ventes immobilières DVF, géocodage, population, zonage PLU, risques, taux de taxe foncière, commodités du quartier. |
 | APIs d'IA (generativelanguage.googleapis.com, api.anthropic.com, api.openai.com) | Appeler le fournisseur d'IA choisi par l'utilisateur, avec sa propre clé API, pour générer l'analyse rédigée, les mails de négociation et les images de restyle. |
+| Hôtes optionnels (ollama.com, localhost, 127.0.0.1 — `optional_host_permissions`) | Jamais demandés à l'installation : uniquement si l'utilisateur configure un endpoint d'IA OpenAI-compatible (Ollama cloud ou local) dans les réglages, via une demande d'autorisation explicite au moment de l'enregistrement. |
 
 ## Déclaration d'usage des données (formulaire « Privacy practices »)
 

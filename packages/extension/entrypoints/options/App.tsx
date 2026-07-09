@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, PageShell, Seg } from "@/components/pepite";
+import { useEndpointPermission } from "@/lib/hooks/use-endpoint-permission";
 import { useLocalData } from "@/lib/hooks/use-local-data";
 import { SEARCH_PROFILE_PLACEHOLDER } from "@/lib/hooks/use-search-profile";
 import { useSettings } from "@/lib/hooks/use-settings";
@@ -46,7 +47,17 @@ const TABS = ["Général", "Données locales"] as const;
 
 function GeneralTab() {
   const { settings, setSettings, save, saved } = useSettings();
+  const endpointBaseURL = settings?.provider === "openai" ? (settings.baseURL ?? "") : "";
+  const endpointPermission = useEndpointPermission(endpointBaseURL);
   if (!settings) return null;
+
+  async function handleSave() {
+    // permissions.request d'abord : il doit rester dans le geste utilisateur du clic.
+    if (endpointBaseURL.trim()) {
+      await endpointPermission.request(endpointBaseURL);
+    }
+    await save();
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -166,19 +177,32 @@ function GeneralTab() {
               htmlFor="openai-base-url"
               hint="Optionnel. Laisser vide pour utiliser l'API OpenAI officielle. Ollama local : http://localhost:11434/v1 (clé API non requise)."
             >
-              <Input
-                id="openai-base-url"
-                value={settings.baseURL ?? ""}
-                onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
-                placeholder="https://ollama.com/v1"
-              />
+              <>
+                <Input
+                  id="openai-base-url"
+                  value={settings.baseURL ?? ""}
+                  onChange={(e) => setSettings({ ...settings, baseURL: e.target.value })}
+                  placeholder="https://ollama.com/v1"
+                />
+                {endpointPermission.status === "missing" && (
+                  <p className="text-[11px] leading-relaxed text-warn">
+                    Accès réseau à cet endpoint non accordé — « Enregistrer » ouvrira la
+                    demande d&apos;autorisation (origines possibles : ollama.com, localhost).
+                  </p>
+                )}
+                {endpointPermission.status === "invalid" && (
+                  <p className="text-[11px] leading-relaxed text-bad">
+                    URL invalide — attendu : http(s)://hôte:port/v1
+                  </p>
+                )}
+              </>
             </Field>
           )}
         </CardContent>
       </Card>
 
       <div>
-        <Button onClick={save}>{saved ? "Enregistré ✓" : "Enregistrer"}</Button>
+        <Button onClick={() => void handleSave()}>{saved ? "Enregistré ✓" : "Enregistrer"}</Button>
       </div>
     </div>
   );
