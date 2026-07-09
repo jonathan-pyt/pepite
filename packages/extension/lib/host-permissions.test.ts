@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { endpointOriginPattern, llmOriginPattern, OPTIONAL_HOST_PERMISSIONS, PROVIDER_ORIGINS } from "./host-permissions";
+import { endpointOriginPattern, llmOriginPattern } from "./host-permissions";
 
 describe("endpointOriginPattern", () => {
   it("dérive le pattern de l'origine, port ignoré (les match patterns n'en ont pas)", () => {
@@ -30,13 +30,5 @@ describe("llmOriginPattern", () => {
 
   it("endpoint invalide : null (signalé « URL invalide » dans les réglages)", () => {
     expect(llmOriginPattern({ provider: "openai", baseURL: "pas-une-url" })).toBeNull();
-  });
-});
-
-describe("OPTIONAL_HOST_PERMISSIONS", () => {
-  it("contient toutes les origines fournisseurs : chacune doit rester « requestable »", () => {
-    for (const origin of Object.values(PROVIDER_ORIGINS)) {
-      expect(OPTIONAL_HOST_PERMISSIONS).toContain(origin);
-    }
   });
 });

@@ -84,10 +84,12 @@ Le découpage core/extension permet de réutiliser toute la logique hors navigat
 
 ```bash
 pnpm install
-pnpm test                              # tests core (Vitest, ~278 tests)
+pnpm test                              # tous les tests du workspace (Vitest : core + extension)
 pnpm typecheck                         # dans chaque package
 cd packages/extension && pnpm dev      # Chrome avec HMR
 ```
+
+Tests e2e (Playwright, en local uniquement) : depuis `packages/extension`, `npx playwright install chromium` puis `pnpm build` avant de lancer `pnpm e2e` — les tests pilotent l'extension buildée dans un vrai Chrome.
 
 ## Données utilisées
 

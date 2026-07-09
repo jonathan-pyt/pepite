@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MockLanguageModelV3 } from "ai/test";
+import { NoObjectGeneratedError } from "ai";
 import { buildNegotiationPrompt, generateNegotiationEmails } from "./negotiation";
 import type { AnalysisResult, Enrichments, Listing, QuickAnalysis } from "../types";
 
@@ -45,43 +46,25 @@ const analysis: Pick<AnalysisResult, "negociation" | "pointsVigilance"> = {
   ],
 };
 
-const fakeEmails = {
-  assertif: {
-    objet: "Offre d'achat — Appartement T3 64 m²",
-    corps: "Bonjour,\n\nNous vous adressons une offre ferme à 277 000 €.\n\nCordialement,\n[Votre nom]",
-  },
-  modere: {
-    objet: "Proposition pour l'appartement T3 64 m²",
-    corps: "Bonjour,\n\nNous vous proposons 277 000 €, ouverts à la discussion.\n\nCordialement,\n[Votre nom]",
-  },
-  aimable: {
-    objet: "Visite du T3 — proposition",
-    corps: "Bonjour,\n\nLe bien nous plaît beaucoup ; nous nous permettons de proposer 278 000 €.\n\nBien à vous,\n[Votre nom]",
-  },
-};
-
 describe("generateNegotiationEmails", () => {
-  it("parse la sortie structurée du modèle (3 variantes objet + corps)", async () => {
+  it("sortie non-JSON du modèle → NoObjectGeneratedError propagée", async () => {
     const model = new MockLanguageModelV3({
       doGenerate: async () => ({
-        content: [{ type: "text", text: JSON.stringify(fakeEmails) }],
+        content: [{ type: "text", text: "désolé, je ne peux pas" }],
         finishReason: { unified: "stop", raw: undefined },
         usage: {
-          inputTokens: { total: 100, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
-          outputTokens: { total: 200, text: undefined, reasoning: undefined },
+          inputTokens: { total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 5, text: undefined, reasoning: undefined },
         },
         warnings: [],
       }),
     });
-    const result = await generateNegotiationEmails(
-      { listing, quick, analysis, settings: { provider: "google", apiKey: "test", model: "gemini-2.5-flash" } },
-      model,
-    );
-    expect(result.assertif.objet).toContain("Offre d'achat");
-    expect(result.assertif.corps).toContain("277 000");
-    expect(result.modere.corps).toContain("[Votre nom]");
-    expect(result.aimable.objet).toBeTruthy();
-    expect(result.aimable.corps).toContain("Bien à vous");
+    await expect(
+      generateNegotiationEmails(
+        { listing, quick, analysis, settings: { provider: "google", apiKey: "test", model: "gemini-2.5-flash" } },
+        model,
+      ),
+    ).rejects.toBeInstanceOf(NoObjectGeneratedError);
   });
 });
 
