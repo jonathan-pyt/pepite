@@ -156,6 +156,79 @@ describe("fetchNeighborhood", () => {
     expect(stats.ecoles.count).toBe(3);
   });
 
+  // Overpass signale ses erreurs d'exécution en HTTP 200 avec un champ
+  // `remark` (vérifié le 2026-08-30 : « runtime error: Query timed out… »),
+  // parfois accompagné de résultats PARTIELS. Sans ce contrôle, un quartier
+  // vide ou tronqué était pris pour argent comptant et effondrait le score.
+  it("bascule sur le second endpoint quand le premier renvoie un remark d'erreur en 200", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          elements: [],
+          remark: 'runtime error: Query timed out in "print" at line 1 after 2 seconds.',
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => fixtureJson });
+
+    const stats = await fetchNeighborhood(CENTER_LAT, CENTER_LON, {
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(stats.ecoles.count).toBe(3);
+  });
+
+  it("rejette aussi un remark d'erreur accompagné de résultats partiels", async () => {
+    const partiel = { elements: fixtureJson.elements.slice(0, 1), remark: "runtime error: out of memory" };
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => partiel })
+      .mockResolvedValueOnce({ ok: true, json: async () => fixtureJson });
+
+    const stats = await fetchNeighborhood(CENTER_LAT, CENTER_LON, {
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    // le partiel est écarté : on obtient bien le jeu complet du second endpoint
+    expect(stats.ecoles.count).toBe(3);
+  });
+
+  it("lève, plutôt que de renvoyer des zéros, quand tous les endpoints renvoient un remark", async () => {
+    const remark = { elements: [], remark: "runtime error: Query timed out" };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => remark });
+
+    await expect(
+      fetchNeighborhood(CENTER_LAT, CENTER_LON, { fetchFn: mockFetch as unknown as typeof fetch }),
+    ).rejects.toThrow(/remark|timed out/i);
+  });
+
+  it("accepte un quartier réellement vide (aucun élément, aucun remark)", async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ elements: [] }) });
+
+    const stats = await fetchNeighborhood(CENTER_LAT, CENTER_LON, {
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(stats.ecoles.count).toBe(0);
+  });
+
+  it("laisse passer un remark purement informatif", async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ...fixtureJson, remark: "Please note: the data is from a mirror." }),
+    });
+
+    const stats = await fetchNeighborhood(CENTER_LAT, CENTER_LON, {
+      fetchFn: mockFetch as unknown as typeof fetch,
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(stats.ecoles.count).toBe(3);
+  });
+
   it("lève une erreur explicite si tous les endpoints échouent", async () => {
     const mockFetch = vi
       .fn()

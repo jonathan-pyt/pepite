@@ -42,7 +42,27 @@ type OverpassElement = {
 
 type OverpassResponse = {
   elements: OverpassElement[];
+  /** Overpass signale ses erreurs d'exécution ici, en HTTP 200. */
+  remark?: string;
 };
+
+/**
+ * Overpass répond 200 même quand la requête échoue : l'erreur est portée par
+ * un champ `remark` (« runtime error: Query timed out… », « out of memory »),
+ * parfois accompagné de résultats PARTIELS. Vérifié le 2026-08-30 sur
+ * overpass-api.de : 4 307 éléments renvoyés avec un remark de timeout.
+ *
+ * Sans ce contrôle, un quartier vide ou tronqué passait pour un résultat
+ * valide : score « Espaces verts / Commerces » à zéro, et un score global
+ * effondré sans le moindre signal d'erreur.
+ *
+ * Les remarks purement informatifs (sans mention d'erreur) sont conservés.
+ */
+function errorRemark(json: unknown): string | null {
+  const remark = (json as OverpassResponse | null)?.remark;
+  if (typeof remark !== "string") return null;
+  return /error|timed out|out of memory|too many requests/i.test(remark) ? remark : null;
+}
 
 const CATEGORY_MATCHERS: Record<
   keyof Omit<NeighborhoodStats, "radiusM">,
@@ -178,6 +198,13 @@ export async function fetchNeighborhood(
         continue;
       }
       const json: unknown = await res.json();
+      const remark = errorRemark(json);
+      if (remark) {
+        // Résultat inexploitable (vide ou tronqué) : on passe à l'endpoint
+        // suivant plutôt que de renvoyer des compteurs faux.
+        lastError = new Error(`Overpass ${endpoint} a renvoyé un remark d'erreur : ${remark}`);
+        continue;
+      }
       return parseOverpass(json, lat, lon, radiusM);
     } catch (err) {
       lastError = err;
