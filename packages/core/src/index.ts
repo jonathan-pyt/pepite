@@ -4,7 +4,8 @@ export { isLeboncoinListingPage, parseLeboncoin, parseLeboncoinHtml } from "./ex
 export { detectSite, isListingPage } from "./extraction/sites";
 export { extractListingGeneric } from "./extraction/generic";
 export { isSelogerListingPage, parseSeloger, parseSelogerHtml } from "./extraction/seloger";
-export { parseBienici } from "./extraction/bienici";
+export { bieniciAdId, fetchBienici, parseBieniciAd } from "./extraction/bienici";
+export type { FetchBieniciOptions } from "./extraction/bienici";
 export { isCityaListingPage, parseCitya } from "./extraction/citya";
 export { geocode, correctedLocation } from "./enrichment/geocode";
 export { parseDvfCsv, computeMarketStats, fetchCommuneSales, DVF_YEARS, haversineM } from "./enrichment/dvf";

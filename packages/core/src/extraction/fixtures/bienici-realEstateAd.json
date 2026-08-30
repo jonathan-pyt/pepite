@@ -1,0 +1,97 @@
+{
+  "reference": "7648KE",
+  "adType": "buy",
+  "propertyType": "flat",
+  "postalCode": "97430",
+  "city": "Le Tampon",
+  "price": 139900,
+  "surfaceArea": 67.8,
+  "roomsQuantity": 3,
+  "bedroomsQuantity": 2,
+  "title": "LE TAMPON CENTRE-VILLE : T3, 2 chambres, résidence sécurisée avec garage",
+  "description": "L'agence PRMI vous propose à la vente ce bel appartement T3 idéalement situé au Tampon, secteur Centre-Ville (11e), au sein d'une résidence sécurisée à proximité immédiate des écoles, des commodités et des commerces.<br>D'une surface habitable de 67,8 m², cet appartement situé au deuxième étage avec ascenseur se distingue par une configuration rare et particulièrement fonctionnelle. Il offre une pièce de vie lumineuse de plus de 30 m² avec cuisine ouverte, idéale pour partager des moments conviviaux. L'agencement de l'espace nuit constitue un véritable atout avec deux chambres situées de part et d'autre du séjour, garantissant une excellente indépendance. L'une des chambres est aménagée en suite parentale avec salle d'eau privative et placard. La seconde chambre dispose également d'un placard et bénéficie de la proximité d'une salle de bains indépendante. Un WC séparé complète l'ensemble.<br>Cette distribution rend ce bien parfaitement adapté à une colocation ou à une résidence principale avec des espaces bien distincts.<br>Un garage fermé de type box en sous-sol sécurisé complète ce bien, véritable atout de praticité et de confort au quotidien.<br>L'appartement ne dispose pas de varangue et nécessitera un léger rafraîchissement, offrant ainsi l'opportunité de le personnaliser selon vos goûts.<br>Vendu libre de toute occupation, cet appartement conviendra aussi bien à un projet de résidence principale qu'à un investissement locatif rentable, notamment en colocation.<br>Pour plus de renseignements ou pour organiser une visite, contactez Kévin Estieu, Agence PRMI, au <span class=\"importDescriptionDecorator\" data-type=\"phone\">0262 41 18 18</span> ou par mail à <span class=\"importDescriptionDecorator\" data-type=\"email\">contact@prmi.re.</span><br>Les charges courantes annuelles s'élèvent à 1 158,96 €, le fonds travaux ALUR à 57,04 €, et la taxe foncière à 1 533 € dont 424 € de taxe d'enlèvement des ordures ménagères récupérable. Le bien est soumis au statut de la copropriété comprenant 360 lots dont 181 à usage d'habitation, sans procédure en cours. Les honoraires sont à la charge du vendeur. Les informations sont disponibles sur www.georisques.gouv.fr.<br>Copropriété de 360 lots - dont 181 lots habitation. (Pas de procédure en cours).<br>Charges annuelles : 1158.96 euros.",
+  "floor": 2,
+  "floorQuantity": 5,
+  "yearOfConstruction": 2007,
+  "showerRoomsQuantity": 2,
+  "toiletQuantity": 1,
+  "hasElevator": true,
+  "enclosedParkingQuantity": 1,
+  "hasDoorCode": true,
+  "hasIntercom": true,
+  "hasTerrace": false,
+  "hasFirePlace": false,
+  "isExclusiveSaleMandate": true,
+  "photos": [
+    {
+      "title": "Photo n°1",
+      "url_photo": "https://media.immo-facile.com/office8/prmi/catalog/images/pr_p/5/7/1/5/6/7/7/1/57156771a.jpg?DATEMAJ=15/06/2026-00:03:32",
+      "url": "https://file.bienici.com/photo/immo-facile-57156771_media.immo-facile.com_office8_prmi_catalog_images_pr_p_5_7_1_5_6_7_7_1_57156771a.jpg_DATEMAJ_15_06_2026-00_03_32"
+    },
+    {
+      "title": "Photo n°2",
+      "url_photo": "https://media.immo-facile.com/office8/prmi/catalog/images/pr_p/5/7/1/5/6/7/7/1/57156771b.jpg?DATEMAJ=15/06/2026-00:03:32",
+      "url": "https://file.bienici.com/photo/immo-facile-57156771_media.immo-facile.com_office8_prmi_catalog_images_pr_p_5_7_1_5_6_7_7_1_57156771b.jpg_DATEMAJ_15_06_2026-00_03_32"
+    }
+  ],
+  "isInCondominium": true,
+  "condominiumPartsQuantity": 360,
+  "annualCondominiumFees": 1158.96,
+  "isCondominiumInProcedure": false,
+  "condominiumDetailedProcedure": "Pas de procédure en cours",
+  "feesChargedTo": "seller",
+  "priceWithoutFees": 139900,
+  "energyClassification": "NS",
+  "greenhouseGazClassification": "VI",
+  "hasGeorisquesMention": true,
+  "id": "immo-facile-57156771",
+  "newProperty": false,
+  "adCreatedByPro": true,
+  "publicationDate": "1970-01-01T00:00:00.000Z",
+  "modificationDate": "2026-08-27T14:29:07.018Z",
+  "district": {
+    "id_polygone": 300422,
+    "id_type": 1,
+    "name": "Le Tampon - Centre-ville",
+    "libelle": "Centre-ville",
+    "cp": "97430",
+    "code_insee": "97422",
+    "id": 300422,
+    "insee_code": "97422",
+    "postal_code": "97430",
+    "type_id": 1
+  },
+  "blurInfo": {
+    "type": "disk",
+    "radius": 50,
+    "bbox": [
+      55.52400742128046,
+      -21.27409387925949,
+      55.52497142358587,
+      -21.27319556525277
+    ],
+    "position": {
+      "lat": -21.27364472225613,
+      "lon": 55.52448942243316
+    },
+    "centroid": {
+      "lat": -21.27364472225613,
+      "lon": 55.52448942243316
+    }
+  },
+  "status": {
+    "onTheMarket": true,
+    "closedByUser": false,
+    "autoImported": true,
+    "isLeading": false,
+    "highlighted": false,
+    "is3dHighlighted": false
+  },
+  "departmentCode": "974",
+  "addressKnown": true,
+  "displayDistrictName": true,
+  "pricePerSquareMeter": 2063.4218289085547,
+  "transactionType": "buy",
+  "adTypeFR": "vente",
+  "generatedTitle": "Appartement 3 pièces 68 m², Le Tampon - 139 900 €"
+}
