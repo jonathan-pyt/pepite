@@ -232,9 +232,19 @@ export function computeMarketStats(
     const p75 = Math.round(percentileNearestRank(medianPrices, 0.75));
     const sampleSize = medianSource.length;
 
-    // Comparables : jusqu'à 10 similaires + 6 autres (triés par distance dans chaque groupe)
-    const topSimilar = similar.sort((a, b) => a.distanceM - b.distanceM).slice(0, 10);
-    const topOthers = others.sort((a, b) => a.distanceM - b.distanceM).slice(0, 6);
+    // Comparables : jusqu'à 10 similaires + 6 autres. Les ventes qui portent
+    // la médiane passent devant — sinon, quand toutes les distances se valent
+    // (même immeuble), le tri par distance renvoyait les plus anciennes et le
+    // tableau affiché contredisait la médiane annoncée.
+    const inMedianSource = new Set(medianSource.map((s) => s.idMutation));
+    const byRelevance = (a: Comparable, b: Comparable) => {
+      const aIn = inMedianSource.has(a.idMutation) ? 0 : 1;
+      const bIn = inMedianSource.has(b.idMutation) ? 0 : 1;
+      // à pertinence et distance égales, la vente la plus récente d'abord
+      return aIn - bIn || a.distanceM - b.distanceM || b.date.localeCompare(a.date);
+    };
+    const topSimilar = similar.sort(byRelevance).slice(0, 10);
+    const topOthers = others.sort(byRelevance).slice(0, 6);
     const comparables = [...topSimilar, ...topOthers];
 
     return {

@@ -199,6 +199,37 @@ describe("computeMarketStats — surface similaire", () => {
     expect(stats!.medianPricePerM2).not.toBeCloseTo(5000, -1);
   });
 
+  it("montre en priorité les ventes qui portent la médiane, pas les plus anciennes", () => {
+    // Cas réel (Le Tampon) : 42 ventes de surface comparable dans le rayon,
+    // dont 15 sur 18 mois → la médiane se calcule sur ces 15. À distance égale,
+    // la liste renvoyée montrait les 10 plus anciennes, jamais les 15 récentes :
+    // le tableau du rapport contredisait la médiane affichée de ~18 %.
+    const now = new Date("2026-08-28");
+    const anciennes = Array.from({ length: 20 }, (_, i) =>
+      fakeSale({ date: `2023-0${(i % 9) + 1}-15`, surface: 60, pricePerM2: 1650 }),
+    );
+    const recentes = Array.from({ length: 15 }, (_, i) =>
+      fakeSale({ date: `2026-0${(i % 8) + 1}-10`, surface: 60, pricePerM2: 1957 }),
+    );
+
+    const stats = computeMarketStats(
+      [...anciennes, ...recentes],
+      { lat: 47.2251, lon: -1.5265 },
+      "Appartement",
+      { surface: 60, now },
+    );
+
+    expect(stats!.medianOnSimilar).toBe(true);
+    expect(stats!.windowMonths).toBe(18);
+    expect(stats!.sampleSize).toBe(15);
+    expect(stats!.medianPricePerM2).toBe(1957);
+
+    // Le tableau doit refléter la médiane : les ventes affichées viennent
+    // d'abord de l'échantillon qui la produit.
+    const affichees = stats!.comparables.filter((c) => c.similar !== false);
+    expect(affichees.every((c) => c.date >= "2026-01-01")).toBe(true);
+  });
+
   it("sans surface → comportement identique à l'ancien (medianOnSimilar false, tous similar !== false)", () => {
     const sales = Array.from({ length: 15 }, (_, i) => fakeSale({ pricePerM2: 4500 + i * 50 }));
     const statsOld = computeMarketStats(sales, { lat: 47.2251, lon: -1.5265 }, "Appartement");
