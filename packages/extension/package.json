@@ -2,7 +2,7 @@
   "name": "@pepite/extension",
   "description": "Pépite — analyse immobilière",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -11,6 +11,8 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "submit": "wxt submit --chrome-zip .output/*-$npm_package_version-chrome.zip --firefox-zip .output/*-$npm_package_version-firefox.zip --firefox-sources-zip .output/*-$npm_package_version-sources.zip",
+    "submit:dry": "pnpm run submit --dry-run",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",

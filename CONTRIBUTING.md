@@ -52,3 +52,38 @@ Philosophie de test :
 - Test manuel du dialogue d'autorisation réseau : réglages → coller une clé → Enregistrer → accepter la demande d'accès.
 - Smoke test Firefox : ouvrir la sidebar, lancer une analyse longue jusqu'au bout.
 - Bump de version = tag `vX.Y.Z` correspondant (la CI vérifie la correspondance entre la version du manifeste et le tag).
+
+## Publier (mainteneur)
+
+Pousser un tag `vX.Y.Z` enchaîne tout : tests → archives → release GitHub →
+**soumission automatique au Chrome Web Store et à Firefox AMO**. Les deux
+stores passent ensuite par leur revue avant mise en ligne effective.
+
+Un tag poussé par erreur part donc en revue. Pour l'annuler, il faut le faire
+depuis les dashboards des stores — pas depuis Git.
+
+### Secrets du dépôt
+
+La soumission est ignorée (avec une notice, sans échec) tant qu'aucun secret
+n'est configuré. Si certains le sont et d'autres pas, la CI échoue en listant
+les manquants.
+
+| Store | Secrets |
+|---|---|
+| Chrome Web Store | `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` |
+| Firefox AMO | `FIREFOX_EXTENSION_ID`, `FIREFOX_JWT_ISSUER`, `FIREFOX_JWT_SECRET` |
+
+- Chrome : identifiants OAuth via la [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api).
+  `CHROME_EXTENSION_ID` est déjà connu : `egkdkadgnhejggojnbgipohjaciiigkf`.
+- Firefox : couple issuer/secret à générer sur [addons.mozilla.org/developers/addon/api/key/](https://addons.mozilla.org/en-US/developers/addon/api/key/).
+
+### Vérifier les identifiants sans rien soumettre
+
+```bash
+cd packages/extension
+pnpm zip && pnpm zip:firefox
+pnpm submit:dry     # authentifie seulement, n'envoie rien
+```
+
+AMO exige les sources de toute extension buildée : `pnpm zip:firefox` produit
+le `*-sources.zip`, joint automatiquement par le script `submit`.

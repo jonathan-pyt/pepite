@@ -57,6 +57,13 @@ jobs:
           fi
       - run: pnpm --filter "@pepite/extension" zip
       - run: pnpm --filter "@pepite/extension" zip:firefox
+      # Partagés avec le job submit : on soumet aux stores exactement les
+      # archives publiées ici, pas une reconstruction.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: archives
+          path: packages/extension/.output/*.zip
+          retention-days: 7
       - uses: softprops/action-gh-release@v3
         with:
           # *-firefox.zip exclut volontairement le *-sources.zip généré par wxt zip -b firefox
@@ -64,3 +71,69 @@ jobs:
             packages/extension/.output/*-chrome.zip
             packages/extension/.output/*-firefox.zip
           generate_release_notes: true
+
+  # Soumission au Chrome Web Store et à Firefox AMO, automatique sur tag.
+  # Les deux stores passent ensuite par leur propre revue avant publication.
+  submit:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: archives
+          path: packages/extension/.output
+
+      # Secrets absents partout = stores pas encore configurés : on n'échoue
+      # pas la release pour autant. Secrets partiels = vraie erreur de config,
+      # qu'il vaut mieux voir tout de suite qu'après un tag raté.
+      - name: Vérifier les secrets des stores
+        id: creds
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: |
+          required="CHROME_EXTENSION_ID CHROME_CLIENT_ID CHROME_CLIENT_SECRET CHROME_REFRESH_TOKEN \
+                    FIREFOX_EXTENSION_ID FIREFOX_JWT_ISSUER FIREFOX_JWT_SECRET"
+          missing=""; present=""
+          for name in $required; do
+            if [ -z "$(eval echo \"\$$name\")" ]; then missing="$missing $name"; else present="$present $name"; fi
+          done
+          if [ -z "$present" ]; then
+            echo "::notice::Aucun secret de store configuré — soumission ignorée. Renseigne les secrets du dépôt pour l'activer."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$missing" ]; then
+            echo "::error::Secrets de store incomplets, il manque :$missing"
+            exit 1
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Soumettre aux stores
+        if: steps.creds.outputs.ready == 'true'
+        working-directory: packages/extension
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        # AMO exige les sources pour toute extension construite : wxt zip -b
+        # firefox produit le *-sources.zip, joint automatiquement par le script.
+        run: pnpm run submit
