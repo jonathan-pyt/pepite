@@ -5,6 +5,8 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  # Lancement manuel : vérifie les identifiants des stores sans rien soumettre.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -71,6 +73,39 @@ jobs:
             packages/extension/.output/*-chrome.zip
             packages/extension/.output/*-firefox.zip
           generate_release_notes: true
+
+  # Vérification à blanc des identifiants de store, sur lancement manuel
+  # (Actions → CI → Run workflow). S'authentifie auprès des deux stores et
+  # s'arrête là : aucune archive n'est envoyée, aucune revue déclenchée.
+  # C'est le seul moyen de valider les secrets réellement utilisés en release
+  # — une copie locale dans .env.submit ne prouverait rien sur ceux du dépôt.
+  submit-dry-run:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Les archives doivent exister : l'outil vérifie les chemins avant d'authentifier.
+      - run: pnpm --filter "@pepite/extension" zip
+      - run: pnpm --filter "@pepite/extension" zip:firefox
+      - name: Vérifier les identifiants (sans soumettre)
+        working-directory: packages/extension
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: pnpm run submit:dry
 
   # Soumission au Chrome Web Store et à Firefox AMO, automatique sur tag.
   # Les deux stores passent ensuite par leur propre revue avant publication.
