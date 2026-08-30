@@ -11,3 +11,9 @@ design/
 .claude/
 test-results/
 playwright-report/
+
+# Secrets de publication : `wxt submit init` écrit ses identifiants de store
+# dans .env.submit — jamais versionné.
+.env
+.env.*
+!.env.example
