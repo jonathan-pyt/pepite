@@ -65,6 +65,9 @@ jobs:
         with:
           name: archives
           path: packages/extension/.output/*.zip
+          # .output est un dossier en point : depuis la v4.4, upload-artifact
+          # écarte les fichiers cachés par défaut et n'aurait rien téléversé.
+          include-hidden-files: true
           retention-days: 7
       - uses: softprops/action-gh-release@v3
         with:
