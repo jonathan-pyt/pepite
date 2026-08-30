@@ -29,7 +29,9 @@ export const HOST_PERMISSIONS: string[] = [
   // domaines relevés dans packages/core/src/extraction (fixtures + parseurs)
   "https://img.leboncoin.fr/*",
   "https://mms.seloger.com/*",
-  "https://photo.bienici.com/*",
+  // Bien'ici sert ses photos depuis file.bienici.com (vérifié 2026-08-28 sur
+  // le payload realEstateAd.json) — photo.bienici.com était une supposition.
+  "https://file.bienici.com/*",
   "https://img.citya.com/*",
   "https://www.citya.com/*",
 ];

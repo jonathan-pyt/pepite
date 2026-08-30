@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import {
   detectSite,
+  fetchBienici,
   isListingPage,
-  parseBienici,
   parseCitya,
   parseLeboncoin,
   parseLeboncoinHtml,
@@ -14,11 +14,12 @@ import {
   type QuickAnalysis,
   type Site,
 } from "@pepite/core";
-import { Loader2, KeyRound } from "lucide-react";
+import { Loader2, KeyRound, RotateCw } from "lucide-react";
 import { PepiteMark, ScoreRing } from "@/components/pepite";
 import { formatPctFr } from "@/lib/format";
 import { sendRequest, type PepiteContentRequest } from "@/lib/messages";
 import { LISTING_MATCHES } from "@/lib/host-permissions";
+import { waitForContent } from "@/lib/wait-for-content";
 
 /* ---------- helpers ---------- */
 
@@ -29,49 +30,20 @@ function scoreLabelText(score: number): string {
   return "Faible";
 }
 
-const GENERIC_PARSERS: Partial<Record<Site, (doc: Document, url: string) => Listing>> = {
+/** Sites dont l'annonce est lisible dans le DOM une fois la page hydratée. */
+const DOM_PARSERS: Partial<Record<Site, (doc: Document, url: string) => Listing>> = {
   seloger: parseSeloger,
-  bienici: parseBienici,
   citya: parseCitya,
 };
 
 /**
- * Attend que le DOM SPA soit hydraté avec un contenu substantiel.
- * Poll toutes les 500 ms jusqu'à :
- *  - innerText > 1500 chars ET stable sur deux polls consécutifs → résout true
- *  - timeout 20 s ET texte < 600 chars → résout false (page vide / splash écran)
- * La promesse est annulée proprement si `cancelledRef.current` passe à true.
+ * Sites dont l'annonce se lit sur une API JSON de même origine. Aucune
+ * dépendance à l'hydratation du DOM (Bien'ici peut rester blanc > 20 s) et
+ * aucun appel LLM : c'est la voie privilégiée quand elle existe.
  */
-function waitForContent(cancelledRef: { current: boolean }): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    const POLL_MS = 500;
-    const MAX_POLLS = 40; // 20 s
-    const STABLE_THRESHOLD = 1500;
-    const FALLBACK_THRESHOLD = 600;
-    let polls = 0;
-    let prevLen = -1;
-
-    function check() {
-      if (cancelledRef.current) return resolve(false);
-      const len = document.body?.innerText?.length ?? 0;
-      polls += 1;
-
-      if (len > STABLE_THRESHOLD && len === prevLen) {
-        return resolve(true);
-      }
-
-      prevLen = len;
-
-      if (polls >= MAX_POLLS) {
-        return resolve(len >= FALLBACK_THRESHOLD);
-      }
-
-      setTimeout(check, POLL_MS);
-    }
-
-    setTimeout(check, POLL_MS);
-  });
-}
+const API_EXTRACTORS: Partial<Record<Site, (url: string) => Promise<Listing>>> = {
+  bienici: (url) => fetchBienici(url),
+};
 
 /** Prépare le texte de page pour l'extracteur LLM (titre + meta description + texte principal). */
 function collectPageText(): string {
@@ -96,7 +68,21 @@ function MiniWordmark() {
 
 /* ---------- Badge component ---------- */
 
-type BadgeState = QuickAnalysis | null | "loading" | "error" | "needs-key" | "extract-failed";
+/**
+ * États non-résultat du badge. « extract-failed » ne couvre plus que le cas où
+ * une extraction a bien tourné sans trouver d'annonce : une page qui n'a jamais
+ * fini de charger dit maintenant autre chose (page-slow / page-blank), pour ne
+ * pas faire passer un problème de chargement pour un problème d'annonce.
+ */
+type BadgeState =
+  | QuickAnalysis
+  | null
+  | "loading"
+  | "page-slow"
+  | "page-blank"
+  | "error"
+  | "needs-key"
+  | "extract-failed";
 
 // Vrai <button> (focusable, activable au clavier) — text-left neutralise le
 // text-align:center par défaut des boutons, le reste écrase le style natif.
@@ -140,18 +126,44 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
           return;
         }
 
-        // Attendre que le SPA soit hydraté avant de tenter le parseur ou l'extraction générique.
-        const ready = await waitForContent(cancelledRef);
-        if (cancelled) return;
-        if (!ready) {
-          // Page trop vide après 20 s (splash écran, contenu bloqué) :
-          // aucune annonce identifiable → badge neutre « Extraction impossible ».
-          setQuick("extract-failed");
-          return;
+        // Voie API de même origine (Bien'ici) : immédiate, sans attendre le DOM.
+        const viaApi = site ? API_EXTRACTORS[site] : undefined;
+        if (viaApi) {
+          try {
+            const listing = await viaApi(url);
+            if (cancelled) return;
+            setParsedListing(listing);
+            const q = await sendRequest<QuickAnalysis | null>({
+              type: "LISTING_DETECTED",
+              listing,
+            });
+            if (cancelled) return;
+            setQuick(q ?? null);
+            return;
+          } catch {
+            // Annonce retirée, réponse inattendue, réseau : on retombe sur le DOM.
+          }
         }
 
+        // Attendre que le SPA soit hydraté avant de tenter le parseur ou l'extraction générique.
+        const ready = await waitForContent({
+          readLength: () => document.body?.innerText?.length ?? 0,
+          cancelled: () => cancelledRef.current,
+          onSlow: () => {
+            if (!cancelled) setQuick("page-slow");
+          },
+        });
+        if (cancelled) return;
+        if (!ready) {
+          // La page n'a jamais rendu de contenu : problème de chargement, pas
+          // d'annonce introuvable — on le dit tel quel.
+          setQuick("page-blank");
+          return;
+        }
+        setQuick("loading");
+
         // Sites à parseur dédié : on tente le DOM live, fallback extraction générique.
-        const parser = site ? GENERIC_PARSERS[site] : undefined;
+        const parser = site ? DOM_PARSERS[site] : undefined;
         let listing: Listing | null = null;
         if (parser) {
           try {
@@ -256,7 +268,54 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
     );
   }
 
-  /* Échec d'extraction générique : badge neutre et discret, sans score ni chiffres. */
+  /* Page lente à s'hydrater (SPA) : on attend toujours, on ne conclut rien. */
+  if (quick === "page-slow") {
+    return (
+      <button
+        type="button"
+        className={CARD_CLASS}
+        title="Ouvrir le panneau Pépite"
+        onClick={() => void sendRequest({ type: "OPEN_SIDE_PANEL" }).catch(() => {})}
+      >
+        <PepiteMark className="size-[24px]" />
+        <div>
+          <div className="flex items-center gap-[7px]">
+            <Loader2 className="size-[13px] shrink-0 animate-spin text-accent" />
+            <span className="text-[12.5px] font-semibold text-ink">La page charge encore…</span>
+          </div>
+          <div className="mt-0.5 text-[10.5px] text-ink-3">
+            analyse dès que l'annonce s'affiche
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  /* La page n'a jamais rendu de contenu : problème de chargement, réessayable. */
+  if (quick === "page-blank") {
+    return (
+      <button
+        type="button"
+        className={CARD_CLASS}
+        title="Relancer la détection Pépite"
+        onClick={() => {
+          setNonce((n) => n + 1);
+          setQuick("loading");
+        }}
+      >
+        <PepiteMark className="size-[24px]" />
+        <div>
+          <div className="flex items-center gap-[7px]">
+            <RotateCw className="size-[13px] shrink-0 text-accent" />
+            <span className="text-[12.5px] font-semibold text-ink">Page non chargée</span>
+          </div>
+          <div className="mt-0.5 text-[10.5px] text-ink-3">cliquer pour réessayer</div>
+        </div>
+      </button>
+    );
+  }
+
+  /* Extraction menée à son terme, sans annonce exploitable trouvée. */
   if (quick === "extract-failed") {
     return (
       <button
@@ -267,7 +326,7 @@ function Badge({ url, viaFetch }: { url: string; viaFetch: boolean }) {
       >
         <PepiteMark className="size-[24px]" />
         <span className="text-[12px] font-medium text-ink-3">
-          Extraction impossible sur cette page
+          Aucune annonce identifiable sur cette page
         </span>
       </button>
     );
