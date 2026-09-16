@@ -27,6 +27,8 @@ export interface UseHistory {
    * purge jamais tout l'historique d'un bien en un clic.
    */
   deleteReport: (reportId: string) => Promise<void>
+  /** Recharge la liste depuis le stockage (ex. après un import). */
+  reload: () => Promise<void>
 }
 
 /**
@@ -77,5 +79,5 @@ export function useHistory(): UseHistory {
     [reload],
   )
 
-  return { groups, selectedIds, toggleSelect, deleteReport }
+  return { groups, selectedIds, toggleSelect, deleteReport, reload }
 }
