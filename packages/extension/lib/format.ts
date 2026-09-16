@@ -5,3 +5,8 @@
 export function formatPctFr(pct: number): string {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1).replace(".", ",")}`;
 }
+
+/** Date ISO → format court français (JJ/MM/AAAA). */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
