@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { NegotiationEmails } from "./analysis/negotiation";
 
-export type Site = "leboncoin" | "seloger" | "bienici" | "citya" | "generic";
+export type Site = "leboncoin" | "seloger" | "bienici" | "citya" | "paruvendu" | "generic";
 export type UsageProfile = "residence" | "locatif-nu" | "airbnb" | "coloc";
 export type PropertyType = "Appartement" | "Maison";
 

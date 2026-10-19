@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseParuvendu > snapshot stable (hors extractedAt) sur la fixture réelle 1`] = `
+{
+  "attributes": [
+    {
+      "label": "Équipement",
+      "value": "Parking / Garage",
+    },
+    {
+      "label": "Équipement",
+      "value": "Balcon / Terrasse",
+    },
+    {
+      "label": "Équipement",
+      "value": "Jardin / Terrain",
+    },
+  ],
+  "bedrooms": 4,
+  "description": "Découvrez cette maison moderne avec 4 chambres, située dans le quartier La Mare à Drancy. Profitez d'un espace de vie lumineux, d'une terrasse conviviale et d'un garage, le tout avec une isolation récente.
+
+iad France - Agent Exemple vous propose: Maison 4 chambres – Quartier La Mare – Drancy
+
+Maison construite en 2004, située dans le quartier La Mare.
+
+Elle se compose :
+Au rez-de-chaussée :
+•Une entrée
+•Un salon / séjour lumineux
+•Une cuisine ouverte
+•Un WC
+
+À l'étage :
+•4 chambres
+•1 salle de bains
+•1 WC
+
+Les + :
+•Terrasse
+•Abri de jardin
+•Garage + place de parking
+•Isolation récente
+•Volets roulants récents
+
+Venez vite la découvrir !
+
+Honoraires d'agence à la charge du vendeur.
+La présentation d'une pièce d'identité en cours de validité sera demandée à la visite, conformément à l'article L.561-5 du Code monétaire et financier. Les informations sur les risques auxquels ce bien est exposé, y compris l'obligation légale de débroussaillement, sont disponibles sur le site Géorisques :
+La présente annonce immobilière a été rédigée sous la responsabilité éditoriale de Mme Agent Exemple mandataire indépendant en immobilier (sans détention de fonds), agent commercial de la SAS I@D France immatriculé au RSAC de bobigny sous le numéro 000000000, titulaire de la carte de démarchage immobilier pour le compte de la société I@D France SAS.
+
+Descriptif :
+- Surface habitable : 93
+- Surface totale : 93
+- Superficie terrain : 253
+- Nbre. d'étages : 1
+- Nbre. de chambres : 4
+- Nb. de pièces : 5
+- Nb. de salles de bain : 1
+- Nb. de WC : 2
+- Terrasse
+- Nb. Parking : 1
+
+Honoraires à la charge de : vendeur
+Bien En copropriété : Non",
+  "dpe": "C",
+  "ges": "A",
+  "location": {
+    "city": "Drancy",
+    "postalCode": "93700",
+    "rawAddress": "Drancy 93700",
+  },
+  "photos": [
+    "https://img.paruvendu.fr/media_ext/_https_/media.studio-net.fr/e9/98/L2JpZW5zLzMzMzMxNzg3L3g2YWIyNWZmMTlmNTg4PzIwMjYxMDAxMDUxNTAz_rct?func=crop&w=1000&gravity=auto",
+    "https://img.paruvendu.fr/media_ext/_https_/media.studio-net.fr/12/4d/L2JpZW5zLzMzMzMxNzg3L3g2YWIyNWZmMTlmNWFhPzIwMjYxMDAxMDUxNTAz_rct?func=crop&w=1000&gravity=auto",
+    "https://img.paruvendu.fr/media_ext/_https_/media.studio-net.fr/62/c4/L2JpZW5zLzMzMzMxNzg3L3g2YWIyNWZmMTlmNWMyPzIwMjYxMDAxMDUxNTAz_rct?func=crop&w=1000&gravity=auto",
+    "https://img.paruvendu.fr/media_ext/_https_/media.studio-net.fr/e8/1a/L2JpZW5zLzMzMzMxNzg3L3g2YWIyNWZmMTlmNWQ3PzIwMjYxMDAxMDUxNTAz_rct?func=crop&w=1000&gravity=auto",
+    "https://img.paruvendu.fr/media_ext/_https_/media.studio-net.fr/d1/eb/L2JpZW5zLzMzMzMxNzg3L3g2YWIyNWZmMTlmNWVkPzIwMjYxMDAxMDUxNTAz_rct?func=crop&w=1000&gravity=auto",
+  ],
+  "price": 359000,
+  "propertyType": "Maison",
+  "rooms": 5,
+  "site": "paruvendu",
+  "surface": 93,
+  "title": "Vente Maison 5 pièces 93 m² Drancy (93700)",
+  "url": "https://www.paruvendu.fr/immobilier/vente/maison/1291571535A1KIVHMN000",
+}
+`;
