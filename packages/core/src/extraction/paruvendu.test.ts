@@ -46,14 +46,27 @@ describe("isParuvenduListingPage", () => {
 });
 
 describe("parseParuvendu", () => {
-  it("jette « structure inconnue » sur une page sans prix", () => {
-    const doc = docWith("<body><h1 id='detail_h1'>Annonce</h1></body>");
-    expect(() => parseParuvendu(doc, REAL_URL)).toThrow(/structure inconnue/i);
+  it.each([
+    ["sans bloc prix", "<body><h1 id='detail_h1'>Annonce</h1></body>"],
+    ["avec un prix sans montant", "<body><div id='autoprix'>Prix sur demande</div></body>"],
+  ])("jette « structure inconnue » sur une page %s", (_, body) => {
+    expect(() => parseParuvendu(docWith(body), REAL_URL)).toThrow(/structure inconnue/i);
   });
 
-  it("jette quand le bloc prix ne contient pas de nombre", () => {
-    const doc = docWith("<body><div id='autoprix'>Prix sur demande</div></body>");
-    expect(() => parseParuvendu(doc, REAL_URL)).toThrow(/structure inconnue/i);
+  it("ne lit que le premier montant du bloc prix", () => {
+    const doc = docWith(
+      "<body><div id='autoprix'><span>359 000 €</span><s>380 000 €</s> dont 12 000 € d'honoraires</div></body>",
+    );
+    expect(parseParuvendu(doc, REAL_URL).price).toBe(359_000);
+  });
+
+  it("lit une surface à séparateur de milliers", () => {
+    const doc = docWith(
+      "<body><div id='autoprix'>1 200 000 €</div><ul>" +
+        "<li><span class='uppercase'>Surface</span><br><span> 1 250m2 environ </span></li>" +
+        "</ul></body>",
+    );
+    expect(parseParuvendu(doc, REAL_URL).surface).toBe(1_250);
   });
 
   it("extrait un Listing cohérent depuis la fixture réelle", () => {
@@ -70,13 +83,17 @@ describe("parseParuvendu", () => {
     expect(listing.location.city).toBe("Drancy");
     expect(listing.location.postalCode).toBe("93700");
     expect(listing.title).toMatch(/Drancy/);
-    expect(listing.attributes).toContainEqual({ label: "Équipement", value: "Parking / Garage" });
+    expect(listing.attributes).toEqual([
+      { label: "Équipement", value: "Parking / Garage" },
+      { label: "Équipement", value: "Balcon / Terrasse" },
+      { label: "Équipement", value: "Jardin / Terrain" },
+    ]);
   });
 
   it("garde la description complète, sans le bandeau de localisation", () => {
     const { description } = parseParuvendu(loadDoc(), REAL_URL);
     expect(description).toContain("Superficie terrain : 253");
-    expect(description).toContain("\n");
+    expect(description).toContain("\nAu rez-de-chaussée :\n•Une entrée\n");
     expect(description).not.toContain("Lieu :");
   });
 

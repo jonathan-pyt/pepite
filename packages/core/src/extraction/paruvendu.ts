@@ -1,38 +1,53 @@
 import type { Listing } from "../types";
-import { buildRawAddress, toLetter, toNumber, toPropertyType, toStr } from "./mapping";
+import {
+  buildRawAddress,
+  readLdNodes,
+  toLetter,
+  toNumber,
+  toPropertyType,
+  toStr,
+  toSurface,
+} from "./mapping";
 
 const UNKNOWN = "paruvendu: structure inconnue";
 
 // Vente uniquement : le pipeline compare le prix aux ventes DVF, un loyer y serait absurde.
+const LISTING_RE = /paruvendu\.fr\/immobilier\/vente\/([a-z-]+)\/\d{6,}[A-Z0-9]*(?:[?#]|$)/;
+
 export function isParuvenduListingPage(url: string): boolean {
-  return /paruvendu\.fr\/immobilier\/vente\/[a-z-]+\/\d{6,}[A-Z0-9]*(?:[?#]|$)/.test(url);
+  return LISTING_RE.test(url);
 }
 
 function text(el: Element | null | undefined): string | undefined {
   return toStr(el?.textContent?.replace(/\s+/g, " "));
 }
 
-/** Critères « libellé / valeur » du bloc résumé (pièces, surface, chambres, équipements). */
-function readCriteria(doc: Document): { byLabel: Map<string, string>; equipments: string[] } {
-  const byLabel = new Map<string, string>();
-  const equipments: string[] = [];
-  for (const labelEl of doc.querySelectorAll("li > span.uppercase")) {
-    const values = [...(labelEl.parentElement?.querySelectorAll(":scope > span") ?? [])]
-      .filter((s) => s !== labelEl)
-      .map(text)
-      .filter((v): v is string => v !== undefined);
-    const label = text(labelEl);
-    // Le libellé vide (&nbsp;) regroupe les équipements, un par span.
-    if (!label) equipments.push(...values);
-    else if (values[0] && !byLabel.has(label)) byLabel.set(label, values[0]);
-  }
-  return { byLabel, equipments };
+/** Premier montant en euros : le bloc prix peut afficher d'autres montants (ancien prix, honoraires). */
+function readPrice(doc: Document): number | undefined {
+  const m = text(doc.getElementById("autoprix"))?.match(/(\d[\d\s  ]*)\s*€/);
+  return m?.[1] ? toNumber(m[1]) : undefined;
 }
 
-/** « 93m2 environ » → 93 ; toNumber garderait le « 2 » de m2. */
-function readSurface(value: string | undefined): number | undefined {
-  const m = value?.match(/(\d+(?:[.,]\d+)?)\s*m/);
-  return m?.[1] ? toNumber(m[1]) : undefined;
+/**
+ * Bloc résumé (pièces, surface, chambres, équipements) : le premier <ul> à libellés
+ * de la page. Les blocs de détail qui suivent sont ignorés.
+ */
+function readCriteria(doc: Document): {
+  byLabel: Map<string, string>;
+  attributes?: Listing["attributes"];
+} {
+  const byLabel = new Map<string, string>();
+  const attributes: NonNullable<Listing["attributes"]> = [];
+  const list = doc.querySelector("li > span.uppercase")?.closest("ul");
+  for (const item of list?.querySelectorAll(":scope > li") ?? []) {
+    const [labelEl, ...valueEls] = item.querySelectorAll(":scope > span");
+    const values = valueEls.map(text).filter((v): v is string => v !== undefined);
+    const label = text(labelEl);
+    // Le libellé vide (&nbsp;) regroupe les équipements, un par span.
+    if (!label) attributes.push(...values.map((value) => ({ label: "Équipement", value })));
+    else if (values[0]) byLabel.set(label, values[0]);
+  }
+  return { byLabel, attributes: attributes.length > 0 ? attributes : undefined };
 }
 
 function readDescription(doc: Document): string {
@@ -51,14 +66,8 @@ function readDescription(doc: Document): string {
 /** Ville et code postal depuis le fil d'Ariane JSON-LD (« Drancy (93700) »), sinon le <title>. */
 function readCity(doc: Document): { city?: string; postalCode?: string } {
   const CITY_RE = /^(.+?) \((\d{5})\)$/;
-  for (const script of doc.querySelectorAll('script[type="application/ld+json"]')) {
-    let data: unknown;
-    try {
-      data = JSON.parse(script.textContent ?? "");
-    } catch {
-      continue;
-    }
-    const items = (data as { itemListElement?: unknown }).itemListElement;
+  for (const node of readLdNodes(doc)) {
+    const items = (node as { itemListElement?: unknown }).itemListElement;
     if (!Array.isArray(items)) continue;
     for (const item of items) {
       const m = toStr((item as { name?: unknown }).name)?.match(CITY_RE);
@@ -80,10 +89,10 @@ function readPhotos(doc: Document): string[] {
 }
 
 export function parseParuvendu(doc: Document, url: string): Listing {
-  const price = toNumber(text(doc.getElementById("autoprix")));
+  const price = readPrice(doc);
   if (!price || price <= 0) throw new Error(UNKNOWN);
 
-  const { byLabel, equipments } = readCriteria(doc);
+  const { byLabel, attributes } = readCriteria(doc);
   const { city, postalCode } = readCity(doc);
   const title =
     text(doc.getElementById("detail_h1")) ??
@@ -96,16 +105,15 @@ export function parseParuvendu(doc: Document, url: string): Listing {
     extractedAt: new Date().toISOString(),
     title,
     price,
-    surface: readSurface(byLabel.get("Surface")),
+    surface: toSurface(byLabel.get("Surface")),
     rooms: toNumber(byLabel.get("Nombre de pièces")),
     bedrooms: toNumber(byLabel.get("Nombre de chambres")),
-    propertyType: toPropertyType(url.match(/\/immobilier\/vente\/([a-z-]+)\//)?.[1]),
+    propertyType: toPropertyType(url.match(LISTING_RE)?.[1]),
     location: { rawAddress: buildRawAddress(city, postalCode, undefined), city, postalCode },
     dpe: toLetter(text(doc.querySelector(".DPE_consEnerNote"))),
     ges: toLetter(text(doc.querySelector(".DPE_effSerreNote"))),
     description: readDescription(doc),
     photos: readPhotos(doc),
-    attributes:
-      equipments.length > 0 ? equipments.map((value) => ({ label: "Équipement", value })) : undefined,
+    attributes,
   };
 }
