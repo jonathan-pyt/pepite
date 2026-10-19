@@ -9,6 +9,7 @@ import {
   parseCitya,
   parseLeboncoin,
   parseLeboncoinHtml,
+  parseParuvendu,
   parseSeloger,
   type Listing,
   type QuickAnalysis,
@@ -34,6 +35,7 @@ function scoreLabelText(score: number): string {
 const DOM_PARSERS: Partial<Record<Site, (doc: Document, url: string) => Listing>> = {
   seloger: parseSeloger,
   citya: parseCitya,
+  paruvendu: parseParuvendu,
 };
 
 /**

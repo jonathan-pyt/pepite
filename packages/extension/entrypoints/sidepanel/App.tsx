@@ -283,7 +283,7 @@ export default function App() {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
           <PepiteLogo size="lg" />
           <p className="text-[12.5px] leading-relaxed text-ink-3">
-            Ouvre une annonce immobilière (Leboncoin, SeLoger, Bien&apos;ici, Citya…) pour lancer l&apos;analyse.
+            Ouvre une annonce immobilière (Leboncoin, SeLoger, Bien&apos;ici, Citya, ParuVendu…) pour lancer l&apos;analyse.
           </p>
         </div>
       </div>
