@@ -1,5 +1,5 @@
 import type { Listing } from "../types";
-import { buildRawAddress, toLetter, toNumber, toPropertyType, toStr } from "./mapping";
+import { buildRawAddress, readLdNodes, toLetter, toNumber, toPropertyType, toStr } from "./mapping";
 
 const UNKNOWN = "citya: structure inconnue";
 
@@ -38,17 +38,6 @@ interface LegacyProduct {
   image?: unknown;
   offers?: unknown;
   address?: unknown;
-}
-
-/** Flatten any JSON-LD payload (object, array, @graph) into a flat node list. */
-function ldNodes(data: unknown): unknown[] {
-  if (Array.isArray(data)) return data.flatMap(ldNodes);
-  if (data && typeof data === "object") {
-    const obj = data as { "@graph"?: unknown };
-    if (Array.isArray(obj["@graph"])) return obj["@graph"].flatMap(ldNodes);
-    return [data];
-  }
-  return [];
 }
 
 function readImages(value: unknown): string[] {
@@ -131,29 +120,17 @@ function tryLegacyProduct(
 }
 
 export function parseCitya(doc: Document, url: string): Listing {
-  const scripts = doc.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]');
-
-  for (const script of scripts) {
-    if (!script.textContent) continue;
-    let data: unknown;
-    try {
-      data = JSON.parse(script.textContent);
-    } catch {
-      continue;
+  for (const node of readLdNodes(doc)) {
+    // Try real structure first
+    const real = tryRealEstateListing(node, (node as Record<string, unknown>).image);
+    if (real) {
+      return { url, site: "citya", extractedAt: new Date().toISOString(), ...real };
     }
 
-    for (const node of ldNodes(data)) {
-      // Try real structure first
-      const real = tryRealEstateListing(node, (node as Record<string, unknown>).image);
-      if (real) {
-        return { url, site: "citya", extractedAt: new Date().toISOString(), ...real };
-      }
-
-      // Fallback: legacy Product/Offer
-      const legacy = tryLegacyProduct(node);
-      if (legacy) {
-        return { url, site: "citya", extractedAt: new Date().toISOString(), ...legacy };
-      }
+    // Fallback: legacy Product/Offer
+    const legacy = tryLegacyProduct(node);
+    if (legacy) {
+      return { url, site: "citya", extractedAt: new Date().toISOString(), ...legacy };
     }
   }
 
