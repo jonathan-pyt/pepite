@@ -11,6 +11,8 @@ describe("detectSite", () => {
     ["https://www.bienici.com/recherche/achat/nantes-44000", "bienici"],
     ["https://www.citya.com/annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A", "citya"],
     ["https://www.citya.com/", "citya"],
+    ["https://www.paruvendu.fr/immobilier/vente/maison/1291571535A1KIVHMN000", "paruvendu"],
+    ["https://www.paruvendu.fr/", "paruvendu"],
     ["https://example.com/some/page", null],
     ["https://www.pap.fr/annonce/123", null],
   ];
@@ -41,6 +43,8 @@ describe("isListingPage", () => {
     "https://www.citya.com/annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A",
     "https://www.citya.com/annonces/vente/maison/nantes-44000/TMAI123456A",
     "https://www.citya.com/annonces/location/appartement/paris-75001/TAPP000001",
+    // paruvendu — vente seule
+    "https://www.paruvendu.fr/immobilier/vente/maison/1291571535A1KIVHMN000",
   ];
 
   const falseCases = [
@@ -58,6 +62,9 @@ describe("isListingPage", () => {
     "https://www.citya.com/",
     "https://www.citya.com/agences",
     "https://www.citya.com/agences-immobilieres/charleville-mezieres-08000/614",
+    // paruvendu — listes et locations
+    "https://www.paruvendu.fr/immobilier/vente/maison/drancy-93700/",
+    "https://www.paruvendu.fr/immobilier/location/appartement/1296202419A1KILHAP000",
     // unrelated
     "https://example.com/annonce/123",
   ];

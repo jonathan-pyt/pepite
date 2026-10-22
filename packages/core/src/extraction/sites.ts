@@ -2,6 +2,7 @@ import type { Site } from "../types";
 import { isLeboncoinListingPage } from "./leboncoin";
 import { isSelogerListingPage } from "./seloger";
 import { isCityaListingPage } from "./citya";
+import { isParuvenduListingPage } from "./paruvendu";
 
 /**
  * Registry of supported sites. Each entry knows how to recognise its domain
@@ -14,6 +15,7 @@ import { isCityaListingPage } from "./citya";
  *           /annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG  (since 2026-10)
  * Citya:    /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
  * Bien'ici: /annonce/vente/{ville}/{type}/{N}pieces/{ref}  (SPA — fixture pending)
+ * ParuVendu: /immobilier/vente/maison/1291571535A1KIVHMN000  (vente seule, 2026-10)
  */
 type SupportedSite = Exclude<Site, "generic">;
 
@@ -51,6 +53,12 @@ const SITES: SiteEntry[] = [
     detect: /(^|\.)citya\.com\//,
     // ex: /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
     isListing: isCityaListingPage,
+  },
+  {
+    site: "paruvendu",
+    detect: /(^|\.)paruvendu\.fr\//,
+    // ex: /immobilier/vente/maison/1291571535A1KIVHMN000
+    isListing: isParuvenduListingPage,
   },
 ];
 

@@ -16,7 +16,7 @@ Extension navigateur open source (Chrome, Firefox, Edge…) d'analyse de biens i
 
 ### Sites supportés
 
-Leboncoin, SeLoger et Citya (parseurs dédiés, instantanés) ; autres sites immobiliers (Bien'ici…) via extraction IA générique (nécessite une clé API).
+Leboncoin, SeLoger, Citya et ParuVendu (parseurs dédiés, instantanés) ; autres sites immobiliers (Bien'ici…) via extraction IA générique (nécessite une clé API).
 
 ## Galerie
 

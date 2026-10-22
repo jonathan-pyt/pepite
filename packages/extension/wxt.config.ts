@@ -26,7 +26,7 @@ export default defineConfig({
   manifest: ({ browser }) => ({
     name: "Pépite — analyse immobilière",
     description:
-      "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin, SeLoger, Bien'ici et Citya.",
+      "Score prix vs marché (DVF), analyse IA et aide à la négociation sur les annonces Leboncoin, SeLoger, Bien'ici, Citya et ParuVendu.",
     // Icône d'outils active (épinglable) ; sur Chrome, le clic ouvre le side
     // panel via setPanelBehavior(openPanelOnActionClick) déjà posé au démarrage.
     action: {

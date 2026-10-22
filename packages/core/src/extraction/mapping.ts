@@ -11,6 +11,35 @@ export function toNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+/** Surface d'un libellé (« 93m2 environ », « 1 250 m² ») ; toNumber garderait le « 2 » de m2. */
+export function toSurface(value: unknown): number | undefined {
+  const m = toStr(value)?.match(/(\d[\d\s  ]*(?:[.,]\d+)?)\s*m/);
+  return m?.[1] ? toNumber(m[1]) : undefined;
+}
+
+/** Flatten any JSON-LD payload (object, array, @graph) into a flat node list. */
+export function ldNodes(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data.flatMap(ldNodes);
+  if (data && typeof data === "object") {
+    const obj = data as { "@graph"?: unknown };
+    if (Array.isArray(obj["@graph"])) return obj["@graph"].flatMap(ldNodes);
+    return [data];
+  }
+  return [];
+}
+
+/** Every JSON-LD node of the page, flattened; unparseable scripts are skipped. */
+export function readLdNodes(doc: Document): unknown[] {
+  return [...doc.querySelectorAll('script[type="application/ld+json"]')].flatMap((script) => {
+    if (!script.textContent) return [];
+    try {
+      return ldNodes(JSON.parse(script.textContent));
+    } catch {
+      return [];
+    }
+  });
+}
+
 export function toStr(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const t = value.trim();

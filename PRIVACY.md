@@ -6,7 +6,7 @@ Pépite est une extension navigateur open source (Chrome, Firefox, Edge…) d'an
 
 ## Ce que l'extension traite, et où
 
-- **Contenu des annonces immobilières** : lorsque vous visitez une annonce (Leboncoin, SeLoger, Bien'ici, Citya…), l'extension lit le contenu de la page pour en extraire les caractéristiques du bien (prix, surface, adresse approximative, photos). Ces données restent dans votre navigateur (IndexedDB locale).
+- **Contenu des annonces immobilières** : lorsque vous visitez une annonce (Leboncoin, SeLoger, Bien'ici, Citya, ParuVendu…), l'extension lit le contenu de la page pour en extraire les caractéristiques du bien (prix, surface, adresse approximative, photos). Ces données restent dans votre navigateur (IndexedDB locale).
 - **Clés API** : vous fournissez vos propres clés (Google Gemini, Anthropic Claude ou OpenAI). Elles sont stockées dans `chrome.storage.local`, **jamais synchronisées** ni transmises ailleurs qu'au fournisseur d'IA correspondant.
 - **Rapports, historique et images générées** : stockés localement (IndexedDB). Vous pouvez les supprimer depuis la page Historique ou en désinstallant l'extension.
 
