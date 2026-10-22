@@ -55,3 +55,10 @@ export {
   type RestyleCost,
   type EstimateRestyleCostInput,
 } from "./restyle/cost";
+export {
+  buildExport,
+  parseImport,
+  HistoryImportError,
+  HISTORY_SCHEMA_VERSION,
+  type HistoryExport,
+} from "./history/io";

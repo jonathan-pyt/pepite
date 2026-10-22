@@ -1,5 +1,5 @@
 import { browser } from "wxt/browser";
-import { GitCompareArrows, ImageOff, Trash2 } from "lucide-react";
+import { Download, GitCompareArrows, ImageOff, Trash2, Upload } from "lucide-react";
 import { PageShell, PepiteLogo, ScoreRing, scoreColorClass } from "@/components/pepite";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +14,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { formatDate } from "@/lib/format";
 import { MAX_COMPARE, useHistory, type HistoryGroup } from "@/lib/hooks/use-history";
+import { useHistoryImportExport } from "@/lib/hooks/use-history-import-export";
+import { ImportDialogView } from "./import-dialog-view";
 
 /* ---------- Carte d'un bien analysé ---------- */
 interface HistoryCardProps {
@@ -32,11 +35,7 @@ function HistoryCard({ group, selected, selectionFull, onToggleSelect, onDelete 
 
   const photo = listing.photos[0];
   const city = listing.location.city ?? listing.location.rawAddress;
-  const analyzedAt = new Date(latest.createdAt).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const analyzedAt = formatDate(latest.createdAt);
 
   // Pattern side panel : score global si disponible, sinon score prix.
   const displayScore = globalScore?.score ?? quick.score;
@@ -147,7 +146,8 @@ function HistoryCard({ group, selected, selectionFull, onToggleSelect, onDelete 
 
 /* ---------- Page ---------- */
 export default function App() {
-  const { groups, selectedIds, toggleSelect, deleteReport } = useHistory();
+  const { groups, selectedIds, toggleSelect, deleteReport, reload } = useHistory();
+  const io = useHistoryImportExport(reload);
 
   if (groups === null) return null;
 
@@ -157,13 +157,44 @@ export default function App() {
       maxWidth="rapport"
       logoHref={browser.runtime.getURL("/historique.html")}
       topRight={
-        groups.length > 0 ? (
-          <span>
-            {groups.length} bien{groups.length > 1 ? "s" : ""} analysé{groups.length > 1 ? "s" : ""}
-          </span>
-        ) : undefined
+        <div className="flex items-center gap-3">
+          {groups.length > 0 && (
+            <span>
+              {groups.length} bien{groups.length > 1 ? "s" : ""} analysé{groups.length > 1 ? "s" : ""}
+            </span>
+          )}
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={io.onExport}
+              disabled={groups.length === 0}
+            >
+              <Download />
+              Exporter
+            </Button>
+            <Button variant="secondary" size="sm" onClick={io.openImportPicker}>
+              <Upload />
+              Importer
+            </Button>
+          </div>
+        </div>
       }
     >
+      <input
+        ref={io.fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(e) => void io.onFileChange(e)}
+      />
+
+      <ImportDialogView
+        dialog={io.dialog}
+        onClose={io.closeDialog}
+        onApply={(reports, ignored) => void io.applyImport(reports, ignored)}
+      />
+
       {groups.length === 0 ? (
         /* État vide */
         <div className="flex flex-col items-center gap-3 rounded-xl border border-line bg-white px-8 py-16 text-center shadow-pepite-card">
