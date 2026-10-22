@@ -4,7 +4,11 @@ import { buildRawAddress, toLetter, toNumber, toPropertyType, toStr } from "./ma
 const UNKNOWN = "seloger: structure inconnue";
 
 export function isSelogerListingPage(url: string): boolean {
-  return /seloger\.com\/annonces\/[^?#]*\/\d+\.htm/.test(url);
+  return (
+    /seloger\.com\/annonces\/[^?#]*\/\d+\.htm/.test(url) ||
+    // Since 2026-10: /annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG
+    /seloger\.com\/annonce\/(?:[^/?#]+\/){2,}(?=[a-z0-9]*\d)[a-z0-9]{8,}\/?(?:[?#]|$)/i.test(url)
+  );
 }
 
 // ── Types for the __UFRN_LIFECYCLE_SERVERREQUEST__ state ──────────────────
@@ -12,6 +16,14 @@ export function isSelogerListingPage(url: string): boolean {
 interface SelogerFact {
   type: string;
   splitValue?: string;
+}
+
+interface SelogerScale {
+  name?: string;
+  type?: string;
+  rating?: string;
+  value?: string;
+  efficiencyClass?: { rating?: string };
 }
 
 interface SelogerCategoryElement {
@@ -45,9 +57,7 @@ interface SelogerState {
           description?: { description?: string };
           gallery?: { images?: Array<{ url?: string }> };
           energy?: {
-            certificates?: Array<{
-              scales?: Array<{ name?: string; rating?: string; value?: string }>;
-            }>;
+            certificates?: Array<{ scales?: SelogerScale[] }>;
           };
           features?: {
             details?: { categories?: SelogerCategory[] };
@@ -127,12 +137,10 @@ function buildAttributes(
   return result;
 }
 
-function extractDpe(
-  scales: Array<{ name?: string; rating?: string; value?: string }> | undefined,
-): string | undefined {
+function extractDpe(scales: SelogerScale[] | undefined): string | undefined {
   if (!scales) return undefined;
   for (const scale of scales) {
-    const v = scale.rating ?? scale.value;
+    const v = scale.efficiencyClass?.rating ?? scale.rating ?? scale.value;
     const letter = toLetter(v);
     if (letter) return letter;
   }
@@ -181,12 +189,15 @@ function buildListing(state: SelogerState, url: string): Listing {
     .map((img) => img.url)
     .filter((u): u is string => typeof u === "string");
 
-  // DPE / GES — from energy certificates scales (may be absent for exempt properties)
+  // DPE / GES — from energy certificates scales (may be absent for exempt properties).
+  // Since 2026-10 a single certificate holds both scales, told apart by their
+  // type (FR_ENERGY_AFTER_2021 / FR_GHG_AFTER_2021); older shapes are positional.
   const certificates = sections?.energy?.certificates ?? [];
-  const dpeScales = certificates[0]?.scales;
-  const gesScales = certificates[1]?.scales;
-  const dpe = extractDpe(dpeScales);
-  const ges = extractDpe(gesScales);
+  const allScales = certificates.flatMap((c) => c.scales ?? []);
+  const dpeTyped = allScales.filter((s) => /ENERGY/.test(s.type ?? ""));
+  const gesTyped = allScales.filter((s) => /GHG|GES/.test(s.type ?? ""));
+  const dpe = extractDpe(dpeTyped.length > 0 ? dpeTyped : certificates[0]?.scales);
+  const ges = extractDpe(gesTyped.length > 0 ? gesTyped : certificates[1]?.scales);
 
   // Attributes from features.details.categories
   const categories = sections?.features?.details?.categories ?? [];
