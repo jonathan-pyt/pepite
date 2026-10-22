@@ -11,6 +11,7 @@ import { isCityaListingPage } from "./citya";
  * (updated 2026-06).
  *
  * SeLoger:  /annonces/achat/appartement/saint-denis-974/271190031.htm
+ *           /annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG  (since 2026-10)
  * Citya:    /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
  * Bien'ici: /annonce/vente/{ville}/{type}/{N}pieces/{ref}  (SPA — fixture pending)
  */
@@ -34,6 +35,7 @@ const SITES: SiteEntry[] = [
     site: "seloger",
     detect: /(^|\.)seloger\.com\//,
     // ex: /annonces/achat/appartement/saint-denis-974/271190031.htm
+    //     /annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG
     isListing: isSelogerListingPage,
   },
   {

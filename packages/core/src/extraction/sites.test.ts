@@ -30,6 +30,7 @@ describe("isListingPage", () => {
     // seloger — real URL format
     "https://www.seloger.com/annonces/achat/appartement/saint-denis-974/271190031.htm",
     "https://www.seloger.com/annonces/achat-de-prestige/maison/lyon-69/987654321.htm",
+    "https://www.seloger.com/annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG",
     // bienici
     "https://www.bienici.com/annonce/vente/nantes/appartement/3pieces/abc-123",
     "https://www.bienici.com/annonce/location/paris/maison/5pieces/xyz-789",
@@ -48,6 +49,7 @@ describe("isListingPage", () => {
     "https://www.leboncoin.fr/",
     // seloger — non-listing pages
     "https://www.seloger.com/immobilier/achat/nantes-44000/",
+    "https://www.seloger.com/recherche/achat/immobilier/ile-de-france/paris-75000/ad08fr31096",
     "https://www.seloger.com/",
     // bienici
     "https://www.bienici.com/recherche/achat/nantes-44000",
