@@ -35,6 +35,8 @@ export const HOST_PERMISSIONS: string[] = [
   "https://img.citya.com/*",
   "https://www.citya.com/*",
   // img.paruvendu.fr répond access-control-allow-origin: * (vérifié 2026-10-20) : pas de permission requise.
+  // images.iadfrance.fr ne renvoie pas d'en-tête CORS (vérifié 2026-10-31) : permission requise.
+  "https://images.iadfrance.fr/*",
 ];
 
 /** Origine de l'API officielle de chaque fournisseur d'IA. */
@@ -99,4 +101,5 @@ export const LISTING_MATCHES: string[] = [
   "*://*.bienici.com/*",
   "*://*.citya.com/*",
   "*://*.paruvendu.fr/*",
+  "*://*.iadfrance.fr/*",
 ];

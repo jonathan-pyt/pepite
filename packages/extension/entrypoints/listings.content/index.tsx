@@ -7,6 +7,7 @@ import {
   fetchBienici,
   isListingPage,
   parseCitya,
+  parseIadfrance,
   parseLeboncoin,
   parseLeboncoinHtml,
   parseParuvendu,
@@ -36,6 +37,7 @@ const DOM_PARSERS: Partial<Record<Site, (doc: Document, url: string) => Listing>
   seloger: parseSeloger,
   citya: parseCitya,
   paruvendu: parseParuvendu,
+  iadfrance: parseIadfrance,
 };
 
 /**
