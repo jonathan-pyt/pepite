@@ -30,6 +30,19 @@ describe("bieniciAdId", () => {
   it("renvoie null hors page d'annonce", () => {
     expect(bieniciAdId("https://www.bienici.com/recherche/achat/le-tampon")).toBeNull();
   });
+
+  it("reconnaît les annonces de prestige (même payload realEstateAd.json)", () => {
+    expect(
+      bieniciAdId(
+        "https://www.bienici.com/annonce/vente-de-prestige/le-locheur/maison/9pieces/safti-1-1692248",
+      ),
+    ).toBe("safti-1-1692248");
+    expect(
+      bieniciAdId(
+        "https://www.bienici.com/annonce/location-de-prestige/paris-7e/appartement/3pieces/netty-1",
+      ),
+    ).toBe("netty-1");
+  });
 });
 
 describe("parseBieniciAd", () => {

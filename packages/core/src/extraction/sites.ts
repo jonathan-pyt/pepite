@@ -15,6 +15,7 @@ import { isParuvenduListingPage } from "./paruvendu";
  *           /annonce/achat/ile-de-france/paris-75/paris-75000/26SNZN4PBSMG  (since 2026-10)
  * Citya:    /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
  * Bien'ici: /annonce/vente/{ville}/{type}/{N}pieces/{ref}  (SPA — fixture pending)
+ *           /annonce/vente-de-prestige/{ville}/{type}/{N}pieces/{ref}  (depuis 2026-11)
  * ParuVendu: /immobilier/vente/maison/1291571535A1KIVHMN000  (vente seule, 2026-10)
  */
 type SupportedSite = Exclude<Site, "generic">;
@@ -46,7 +47,8 @@ const SITES: SiteEntry[] = [
     // ex: /annonce/vente/nantes/appartement/3pieces/ref
     //     /annonce/vente/{type}/{pieces}/{ref}
     //     /annonce/location/...
-    isListing: (url) => /bienici\.com\/annonce\/(vente|location)\//.test(url),
+    //     /annonce/vente-de-prestige/le-locheur/maison/9pieces/safti-1-1692248  (2026-11)
+    isListing: (url) => /bienici\.com\/annonce\/(vente|location)(-de-prestige)?\//.test(url),
   },
   {
     site: "citya",

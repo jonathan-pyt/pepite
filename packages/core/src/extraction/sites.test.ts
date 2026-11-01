@@ -39,6 +39,9 @@ describe("isListingPage", () => {
     // bienici — observed ref formats
     "https://www.bienici.com/annonce/vente/type/pieces/guy-hoquet-immo-facile-7263996",
     "https://www.bienici.com/annonce/vente/type/pieces/ag442125-497051288",
+    // bienici — prestige (depuis 2026-11)
+    "https://www.bienici.com/annonce/vente-de-prestige/le-locheur/maison/9pieces/safti-1-1692248",
+    "https://www.bienici.com/annonce/location-de-prestige/paris-7e/appartement/3pieces/netty-1",
     // citya — real URL format
     "https://www.citya.com/annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A",
     "https://www.citya.com/annonces/vente/maison/nantes-44000/TMAI123456A",
