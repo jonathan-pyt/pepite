@@ -4,10 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { isIadfranceListingPage, parseIadfrance } from "./iadfrance";
 
-const html = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), "fixtures/iadfrance-annonce.html"),
-  "utf8",
-);
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+const houseHtml = readFileSync(join(fixturesDir, "iadfrance-annonce.html"), "utf8");
+const apartmentHtml = readFileSync(join(fixturesDir, "iadfrance-annonce-appartement.html"), "utf8");
 
 function docWith(innerHtml: string): Document {
   const doc = document.implementation.createHTMLDocument();
@@ -16,19 +15,20 @@ function docWith(innerHtml: string): Document {
 }
 
 function loadDoc(): Document {
-  return docWith(html);
+  return docWith(houseHtml);
+}
+
+function loadApartmentDoc(): Document {
+  return docWith(apartmentHtml);
 }
 
 const REAL_URL = "https://www.iadfrance.fr/annonce/maison-vente-5-pieces-cauville-150m2/r1946966";
+const APARTMENT_URL = "https://www.iadfrance.fr/annonce/appartement-vente-4-pieces-paris-126m2/r2137679";
 
 describe("isIadfranceListingPage", () => {
   it("reconnaît les URLs d'annonces de vente", () => {
     expect(isIadfranceListingPage(REAL_URL)).toBe(true);
-    expect(
-      isIadfranceListingPage(
-        "https://www.iadfrance.fr/annonce/appartement-vente-4-pieces-paris-126m2/r2137679",
-      ),
-    ).toBe(true);
+    expect(isIadfranceListingPage(APARTMENT_URL)).toBe(true);
     expect(isIadfranceListingPage(`${REAL_URL}?origine=liste#photos`)).toBe(true);
   });
 
@@ -94,18 +94,25 @@ describe("parseIadfrance", () => {
     expect(new Set(photos).size).toBe(photos.length);
   });
 
-  it("se replie sur le <h1> quand l'og:title manque", () => {
-    const doc = docWith(
-      '<script type="application/ld+json">{"@graph":[' +
-        '{"@type":"Apartment","address":{"addressLocality":"Nantes","postalCode":"44000"},"floorSize":{"value":80},"numberOfRooms":4,"numberOfBedrooms":2},' +
-        '{"@type":"Offer","price":"250 000 €"}' +
-        "]}</script><body><h1>Appartement à vendre 4 pièces 80 m² Nantes</h1></body>",
-    );
-    const listing = parseIadfrance(doc, REAL_URL);
-    expect(listing.title).toBe("Appartement à vendre 4 pièces 80 m² Nantes");
+  it("extrait un appartement (second site réel, Paris 75017)", () => {
+    const listing = parseIadfrance(loadApartmentDoc(), APARTMENT_URL);
+    expect(listing.price).toBe(2_400_000);
+    expect(listing.surface).toBe(126);
+    expect(listing.rooms).toBe(4);
+    expect(listing.bedrooms).toBe(3);
     expect(listing.propertyType).toBe("Appartement");
-    expect(listing.price).toBe(250_000);
-    expect(listing.photos).toEqual([]);
+    expect(listing.dpe).toBe("C");
+    expect(listing.ges).toBe("C");
+    expect(listing.location.city).toBe("Paris");
+    expect(listing.location.postalCode).toBe("75017");
+    expect(listing.description).toContain("ROOFTOP PRIVATIF");
+  });
+
+  it("se replie sur le <h1> quand l'og:title manque", () => {
+    const doc = loadApartmentDoc();
+    doc.querySelector('meta[property="og:title"]')?.remove();
+    const listing = parseIadfrance(doc, APARTMENT_URL);
+    expect(listing.title).toBe("Appartement à vendre 4 pièces 126 m² Paris 17");
   });
 
   it("snapshot stable (hors extractedAt) sur la fixture réelle", () => {
