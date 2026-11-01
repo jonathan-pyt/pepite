@@ -1,0 +1,52 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseIadfrance > snapshot stable (hors extractedAt) sur la fixture réelle 1`] = `
+{
+  "bedrooms": 2,
+  "description": "Ancien corps de ferme plein de charme à Cauville – Suisse Normande
+
+Situé dans un environnement naturel préservé au calme absolu et sans aucun vis-à-vis à seulement 7 kilomètres de Clécy, au cœur des paysages prisés de la Suisse Normande, ce magnifique corps de ferme au fort potentiel offre un véritable havre de paix. Il saura séduire les amoureux de la pierre, des poutres apparentes et de l’authenticité. 
+
+Maison principale – 150 m² habitables (+ 84 m² de combles aménageables)
+• Rez-de-chaussée : entrée, séjour avec cuisine ouverte et superbe cheminée en pierre, salon avec insert, salle d’eau, WC séparé, arrière-cuisine/buanderie, 1 pièce au-dessus à aménager.
+
+• Étage : palier avec placard desservant 2 grandes chambres avec rangements, grande salle de bain, WC séparé.
+
+• Combles (2ᵉ étage) : déjà isolés et divisés en deux espaces, parfaits pour créer des chambres supplémentaires ou un espace loisirs. 
+
+Dépendance de 45 m² à rénover : salon avec cheminée, cuisine, salle d’eau avec WC, chambre à l’étage.
+
+Extérieurs et annexes :
+Deux garages
+Grande grange spacieuse
+Hangar pour stockage de bois
+Terrain de 15 040 m²
+
+Un bien rare, au calme total, offrant de multiples possibilités d’aménagement dans un environnement naturel privilégié.
+
+Une opportunité à ne pas manquer – À visiter sans tarder !
+
+Honoraires d'agence à la charge du vendeur.
+La présentation d'une pièce d'identité en cours de validité sera demandée à la visite, conformément à l'article L.561-5 du Code monétaire et financier. Les informations sur les risques auxquels ce bien est exposé, y compris l'obligation légale de débroussaillement, sont disponibles sur le site Géorisques : http://www.georisques.gouv.fr.
+La présente annonce immobilière a été rédigée sous la responsabilité éditoriale de M Rafik Madi mandataire indépendant en immobilier (sans détention de fonds), agent commercial de la SAS I@D France immatriculé au RSAC de CAEN sous le numéro 900611336, titulaire de la carte de démarchage immobilier pour le compte de la société I@D France SAS.",
+  "dpe": "E",
+  "ges": "E",
+  "location": {
+    "city": "Cauville",
+    "postalCode": "14770",
+    "rawAddress": "Cauville 14770",
+  },
+  "photos": [
+    "https://images.iadfrance.fr/property/broadcast/2026/02/12/019c511ddf4c05c5776c0a0bee10f565.jpg",
+    "https://images.iadfrance.fr/property/broadcast/2026/02/12/019c513acbeb848b3182ad540754a106.jpg",
+    "https://images.iadfrance.fr/property/broadcast/2026/02/12/019c511de08154cfc6d6921ccb0a7d12.jpg",
+  ],
+  "price": 375000,
+  "propertyType": "Maison",
+  "rooms": 5,
+  "site": "iadfrance",
+  "surface": 150,
+  "title": "Maison traditionnelle 5 pièces de 150 m² à Cauville (14770)",
+  "url": "https://www.iadfrance.fr/annonce/maison-vente-5-pieces-cauville-150m2/r1946966",
+}
+`;

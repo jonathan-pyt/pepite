@@ -13,6 +13,8 @@ describe("detectSite", () => {
     ["https://www.citya.com/", "citya"],
     ["https://www.paruvendu.fr/immobilier/vente/maison/1291571535A1KIVHMN000", "paruvendu"],
     ["https://www.paruvendu.fr/", "paruvendu"],
+    ["https://www.iadfrance.fr/annonce/maison-vente-5-pieces-cauville-150m2/r1946966", "iadfrance"],
+    ["https://www.iadfrance.fr/", "iadfrance"],
     ["https://example.com/some/page", null],
     ["https://www.pap.fr/annonce/123", null],
   ];
@@ -45,6 +47,9 @@ describe("isListingPage", () => {
     "https://www.citya.com/annonces/location/appartement/paris-75001/TAPP000001",
     // paruvendu — vente seule
     "https://www.paruvendu.fr/immobilier/vente/maison/1291571535A1KIVHMN000",
+    // iadfrance — vente seule
+    "https://www.iadfrance.fr/annonce/maison-vente-5-pieces-cauville-150m2/r1946966",
+    "https://www.iadfrance.fr/annonce/appartement-vente-4-pieces-paris-126m2/r2137679",
   ];
 
   const falseCases = [
@@ -65,6 +70,10 @@ describe("isListingPage", () => {
     // paruvendu — listes et locations
     "https://www.paruvendu.fr/immobilier/vente/maison/drancy-93700/",
     "https://www.paruvendu.fr/immobilier/location/appartement/1296202419A1KILHAP000",
+    // iadfrance — listes et locations
+    "https://www.iadfrance.fr/annonces/vente/maison",
+    "https://www.iadfrance.fr/annonces/cauville-14770/vente/maison",
+    "https://www.iadfrance.fr/annonce/appartement-location-2-pieces-bordeaux-32m2/r2044797",
     // unrelated
     "https://example.com/annonce/123",
   ];

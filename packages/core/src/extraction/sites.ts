@@ -3,6 +3,7 @@ import { isLeboncoinListingPage } from "./leboncoin";
 import { isSelogerListingPage } from "./seloger";
 import { isCityaListingPage } from "./citya";
 import { isParuvenduListingPage } from "./paruvendu";
+import { isIadfranceListingPage } from "./iadfrance";
 
 /**
  * Registry of supported sites. Each entry knows how to recognise its domain
@@ -16,6 +17,7 @@ import { isParuvenduListingPage } from "./paruvendu";
  * Citya:    /annonces/vente/appartement/charleville-mezieres-08000/TAPP949326A
  * Bien'ici: /annonce/vente/{ville}/{type}/{N}pieces/{ref}  (SPA — fixture pending)
  * ParuVendu: /immobilier/vente/maison/1291571535A1KIVHMN000  (vente seule, 2026-10)
+ * iadFrance: /annonce/maison-vente-5-pieces-cauville-150m2/r1946966  (vente seule, 2026-10)
  */
 type SupportedSite = Exclude<Site, "generic">;
 
@@ -59,6 +61,12 @@ const SITES: SiteEntry[] = [
     detect: /(^|\.)paruvendu\.fr\//,
     // ex: /immobilier/vente/maison/1291571535A1KIVHMN000
     isListing: isParuvenduListingPage,
+  },
+  {
+    site: "iadfrance",
+    detect: /(^|\.)iadfrance\.fr\//,
+    // ex: /annonce/maison-vente-5-pieces-cauville-150m2/r1946966
+    isListing: isIadfranceListingPage,
   },
 ];
 
