@@ -63,7 +63,9 @@ export function bieniciAdId(url: string): string | null {
   } catch {
     return null;
   }
-  if (!/^\/annonce\/(vente|location)\//.test(pathname)) return null;
+  // Prestige (ex. /annonce/vente-de-prestige/le-locheur/maison/9pieces/safti-1-1692248)
+  // porte le même payload realEstateAd.json que vente/location, sous un segment différent.
+  if (!/^\/annonce\/(vente|location)(-de-prestige)?\//.test(pathname)) return null;
   const segments = pathname.split("/").filter(Boolean);
   return segments.length > 3 ? (segments.at(-1) ?? null) : null;
 }
